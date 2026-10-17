@@ -22,13 +22,14 @@ export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}
 
 export function load() {
   const raw = ls.get(KEY);
-  if (raw) { try { DB = JSON.parse(raw); if (DB?.version === 3) return DB; } catch { /* reseed */ } }
+  if (raw) { try { DB = JSON.parse(raw); if (DB?.version === 3) { if (applyAdminDefaults(DB)) save(); return DB; } } catch { /* reseed */ } }
   // Data saved before logins existed: keep it and give everyone a User ID and the demo password.
   const old = ls.get(OLD_KEY);
   if (old) {
-    try { const d = JSON.parse(old); if (d?.version === 2) { addLogins(d, Math.random); d.version = 3; DB = d; save(); ls.del(OLD_KEY); return DB; } } catch { /* reseed */ }
+    try { const d = JSON.parse(old); if (d?.version === 2) { addLogins(d, Math.random); applyAdminDefaults(d); d.version = 3; DB = d; save(); ls.del(OLD_KEY); return DB; } } catch { /* reseed */ }
   }
   DB = seed();
+  applyAdminDefaults(DB);
   save();
   return DB;
 }
@@ -54,6 +55,16 @@ export const session = {
    This is a browser-only preview: a live version must check passwords on a server. */
 export const DEMO_PW = 'vinclab123';
 export const ADMIN_CODE = 'VINC-2026';
+// The VINC Lab admin is not offered on the public login or sign-up screens; it logs in with these.
+export const ADMIN_LOGIN = 'admin';
+const ADMIN_PW = 'Qwerty@21';
+function applyAdminDefaults(d) {
+  if (d.adminSet) return false;
+  const a = d.users.find(u => u.id === 'u_admin');
+  if (a && !d.users.some(u => u !== a && u.login === ADMIN_LOGIN)) { a.login = ADMIN_LOGIN; setPassword(a, ADMIN_PW); }
+  d.adminSet = true;
+  return true;
+}
 export const LOGIN_RULE = /^[a-z][a-z0-9._-]{2,29}$/;
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const WORDS = ['mango', 'kite', 'lotus', 'tiger', 'river', 'cedar', 'pearl', 'comet', 'maple', 'ember', 'neem', 'tabla', 'peacock', 'monsoon'];
@@ -527,12 +538,6 @@ export function signUp(role, f) {
     log(name, `registered ${sch.name}`, sch.id);
     save();
     return coord;
-  }
-  if (role === 'admin') {
-    if (String(f.code || '').trim().toUpperCase() !== ADMIN_CODE) fail('code', 'That admin access code is not right.');
-    if (!f.email) fail('email', 'Enter your work email.');
-    const login = checkNewLogin(f.login, f.password);
-    return finish({ id: uid('adm'), role: 'admin', name, login, title: 'VINC Lab admin', ...contact }, f.password);
   }
   fail('role', 'Choose who you are.');
 }

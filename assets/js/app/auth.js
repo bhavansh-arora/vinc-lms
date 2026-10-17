@@ -1,27 +1,25 @@
 // Log in and create-account screens. Everyone logs in with a User ID and password; anyone can
-// sign up as a student, parent, teacher, school or (with an access code) VINC Lab admin.
-import { db, school, user, session, authenticate, signUp, makeLogin, loginTaken, LOGIN_RULE, normLogin, findByFamilyCode, studioName, initials, DEMO_PW, ADMIN_CODE } from './store.js';
+// sign up as a student, parent, teacher or school. The VINC Lab admin is not listed here.
+import { db, school, user, session, authenticate, signUp, makeLogin, loginTaken, LOGIN_RULE, normLogin, findByFamilyCode, studioName, initials, DEMO_PW } from './store.js';
 import { $, $$, esc, icon, art, confetti, bindCopy, modal, REDUCED } from './ui.js';
 
 // Demo accounts (seeded). Links like app.html#/login/teacher fill these in.
-export const DEMO = { student: 'u_aarav', student7: 'u_meera', student8: 'u_ananya', parent: 'u_priya', teacher: 'u_anjali', school: 'u_sch_greenwood_coord', admin: 'u_admin' };
+export const DEMO = { student: 'u_aarav', student7: 'u_meera', student8: 'u_ananya', parent: 'u_priya', teacher: 'u_anjali', school: 'u_sch_greenwood_coord' };
 const DEMO_CHIPS = [
   ['student', 'student', 'Grade 6'], ['student7', 'student', 'Grade 7'], ['student8', 'student', 'Grade 8'],
-  ['parent', 'parent', 'Parent'], ['teacher', 'teacher', 'Teacher'], ['school', 'school', 'School'], ['admin', 'admin', 'Admin'],
+  ['parent', 'parent', 'Parent'], ['teacher', 'teacher', 'Teacher'], ['school', 'school', 'School'],
 ];
 export const ROLES = {
   student: { label: 'Student', icon: 'star', blurb: 'I am in Grade 6, 7 or 8' },
   parent: { label: 'Parent', icon: 'home', blurb: 'I want to follow my child\'s projects' },
   teacher: { label: 'Teacher', icon: 'book', blurb: 'I teach Kaushal Bodh at my school' },
   school: { label: 'School', icon: 'school', blurb: 'Register my school as its coordinator' },
-  admin: { label: 'VINC Lab admin', icon: 'settings', blurb: 'For the VINC Lab team, with an access code' },
 };
 const TITLES = {
   student: ['Join your skill studio', 'Find your school and class, then choose a User ID.'],
   parent: ['Follow your child\'s projects', 'You need your child\'s family code. It is on their Profile page in VINC Lab.'],
   teacher: ['Set up your teacher account', 'Your Kaushal Bodh coordinator gives you the school\'s joining code.'],
   school: ['Register your school', 'You become the school\'s Kaushal Bodh coordinator. We set up Grades 6, 7 and 8 for you.'],
-  admin: ['VINC Lab team account', 'Admins manage schools and course content across the network.'],
 };
 const COLORS = ['#1F6F66', '#2D5BA8', '#7A3FA0', '#B23A48', '#C26A12', '#3E7B2A', '#0F4C5C', '#8C3557'];
 const EASE = 'cubic-bezier(.22, 1, .36, 1)';
@@ -359,10 +357,6 @@ function formHtml(role) {
       <div class="swatches">${COLORS.map((c, i) => `<label class="sw"><input type="radio" name="color" value="${c}" ${i === 0 ? 'checked' : ''}><span style="--c:${c}" aria-label="Colour ${c}"></span></label>`).join('')}</div>
       <div class="studio-preview" id="studio-pv" style="--brand:${COLORS[0]}"><span class="badge">SC</span><span><b>Your Skills Studio</b><small>What your students will see</small></span></div>
     </fieldset>`;
-  if (role === 'admin') body = `
-    ${name()}
-    ${email(true)}
-    ${field({ name: 'code', label: 'Admin access code', ic: 'key', attrs: 'autocapitalize="characters" spellcheck="false" autocomplete="off"', hint: 'Given to VINC Lab staff.', extra: demoBtn(`data-fill-admin="${ADMIN_CODE}"`, 'Use the demo code') })}`;
   const account = `<fieldset class="fs-login"><legend>${icon('lock')} Your login</legend>
     ${field({ name: 'login', label: 'User ID', ic: 'id-card', auto: 'username', hint: 'You will log in with this. Lowercase letters, numbers and dots.', attrs: 'autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="30"' })}
     ${pwField({ name: 'password', label: 'Password', auto: 'new-password', meter: true })}
@@ -438,7 +432,6 @@ function bindSignup(pane) {
     f.code.addEventListener('input', look);
     $('[data-fill-code]', f)?.addEventListener('click', e => { f.code.value = e.currentTarget.dataset.fillCode; clearErr(f, 'code'); look(); });
   }
-  if (role === 'admin') $('[data-fill-admin]', f)?.addEventListener('click', e => { f.code.value = e.currentTarget.dataset.fillAdmin; clearErr(f, 'code'); });
   // School: live studio preview.
   if (role === 'school') {
     const pv = $('#studio-pv', f);

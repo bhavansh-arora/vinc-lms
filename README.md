@@ -25,7 +25,7 @@ Light and dark mode follow the device setting automatically.
   the year laid out in periods and weeks, ending with the Kaushal Mela.
 - **Assessment**: sliders and a donut chart showing how the CBSE five-part split
   adds up to one score.
-- **Dashboards**: tabbed previews of the five dashboards, each with a button that
+- **Dashboards**: tabbed previews of the student, parent, teacher and school dashboards, each with a button that
   opens that role in the demo.
 - **Grades 6 to 8**: one card per grade with its projects and a link to a
   student demo in that grade.
@@ -37,7 +37,7 @@ Light and dark mode follow the device setting automatically.
 ### Logins and sign-up
 - Everyone logs in with a **User ID** (like `aarav.sharma`) and a **password**.
   The User ID is case-insensitive; an email on the profile also works.
-- **Create account** works for all five roles. Each form asks for basic profile
+- **Create account** works for students, parents, teachers and schools. Each form asks for basic profile
   details and suggests a User ID from the name, with a live availability check
   and a password-strength meter:
   - **Student**: name, school, class and section, optional date of birth and email.
@@ -47,7 +47,6 @@ Light and dark mode follow the device setting automatically.
     coordinator on the Teachers page), the sections they teach, email.
   - **School**: school name, city, board, coordinator's name and email, brand
     colour. The school is set up with sections 6 A, 7 A and 8 A.
-  - **VINC Lab admin**: name, email and the admin access code.
 - **Profile** page for every role: edit name, User ID, email and mobile, change
   the password, see or renew the family code or joining code, and (for
   parents) link another child.
@@ -131,12 +130,16 @@ button for each; it types the User ID and password in and logs in.
 | Parent | `priya.sharma` | Mother of Aarav and Ananya |
 | Teacher | `anjali.menon` | Teaches 6 A, 7 A and 8 A at Greenwood |
 | School | `kavita.rao` | Kaushal Bodh coordinator at Greenwood |
-| Admin | `neha.kapoor` | VINC Lab |
 
 Every seeded student, parent, teacher and coordinator has a User ID made from
-their name and the same demo password. For trying sign-up: the admin access
-code is `VINC-2026`; the "Use Aarav's code" and "Use Greenwood's code" buttons
-on the forms fill in a family code and a joining code.
+their name and the same demo password. For trying sign-up, the "Use Aarav's
+code" and "Use Greenwood's code" buttons on the forms fill in a family code and
+a joining code.
+
+**VINC Lab admin.** The admin is not shown on the landing page or offered on the
+login and sign-up screens, but works in the background: log in on the normal
+login screen with User ID `admin` and password `Qwerty@21`, then change the
+password on the profile page. Admin accounts cannot be created through sign-up.
 
 Links like `app.html#/login/teacher` or `#/login/student7` fill in that demo
 account and log in; `app.html#/signup` opens the sign-up form.

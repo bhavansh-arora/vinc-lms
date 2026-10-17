@@ -197,7 +197,7 @@ function settings(ctx) {
       $('#export', el).addEventListener('click', () => download('vinclab-demo-data.json', JSON.stringify(D, null, 1), 'application/json'));
       $('#reset', el).addEventListener('click', () => {
         if (!confirm('Reset all demo data? Schools, students and marks go back to the starting sample.')) return;
-        reset(); session.set({ userId: 'u_admin', at: Date.now() }); toast('Demo data reset. Demo accounts use the password vinclab123.'); ctx.go('/admin');
+        reset(); session.set({ userId: 'u_admin', at: Date.now() }); toast('Demo data reset. Demo accounts use vinclab123; the admin password is back to its default.'); ctx.go('/admin');
       });
     },
   };

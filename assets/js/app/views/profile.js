@@ -1,6 +1,6 @@
 // Profile page for every role: details, User ID, password, and the codes that link accounts
 // (a student's family code, a school's teacher joining code, a parent's linked children).
-import { save, school, section, childrenOf, parentsOf, sectionsOf, updateProfile, checkPassword, setPassword, linkChild, newFamilyCode, newJoinCode, loginTaken, LOGIN_RULE, normLogin, log, ADMIN_CODE } from '../store.js';
+import { save, school, section, childrenOf, parentsOf, sectionsOf, updateProfile, checkPassword, setPassword, linkChild, newFamilyCode, newJoinCode, loginTaken, LOGIN_RULE, normLogin, log } from '../store.js';
 import { $, $$, esc, icon, toast, fmtDate, timeAgo, bindCopy } from '../ui.js';
 import { bindFields, setErr, shake, busy, strength } from '../auth.js';
 
@@ -163,10 +163,10 @@ function roleCard(me, sch) {
       <button type="button" class="linkish" id="new-join">${icon('refresh')} Make a new code</button>
     </section>`;
   }
-  return `<section class="card code-card">
-    <h2 class="h-card">${icon('key')} Admin access code</h2>
-    <p>New VINC Lab team members need this code to create an admin account.</p>
-    <div class="big-code"><code>${ADMIN_CODE}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${ADMIN_CODE}">${icon('copy')} Copy</button></div>
+  return `<section class="card">
+    <h2 class="h-card">${icon('shield')} Admin access</h2>
+    <p>The admin account is not shown on the public login or sign-up screens. Log in on the normal login screen with your User ID <code>${esc(me.login)}</code>.</p>
+    <p class="muted small">Change the default password above after your first login.</p>
   </section>`;
 }
 
