@@ -67,7 +67,7 @@ export function mount(stage, cfg, api) {
   relabel();
   const setStatus = () => {
     const k = locked.filter(Boolean).length;
-    status.innerHTML = `<b>${k}</b> of ${n} locked in${k < n ? ' · <span>drag or tap two cards to swap them</span>' : ''}`;
+    status.innerHTML = `<b>${k}</b> of ${n} locked in${k < n ? '<span> · drag or tap two cards to swap them</span>' : ''}`;
   };
   setStatus();
   api.progress(0);

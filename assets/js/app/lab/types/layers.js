@@ -316,7 +316,7 @@ export function mount(stage, cfg, api) {
   const kindName = { bin: 'bin', pot: 'pot', bottle: 'bottle', trench: 'trench', tray: 'tray', bucket: 'bucket', tank: 'tank', pit: 'pit' }[kind];
   const seed = hash(cfg.title || kind);
   const timers = [], tickers = [];
-  let placed = 0, busy = false, sel = null, wrongHere = 0, finished = false;
+  let placed = 0, busy = false, sel = null, wrongHere = 0, finished = false, queued = null;
 
   // Band geometry: bottom → top, sharing ~86% of the height.
   const fillFrac = after.anim === 'roots' || after.anim === 'sprout' ? .8 : kind === 'tray' ? .84 : .86;
@@ -391,16 +391,17 @@ export function mount(stage, cfg, api) {
     onRelease() { card.classList.remove('dragging'); root.classList.remove('dragging'); zone.classList.remove('over'); },
     onDragEnd() {
       const p = pointOf(this.pointerEvent);
-      if (!busy && !finished && !card.classList.contains('used') && overZone(p.x, p.y)) tryPlace(card);
+      if (busy && overZone(p.x, p.y)) { queued = card; return; }
+      if (!finished && !card.classList.contains('used') && overZone(p.x, p.y)) tryPlace(card);
       else gsap.to(card, { x: 0, y: 0, duration: .45, ease: 'back.out(1.6)' });
     },
-    onClick() { if (!busy && !card.classList.contains('used')) setSel(sel === card ? null : card); },
+    onClick() { if (!card.classList.contains('used')) setSel(sel === card ? null : card); },
   })[0]);
   const pointOf = e => { const t = e?.changedTouches?.[0] || e?.touches?.[0] || e; return { x: t?.clientX ?? 0, y: t?.clientY ?? 0 }; };
-  cards.forEach(card => card.addEventListener('click', e => { if (e.detail === 0 && !busy && !card.classList.contains('used')) setSel(sel === card ? null : card); }));
+  cards.forEach(card => card.addEventListener('click', e => { if (e.detail === 0 && !card.classList.contains('used')) setSel(sel === card ? null : card); }));
   drop.addEventListener('click', () => {
     if (finished) return;
-    if (busy) return;
+    if (busy) { if (sel) queued = sel; return; }
     if (!sel) { api.say(`First pick a layer card, then tap the ${kindName}.`, 'hint'); pulseCards(); return; }
     tryPlace(sel);
   });
@@ -456,6 +457,7 @@ export function mount(stage, cfg, api) {
       sparkleAt(C.cx, bands[idx].y0);
       busy = false; root.classList.remove('busy');
       if (placed === layers.length) finish(); else drawGhost();
+      if (queued && !finished) { const q = queued; queued = null; if (!q.classList.contains('used')) tryPlace(q); }
     };
     pour(idx, done);
   }
@@ -671,8 +673,9 @@ export function mount(stage, cfg, api) {
       const ov = el('g', { opacity: 0 }, B.g);
       ov.innerHTML = `<path d="${B.base}" fill="url(#lyr-g-compost)"/><path d="${B.base}" fill="url(#lyr-p-compost)"/>${TEX.compost.items(B.box, r).join('')}`;
       const delay = .3 + (bandEls.length - i) * .35;
-      tl.to(ov, { opacity: .95, duration: 2.6, ease: 'power1.inOut' }, delay)
-        .to(B.g.querySelectorAll('.lyr-items > :not(.lyr-worm)'), { opacity: .1, duration: 2.4 }, delay);
+      tl.to(ov, { opacity: .95, duration: 2.6, ease: 'power1.inOut' }, delay);
+      const old = B.g.querySelectorAll('.lyr-items > :not(.lyr-worm)');
+      if (old.length) tl.to(old, { opacity: .1, duration: 2.4 }, delay);
     });
     tl.add(() => addWorms(null, 6, stackBounds()), .2);
     const S = xf(stackG, C.cx, C.bottom);

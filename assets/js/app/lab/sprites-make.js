@@ -557,4 +557,219 @@ export const SPRITES = {
   <circle cx="50" cy="36" r="4.5" fill="#7A4520"/>
   ${defs(lg('windmill-t', '#F6E7C8', '#D9BF8E', 'h'))}`,
 
+  // ---------- bicycle and tools ----------
+  'bicycle': `${sh(44, 50, 89)}
+  ${[24, 76].map(x => `<circle cx="${x}" cy="66" r="19" fill="none" stroke="#3E444B" stroke-width="5"/><circle cx="${x}" cy="66" r="15.5" fill="none" stroke="#B9C4CC" stroke-width="1.8"/>
+  <path d="${rep(6, i => `M${x} 66L${pt(x, 66, 15, i * 30)}`)}" stroke="#B9C4CC" stroke-width=".9"/><path d="${rep(6, i => `M${x} 66L${pt(x, 66, 15, i * 30 + 180)}`)}" stroke="#B9C4CC" stroke-width=".9"/><circle cx="${x}" cy="66" r="2.5" fill="${MS}"/>`).join('')}
+  <path d="M24 63L48 61M24 69L48 71" stroke="#6B7782" stroke-width="1.4"/>
+  <path d="M24 66H48L41 40ZM41 40L70 38 48 66M70 38L76 66" stroke="#B62F22" stroke-width="6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M24 66H48L41 40ZM41 40L70 38 48 66M70 38L76 66" stroke="#F0604C" stroke-width="3.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M41 40l-1.5-6M70 38l-2-9" stroke="${MS}" stroke-width="3"/>
+  <path d="M31 33q8-4 16 0q-2 3-8 3t-8-3z" fill="#3E444B" stroke="#22262B" stroke-width="1.5"/>
+  <path d="M60 29q8-3 14 1" stroke="#3E444B" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <circle cx="48" cy="66" r="5" fill="url(#bicycle-m)" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M48 66l6 8" stroke="${MS}" stroke-width="3" stroke-linecap="round"/><rect x="51" y="73" width="9" height="3.5" rx="1.5" fill="#3E444B"/>
+  ${defs(metal('bicycle-m', 'd'))}`,
+
+  'tyre': `${sh(30, 50, 92)}
+  <path d="${ring(50, 48, 39, 24)}" fill-rule="evenodd" fill="url(#tyre-r)" stroke="#23272C" stroke-width="2"/>
+  <circle cx="50" cy="48" r="35.5" fill="none" stroke="#69717A" stroke-width="4.5" stroke-dasharray="5 4"/>
+  <path d="${ring(50, 48, 24, 20)}" fill-rule="evenodd" fill="url(#tyre-m)" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="47.5" y="66" width="5" height="9" rx="1.5" fill="#B9C4CC" stroke="${MS}" stroke-width="1"/>
+  <path d="M20 34q8-18 28-22" stroke="#fff" stroke-width="3" fill="none" opacity=".3" stroke-linecap="round"/>
+  ${defs(rg('tyre-r', '#5D646D', '#33383E'), metal('tyre-m', 'd'))}`,
+
+  'air-pump': `${sh(32, 50, 93)}
+  <path d="M58 78q24 6 24-16t8-30" stroke="#2E3338" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M58 78q24 6 24-16t8-30" stroke="#5D646D" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <rect x="85" y="20" width="9" height="13" rx="2" fill="#B9C4CC" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M20 90q0-6 6-6h48q6 0 6 6z" fill="#4A5058" stroke="#2E3338" stroke-width="2"/>
+  <rect x="48" y="10" width="4" height="14" fill="#B9C4CC" stroke="${MS}" stroke-width="1"/>
+  <rect x="28" y="5" width="44" height="9" rx="4.5" fill="#4A5058" stroke="#2E3338" stroke-width="2"/>
+  <path d="M33 8h14" stroke="#fff" stroke-width="2" opacity=".35" stroke-linecap="round"/>
+  <rect x="41" y="22" width="18" height="64" rx="5" fill="url(#air-pump-b)" stroke="#1D4F80" stroke-width="2"/>
+  <path d="M45 28v40" stroke="#fff" stroke-width="2.5" opacity=".4" stroke-linecap="round"/>
+  <circle cx="50" cy="72" r="9" fill="#fff" stroke="#1D4F80" stroke-width="2"/>
+  <path d="M50 72l4-5" stroke="#D9483B" stroke-width="2" stroke-linecap="round"/>
+  ${defs(lg('air-pump-b', '#5AA6E8', '#2668A8', 'h'))}`,
+
+  'spanner': `${sh(30, 50, 90)}
+  <defs><g id="spanner-s"><path d="M5.9 45H22V55H5.9A15 15 0 1 0 5.9 45Z"/><rect x="28" y="44" width="50" height="12" rx="5"/>
+  <path fill-rule="evenodd" d="M70 50a12 12 0 1 0 24 0a12 12 0 1 0-24 0ZM${rep(6, i => `${i ? 'L' : ''}${pt(82, 50, 6, i * 60)}`)}Z"/></g>${metal('spanner-m', 'd')}</defs>
+  <g transform="rotate(-38 50 50)"><use href="#spanner-s" fill="none" stroke="${MS}" stroke-width="4" stroke-linejoin="round"/><use href="#spanner-s" fill="url(#spanner-m)"/>
+  <path d="M30 47h44" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/></g>`,
+
+  'screwdriver': `${sh(30, 50, 90)}
+  <g transform="rotate(-42 50 50)">
+  <rect x="50" y="46.5" width="36" height="7" fill="url(#screwdriver-m)" stroke="${MS}" stroke-width="1.6"/>
+  <path d="M86 46.5l8 2.5v2l-8 2.5z" fill="#AEB9C2" stroke="${MS}" stroke-width="1.6" stroke-linejoin="round"/>
+  <rect x="44" y="44" width="8" height="12" rx="2" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="6" y="39" width="40" height="22" rx="10" fill="url(#screwdriver-h)" stroke="#8E2A22" stroke-width="2"/>
+  <path d="M14 46h26M14 54h26" stroke="#8E2A22" stroke-width="1.6" opacity=".5" stroke-linecap="round"/>
+  <path d="M13 43h24" stroke="#fff" stroke-width="2" opacity=".5" stroke-linecap="round"/>
+  <path d="M30 39v22" stroke="#F2C230" stroke-width="4"/></g>
+  ${defs(metal('screwdriver-m', 'v'), lg('screwdriver-h', '#FF7A66', '#C2392C'))}`,
+
+  'pliers': `${sh(26, 50, 93)}
+  <path d="M46 52L32 90M54 52l14 38" stroke="${MS}" stroke-width="8" stroke-linecap="round"/>
+  <path d="M46 52L32 90M54 52l14 38" stroke="#AEB9C2" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M39 68l-7 22M61 68l7 22" stroke="#1D4F80" stroke-width="11" stroke-linecap="round"/>
+  <path d="M39 68l-7 22M61 68l7 22" stroke="#4D9BE0" stroke-width="7.5" stroke-linecap="round"/>
+  <path d="M43 50Q41 24 48 7q2-2 4 0q7 17 5 43z" fill="url(#pliers-m)" stroke="${MS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M50 9v40" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M46 20h8M45.5 26h9M45 32h10" stroke="${MS}" stroke-width="1.2" opacity=".7"/>
+  <circle cx="50" cy="50" r="6.5" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/><circle cx="50" cy="50" r="2" fill="${MS}"/>
+  ${defs(metal('pliers-m'))}`,
+
+  'oil-can': `${sh(32, 46, 92)}
+  <path d="M48 44L90 13" stroke="#8A6414" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M48 44L90 13" stroke="#EBC25E" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M93 17q-3 5-3 7a3 3 0 0 0 6 0q0-2-3-7z" fill="#E8B330" stroke="#8A6414" stroke-width="1"/>
+  <path d="M18 70q-12-4-6-20q4-8 14-4" stroke="#8E2A22" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M16 88q0-34 30-40q30 6 30 40z" fill="url(#oil-can-r)" stroke="#8E2A22" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="40" y="40" width="12" height="10" rx="2" fill="#EBC25E" stroke="#8A6414" stroke-width="2"/>
+  <rect x="13" y="82" width="66" height="9" rx="3" fill="#B9C4CC" stroke="${MS}" stroke-width="2"/>
+  <path d="M26 78q2-14 12-22" stroke="#fff" stroke-width="3" fill="none" opacity=".45" stroke-linecap="round"/>
+  ${defs(lg('oil-can-r', '#FF7A66', '#C2392C', 'h'))}`,
+
+  'bicycle-chain': `${sh(34, 50, 92)}
+  <path d="${cog(48, 50, 30, 4, 20)}" fill="url(#bicycle-chain-m)" stroke="${MS}" stroke-width="1.5" stroke-linejoin="round"/>
+  <circle cx="48" cy="50" r="18" fill="none" stroke="${MS}" stroke-width="2" opacity=".6"/>
+  ${rep(5, i => `<circle cx="${pt(48, 50, 12, i * 72 - 90).split(' ')[0]}" cy="${pt(48, 50, 12, i * 72 - 90).split(' ')[1]}" r="3.6" fill="#7D8A95"/>`)}
+  <circle cx="48" cy="50" r="5" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M98 30L48 18A32 32 0 1 0 48 82L98 70" stroke="#3E444B" stroke-width="8" fill="none"/>
+  <path d="M98 30L48 18A32 32 0 1 0 48 82L98 70" stroke="#C3CDD5" stroke-width="3.5" fill="none" stroke-dasharray="5 2.5"/>
+  ${defs(metal('bicycle-chain-m', 'd'))}`,
+
+  'bicycle-bell': `${sh(36, 50, 93)}
+  <rect x="6" y="80" width="88" height="9" rx="4.5" fill="#4A5058" stroke="#2E3338" stroke-width="1.5"/>
+  <rect x="40" y="72" width="20" height="14" rx="3" fill="#7D8A95"/>
+  <path d="M78 66q10-2 14-10" stroke="${MS}" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="92" cy="55" r="4" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M20 72q0-38 30-38t30 38z" fill="url(#bicycle-bell-m)" stroke="${MS}" stroke-width="2"/>
+  <ellipse cx="50" cy="72" rx="32" ry="6" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
+  <circle cx="50" cy="32" r="4" fill="#AEB9C2" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M30 64q2-18 14-24" stroke="#fff" stroke-width="4" fill="none" opacity=".8" stroke-linecap="round"/>
+  <path d="M16 30q-6 6-4 14M9 23q-10 10-6 24" stroke="#F2A93B" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  ${defs(rg('bicycle-bell-m', '#FFFFFF', '#8D9AA5'))}`,
+
+  // ---------- woodworking ----------
+  'hammer': `${sh(30, 50, 91)}
+  <g transform="rotate(30 50 50)">
+  <rect x="44" y="28" width="12" height="66" rx="5" fill="url(#hammer-w)" stroke="${WS}" stroke-width="2"/>
+  <rect x="44" y="70" width="12" height="24" rx="5" fill="#D9483B" stroke="#8E2A22" stroke-width="2"/>
+  <path d="M48 34v32" stroke="#fff" stroke-width="2" opacity=".35" stroke-linecap="round"/>
+  <path d="M22 14h36v18H22zM58 16q20-2 30 14l-6 4q-8-9-24-8z" fill="url(#hammer-m)" stroke="${MS}" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="14" y="11" width="11" height="24" rx="3" fill="url(#hammer-m)" stroke="${MS}" stroke-width="2"/>
+  <path d="M24 18h30" stroke="#fff" stroke-width="2" opacity=".6" stroke-linecap="round"/></g>
+  ${defs(metal('hammer-m', 'v'), wood('hammer-w'))}`,
+
+  'nail': `${sh(30, 50, 91)}
+  <defs><g id="nail-n"><rect x="40" y="10" width="20" height="6" rx="2"/><path d="M46.5 16h7v58L50 86l-3.5-12z"/></g>${metal('nail-m')}</defs>
+  ${[['translate(-18 8) rotate(-20 50 50) scale(.8)'], ['translate(22 10) rotate(24 50 50) scale(.75)'], ['translate(0 2) rotate(-4 50 50)']].map(([t]) => `<g transform="${t}"><use href="#nail-n" fill="none" stroke="${MS}" stroke-width="3" stroke-linejoin="round"/><use href="#nail-n" fill="url(#nail-m)"/><path d="M48.5 20v46" stroke="#fff" stroke-width="1.5" opacity=".7"/></g>`).join('')}`,
+
+  'saw': `${sh(34, 50, 90)}
+  <g transform="rotate(-28 50 50)">
+  <path d="M34 38L95 48V62H34z" fill="url(#saw-m)" stroke="${MS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M34 62${rep(15, () => 'l2 4 2-4')}" fill="#AEB9C2" stroke="${MS}" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M40 44l50 8" stroke="#fff" stroke-width="2" opacity=".6" stroke-linecap="round"/>
+  <path fill-rule="evenodd" d="M8 34q0-6 6-6h18q6 0 6 6v32q0 6-6 6H14q-6 0-6-6zM17 39h12q2 0 2 2v16q0 2-2 2H17q-2 0-2-2V41q0-2 2-2z" fill="url(#saw-w)" stroke="${WS}" stroke-width="2"/>
+  <circle cx="35" cy="44" r="1.8" fill="#C9D2D8"/><circle cx="35" cy="56" r="1.8" fill="#C9D2D8"/></g>
+  ${defs(metal('saw-m', 'v'), wood('saw-w', 'd'))}`,
+
+  'chisel': `${sh(30, 50, 90)}
+  <g transform="rotate(-40 50 50)">
+  <path d="M52 44h32l10 4v4l-10 4H52z" fill="url(#chisel-m)" stroke="${MS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M84 44l10 4v4l-10 4z" fill="#DDE4E9"/>
+  <path d="M56 47h26" stroke="#fff" stroke-width="2" opacity=".6" stroke-linecap="round"/>
+  <rect x="45" y="42" width="9" height="16" rx="2" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M10 38q-4 0-4 4v16q0 4 4 4l36-2V40z" fill="url(#chisel-w)" stroke="${WS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M14 46q12 2 26 0M16 54q10-1 22 1" stroke="${WS}" stroke-width="1.2" fill="none" opacity=".6"/></g>
+  ${defs(metal('chisel-m', 'v'), wood('chisel-w', 'v'))}`,
+
+  'hand-drill': `${sh(20, 50, 94)}
+  <g transform="rotate(-12 50 50)">
+  <rect x="47" y="18" width="6" height="56" fill="url(#hand-drill-m)" stroke="${MS}" stroke-width="1.6"/>
+  <rect x="41" y="2" width="18" height="20" rx="8" fill="url(#hand-drill-w)" stroke="${WS}" stroke-width="2"/>
+  <rect x="24" y="48" width="23" height="9" rx="4.5" fill="url(#hand-drill-w)" stroke="${WS}" stroke-width="2"/>
+  <path d="${cog(62, 42, 17, 3, 18)}" fill="#E5574A" stroke="#8E2A22" stroke-width="1.6" stroke-linejoin="round"/>
+  <circle cx="62" cy="42" r="10" fill="#F07C6E" stroke="#8E2A22" stroke-width="1.5"/>
+  <circle cx="62" cy="42" r="3" fill="#8E2A22"/>
+  <path d="M62 42l16-12" stroke="${MS}" stroke-width="4" stroke-linecap="round"/>
+  <rect x="74" y="16" width="10" height="16" rx="5" fill="url(#hand-drill-w)" stroke="${WS}" stroke-width="2"/>
+  <path d="M43 72h14l-2 10h-10z" fill="url(#hand-drill-m)" stroke="${MS}" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M48.5 82h3v12l-1.5 3-1.5-3z" fill="#AEB9C2" stroke="${MS}" stroke-width="1"/>
+  <path d="M48.5 85l3 2M48.5 89l3 2" stroke="${MS}" stroke-width="1"/></g>
+  ${defs(metal('hand-drill-m'), wood('hand-drill-w'))}`,
+
+  'sandpaper': `${sh(36, 50, 90)}
+  <g transform="rotate(-10 50 50)">
+  <path d="M14 16h60l12 12v56H14z" fill="#D9A35B" stroke="#8A5A22" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M14 16h60l12 12v56H14z" fill="url(#sandpaper-g)"/>
+  <path d="M74 16v12h12z" fill="#F7EEDC" stroke="#8A5A22" stroke-width="2" stroke-linejoin="round"/></g>
+  <rect x="46" y="60" width="44" height="22" rx="5" fill="url(#sandpaper-w)" stroke="${WS}" stroke-width="2"/>
+  <rect x="46" y="78" width="44" height="6" rx="2" fill="#B9813E" stroke="#8A5A22" stroke-width="1.5"/>
+  <path d="M52 66h32" stroke="#fff" stroke-width="2" opacity=".4" stroke-linecap="round"/>
+  ${defs(`<pattern id="sandpaper-g" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="#8A5A22"/><circle cx="4.5" cy="4" r=".8" fill="#FFF0CC"/></pattern>`, wood('sandpaper-w', 'v'))}`,
+
+  'wood-plank': `${sh(44, 50, 86)}
+  <path d="M6 60L70 27h24L30 60z" fill="url(#wood-plank-t)" stroke="${WS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M30 60L94 27v10L30 72z" fill="#B47236" stroke="${WS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M6 60h24v12H6z" fill="#E2A563" stroke="${WS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M10 68q8-6 16 0M13 66q5-3 10 0" stroke="${WS}" stroke-width="1.2" fill="none" opacity=".7"/>
+  <path d="M16 57q30-16 60-27M24 57q26-12 58-27" stroke="${WS}" stroke-width="1.3" fill="none" opacity=".45"/>
+  <ellipse cx="54" cy="42" rx="5" ry="2.4" transform="rotate(-27 54 42)" fill="none" stroke="${WS}" stroke-width="1.5" opacity=".7"/>
+  ${defs(lg('wood-plank-t', '#F0C084', '#D08E4A', 'h'))}`,
+
+  'bamboo-pole': `${sh(36, 50, 90)}
+  <g transform="rotate(-35 50 50)">
+  <rect x="2" y="42" width="94" height="16" rx="6" fill="url(#bamboo-pole-g)" stroke="#7A6A1E" stroke-width="2"/>
+  <path d="${rep(4, i => `M${20 + i * 22} 42v16`)}" stroke="#7A6A1E" stroke-width="2.6"/>
+  <path d="${rep(4, i => `M${23 + i * 22} 43v14`)}" stroke="#fff" stroke-width="1.2" opacity=".4"/>
+  <path d="M6 46.5h86" stroke="#fff" stroke-width="2" opacity=".4" stroke-linecap="round"/>
+  <ellipse cx="94" cy="50" rx="3" ry="7.5" fill="#F3E7B0" stroke="#7A6A1E" stroke-width="1.5"/>
+  <path d="M64 42q4-12 16-14q-4 12-16 14z" fill="#6CC04A" stroke="#3F8F3A" stroke-width="1.2"/></g>
+  ${defs(lg('bamboo-pole-g', '#E8D886', '#A8952F'))}`,
+
+  'clamp': `${sh(32, 50, 93)}
+  <path d="M68 16H34V76H62" stroke="#9A4A12" stroke-width="15" fill="none" stroke-linejoin="round"/>
+  <path d="M68 16H34V76H62" stroke="url(#clamp-o)" stroke-width="10" fill="none" stroke-linejoin="round"/>
+  <path d="M30 22v48" stroke="#fff" stroke-width="2" opacity=".4" stroke-linecap="round"/>
+  <rect x="60" y="22" width="16" height="6" rx="2" fill="#B9C4CC" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="64" y="34" width="8" height="54" fill="url(#clamp-m)" stroke="${MS}" stroke-width="1.6"/>
+  <path d="${rep(9, i => `M64 ${38 + i * 5}l8-2.5`)}" stroke="${MS}" stroke-width="1.3"/>
+  <rect x="58" y="30" width="20" height="5" rx="2" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="52" y="86" width="32" height="6" rx="3" fill="url(#clamp-m)" stroke="${MS}" stroke-width="1.6"/>
+  ${defs(lg('clamp-o', '#FDBA5C', '#E2741F', 'h'), metal('clamp-m'))}`,
+
+  'try-square': `${sh(32, 50, 92)}
+  <path d="M30 15h62v13H30z" fill="url(#try-square-m)" stroke="${MS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="${rep(12, i => `M${35 + i * 5} 28v${i % 2 ? -3 : -5.5}`)}" stroke="#3E4A54" stroke-width="1.2"/>
+  <path d="M33 18h56" stroke="#fff" stroke-width="1.6" opacity=".7"/>
+  <rect x="13" y="12" width="18" height="76" rx="3" fill="url(#try-square-w)" stroke="${WS}" stroke-width="2"/>
+  <path d="M18 34q2 20 0 46M25 30q-2 16 0 30" stroke="${WS}" stroke-width="1.2" fill="none" opacity=".5"/>
+  <circle cx="22" cy="20" r="2.4" fill="#E2B24A" stroke="#8A6414"/><circle cx="22" cy="40" r="2.4" fill="#E2B24A" stroke="#8A6414"/>
+  ${defs(metal('try-square-m', 'v'), wood('try-square-w'))}`,
+
+  'varnish': `${sh(34, 48, 93)}
+  <path d="M18 34v50q0 6 24 6t24-6V34z" fill="url(#varnish-m)" stroke="${MS}" stroke-width="2"/>
+  <path d="M18 50q24 6 48 0v22q-24 6-48 0z" fill="#C9772B"/>
+  <path d="M28 60q14 4 28 0M28 66q14 4 28 0" stroke="#F3C27E" stroke-width="1.5" fill="none" opacity=".8"/>
+  <ellipse cx="42" cy="34" rx="24" ry="6" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
+  <ellipse cx="42" cy="34.4" rx="20" ry="4.2" fill="url(#varnish-v)"/>
+  <path d="M25 37v10q0 3 2.5 3t2.5-3v-8" fill="#B5651D"/>
+  <g transform="rotate(28 76 46)"><rect x="72" y="2" width="8" height="30" rx="3" fill="url(#varnish-w)" stroke="${WS}" stroke-width="1.6"/>
+  <rect x="70" y="30" width="12" height="7" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M70 37h12v10q-6 5-12 0z" fill="#B5651D" stroke="#7A4520" stroke-width="1.5"/></g>
+  ${defs(metal('varnish-m'), rg('varnish-v', '#F7C26A', '#B5651D'), wood('varnish-w'))}`,
+
+  'pen-stand': `${sh(28, 50, 92)}
+  <ellipse cx="50" cy="46" rx="22" ry="5" fill="#5A3418"/>
+  <g transform="translate(40 50) rotate(-16)"><rect x="-4" y="-40" width="8" height="40" fill="#F2C230" stroke="#B5851A" stroke-width="1.2"/><path d="M-4-40l4-9 4 9z" fill="#F1D2A6" stroke="#B5851A" stroke-width="1.2" stroke-linejoin="round"/><path d="M-1.4-46l1.4-3 1.4 3z" fill="#3E444B"/></g>
+  <g transform="translate(52 50) rotate(6)"><rect x="-3.5" y="-46" width="7" height="46" rx="3" fill="#2F7FC1" stroke="#1D4F80" stroke-width="1.2"/><rect x="2.5" y="-42" width="2" height="14" rx="1" fill="#C3CDD5"/></g>
+  <g transform="translate(62 50) rotate(22)"><rect x="-4" y="-36" width="8" height="36" fill="#E5484D" stroke="#8E2A22" stroke-width="1.2"/><path d="M-4-36l4-9 4 9z" fill="#F1D2A6" stroke="#8E2A22" stroke-width="1.2" stroke-linejoin="round"/></g>
+  <path d="M28 46q22 8 44 0l-3 42q-19 5-38 0z" fill="url(#pen-stand-w)" stroke="${WS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M29 56q21 7 42 0M30 74q20 6 40 0" stroke="#3FA7A0" stroke-width="4" fill="none"/>
+  <path d="M35 58v24" stroke="#fff" stroke-width="2.5" opacity=".35" stroke-linecap="round"/>
+  ${defs(wood('pen-stand-w'))}`,
+
 };
