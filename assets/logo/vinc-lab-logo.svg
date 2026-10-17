@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 552 124" role="img" aria-labelledby="t">
+  <title id="t">VINC Lab</title>
+  <g fill="#D98A1C">
+    <polygon points="4,24 40,24 84,116 56,116"/>
+    <polygon points="62,116 80,116 140,4 122,4"/>
+    <rect x="130" y="4" width="418" height="6" rx="3"/>
+  </g>
+  <path fill="#1F6F66" d="M57.5 58 q9 -5 18 0 t17.5 0 L73.5 92 Z"/>
+  <g fill="#2A8378">
+    <circle cx="69" cy="47" r="4"/><circle cx="80" cy="36" r="3"/><circle cx="72" cy="27" r="2.2"/>
+  </g>
+  <g fill="#2B1A10">
+    <rect x="156" y="24" width="22" height="92"/>
+    <rect x="196" y="24" width="22" height="92"/><rect x="250" y="24" width="22" height="92"/>
+    <polygon points="196,24 218,24 272,116 250,116"/>
+  </g>
+  <path d="M357 45 A35 35 0 1 0 357 95" fill="none" stroke="#2B1A10" stroke-width="22"/>
+  <g fill="none" stroke="#1F6F66" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M396 58 V111 H430"/>
+    <path d="M443 111 L465 58 L487 111 M451 94 H479"/>
+    <path d="M502 111 V58 H522 a13.25 13.25 0 0 1 0 26.5 H502 M522 84.5 a13.25 13.25 0 0 1 0 26.5 H502"/>
+  </g>
+</svg>

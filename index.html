@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VINC Lab · Kaushal Bodh LMS</title>
+<meta name="description" content="VINC Lab turns NCERT's Kaushal Bodh activity books into a ready-to-run skill programme for CBSE schools: guided projects, quizzes, teacher rubrics, portfolios, and dashboards for students, parents, schools and admins. Grade 6 is live.">
+<meta name="theme-color" content="#F7F0E3">
+<link rel="icon" href="assets/logo/vinc-lab-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400..800&family=Lora:ital,wght@0,500..700;1,500..700&display=swap">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/art.css">
+<link rel="stylesheet" href="assets/css/landing.css">
+</head>
+<body>
+<a class="skip" href="#top">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="#top" aria-label="VINC Lab home">
+      <img class="logo-l" src="assets/logo/vinc-lab-logo.svg" alt="VINC Lab" width="150" height="34">
+      <img class="logo-d" src="assets/logo/vinc-lab-logo-dark.svg" alt="VINC Lab" width="150" height="34">
+    </a>
+    <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="#course">Grade 6</a>
+      <a href="#plan">Plan the year</a>
+      <a href="#assess">Assessment</a>
+      <a href="#dashboards">Dashboards</a>
+      <a href="#brand">For schools</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary btn-sm" href="app.html">Log in</a>
+    </nav>
+  </div>
+  <div class="progress" aria-hidden="true"><i id="progress-bar"></i></div>
+</header>
+
+<main id="top">
+
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="hero-title">
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="label">Kaushal Bodh LMS · CBSE Grades 6–8</p>
+        <h1 id="hero-title">Kaushal Bodh, brought to <em>life<svg class="scribble" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 16 C 42 5, 78 21, 118 10 S 176 6, 197 14"/></svg></em></h1>
+        <p class="lead">VINC Lab turns NCERT's Kaushal Bodh activity books into a ready-to-run skill programme: guided projects, quizzes, teacher rubrics and digital portfolios, with a dashboard for every student, parent, school and admin.</p>
+        <p class="live-chip"><span class="dot" aria-hidden="true"></span><b>Grade 6 is live</b> · Grades 7 and 8 next</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary magnetic" href="#course">Explore Grade 6 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-ghost magnetic" href="app.html">Try the live demo</a>
+        </div>
+        <dl class="hero-stats">
+          <div><dt><span class="count" data-to="110">110</span> hrs</dt><dd>of skill work a year</dd></div>
+          <div><dt><span class="count" data-to="3">3</span></dt><dd>projects a year, one per form of work</dd></div>
+          <div><dt><span class="count" data-to="18">18</span></dt><dd>learning outcomes tracked</dd></div>
+        </dl>
+      </div>
+
+      <div class="orbit-wrap">
+        <div class="orbit" id="orbit">
+          <div class="ring r1" aria-hidden="true"></div>
+          <div class="ring r2" aria-hidden="true"></div>
+          <div class="core" aria-hidden="true">
+            <svg viewBox="0 0 160 140" class="core-mark">
+              <defs><clipPath id="funnel"><path d="M42.5 24 L108 24 L73.5 91 Z"/></clipPath></defs>
+              <g fill="var(--amber)">
+                <polygon points="4,24 40,24 84,116 56,116"/>
+                <polygon points="62,116 80,116 140,4 122,4"/>
+              </g>
+              <g clip-path="url(#funnel)">
+                <path class="liquid" d="M-40 52 q10 -6 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 V140 H-40 Z"/>
+              </g>
+              <g class="bub"><circle cx="69" cy="47" r="4"/><circle cx="80" cy="36" r="3"/><circle cx="72" cy="27" r="2.2"/><circle cx="84" cy="50" r="2"/></g>
+            </svg>
+          </div>
+          <button class="planet f-life" data-form="life" aria-pressed="false"><span class="pi" aria-hidden="true"></span><span>Life forms</span></button>
+          <button class="planet f-machines" data-form="machines" aria-pressed="false"><span class="pi" aria-hidden="true"></span><span>Machines &amp; materials</span></button>
+          <button class="planet f-services" data-form="services" aria-pressed="false"><span class="pi" aria-hidden="true"></span><span>Human services</span></button>
+        </div>
+        <div class="orbit-caption" id="orbit-caption" aria-live="polite">
+          <strong>Three forms of work</strong>
+          <span class="muted">Every Kaushal Bodh year has one project from each. Tap a planet to see Grade 6's choices.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ticker -->
+  <div class="ticker" aria-label="Key facts">
+    <div class="ticker-track">
+      <span>CBSE Circular Skill-81/2025</span><span>Skill education in Grades 6–8 for every CBSE school</span><span>110 hours a year</span><span>Two periods, twice a week</span><span>9 projects by the end of Grade 8</span><span>Project-based assessment</span><span>Kaushal Mela every year</span><span>Composite Skill Lab by Aug 2027</span>
+      <span aria-hidden="true">CBSE Circular Skill-81/2025</span><span aria-hidden="true">Skill education in Grades 6–8 for every CBSE school</span><span aria-hidden="true">110 hours a year</span><span aria-hidden="true">Two periods, twice a week</span><span aria-hidden="true">9 projects by the end of Grade 8</span><span aria-hidden="true">Project-based assessment</span><span aria-hidden="true">Kaushal Mela every year</span><span aria-hidden="true">Composite Skill Lab by Aug 2027</span>
+    </div>
+  </div>
+
+  <!-- Why now -->
+  <section id="why" aria-labelledby="why-title">
+    <div class="wrap two-col">
+      <div>
+        <p class="label">Why now</p>
+        <h2 id="why-title">Skill education is now part of every CBSE timetable</h2>
+        <p class="lead-sm">CBSE has asked every affiliated school to run skill education in Grades 6–8 with NCERT's Kaushal Bodh books. That means 110 hours a year, three hands-on projects, and assessment built on projects rather than exams. Most schools have the books. Few have a way to run, track and grade it all. VINC Lab is that way.</p>
+      </div>
+      <ol class="timeline" id="timeline">
+        <li><span class="when">Jan 2025</span><b>Skill-01/2025</b> CBSE lists its skill initiatives: modules, subjects and skill labs.</li>
+        <li><span class="when">Oct 2025</span><b>Skill-81/2025</b> Kaushal Bodh skill education is made mandatory in Grades 6–8.</li>
+        <li><span class="when">Mar 2026</span><b>Skill-13/2026</b> Guidelines for Composite Skill Labs in every school.</li>
+        <li class="now"><span class="when">2026–27</span><b>This session</b> Kaushal Bodh is part of the timetable. Grade 6 is live on VINC Lab.</li>
+        <li><span class="when">Aug 2027</span><b>Deadline</b> Composite Skill Labs due in all existing CBSE schools.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Grade 6 course -->
+  <section id="course" class="band-alt" aria-labelledby="course-title">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="label">The Grade 6 course</p>
+          <h2 id="course-title">Six projects. Pick three. Learn by doing.</h2>
+          <p class="lead-sm">Every project from the Kaushal Bodh Grade 6 book, broken into guided activities with page references, a quiz, a viva, portfolio tasks and teacher rubrics.</p>
+        </div>
+        <div class="filters" role="group" aria-label="Filter projects by form of work">
+          <button class="filter" data-filter="all" aria-pressed="true">All six</button>
+          <button class="filter f-life" data-filter="life" aria-pressed="false">Life forms</button>
+          <button class="filter f-machines" data-filter="machines" aria-pressed="false">Machines</button>
+          <button class="filter f-services" data-filter="services" aria-pressed="false">Services</button>
+        </div>
+      </div>
+      <div class="projects" id="projects"></div>
+    </div>
+  </section>
+
+  <!-- Year planner -->
+  <section id="plan" aria-labelledby="plan-title">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="label">Plan the year</p>
+          <h2 id="plan-title">Build your Grade 6 year in three taps</h2>
+          <p class="lead-sm">Choose one project from each form of work. VINC Lab lays them across the session at two double periods a week and keeps time for the Kaushal Mela.</p>
+        </div>
+      </div>
+      <div class="planner">
+        <div class="planner-picks" id="planner-picks"></div>
+        <div class="planner-out">
+          <div class="tl-head"><span>Term 1</span><span>Term 2</span></div>
+          <div class="tl" id="tl" role="img" aria-label="Year timeline"></div>
+          <div class="tl-weeks" aria-hidden="true"><span>Wk 1</span><span>Wk 10</span><span>Wk 20</span><span>Wk 30</span><span>Wk 40</span></div>
+          <div class="planner-sum" id="planner-sum" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Assessment -->
+  <section id="assess" class="band-dark" aria-labelledby="assess-title">
+    <div class="wrap two-col">
+      <div>
+        <p class="label">Assessment, done for you</p>
+        <h2 id="assess-title">Five parts. One fair score.</h2>
+        <p class="lead-sm">VINC Lab follows the split CBSE suggests for Kaushal Bodh. Quizzes are marked automatically, activities and portfolios fill in as students work, and teachers mark the viva and observation rubrics on their phone in class.</p>
+        <p class="hint">Drag the sliders to see how one student's project score adds up.</p>
+        <div class="sliders" id="sliders"></div>
+      </div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 220 220" class="donut" id="donut" role="img" aria-labelledby="donut-title">
+          <title id="donut-title">Assessment weights</title>
+        </svg>
+        <div class="donut-center" aria-live="polite"><strong id="score">0</strong><span id="band">—</span></div>
+        <ul class="legend" id="legend"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboards -->
+  <section id="dashboards" aria-labelledby="dash-title">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="label">Four dashboards</p>
+          <h2 id="dash-title">Everyone sees what they need</h2>
+        </div>
+      </div>
+      <div class="dash-tabs" role="tablist" aria-label="Dashboards">
+        <button role="tab" id="t-student" aria-controls="p-student" aria-selected="true" data-role="student">Students</button>
+        <button role="tab" id="t-parent" aria-controls="p-parent" aria-selected="false" tabindex="-1" data-role="parent">Parents</button>
+        <button role="tab" id="t-school" aria-controls="p-school" aria-selected="false" tabindex="-1" data-role="school">Schools</button>
+        <button role="tab" id="t-admin" aria-controls="p-admin" aria-selected="false" tabindex="-1" data-role="admin">Admin</button>
+      </div>
+      <div class="dash-panels">
+        <div class="dash-panel" role="tabpanel" id="p-student" aria-labelledby="t-student">
+          <div class="dash-copy">
+            <h3>A project studio for every student</h3>
+            <ul class="ticks">
+              <li>Step-by-step activities with the textbook page for each</li>
+              <li>Quick reflections and photo uploads build the portfolio</li>
+              <li>Quizzes with instant feedback, badges and a progress ring</li>
+              <li>A countdown to the Kaushal Mela</li>
+            </ul>
+            <a class="btn btn-primary" href="app.html#/login/student">Open the student demo</a>
+          </div>
+          <div class="mock mock-student" aria-hidden="true">
+            <div class="m-top"><i></i><b>Hi Aarav</b><span>Grade 6 · B</span></div>
+            <div class="m-row">
+              <div class="m-ring" style="--p:64"><span>64%</span></div>
+              <div class="m-list"><p><i class="ok"></i>Make vermicompost</p><p><i class="ok"></i>Use levers to make toys</p><p><i class="cur"></i>Use a propeller to make toys</p><p><i></i>Wheel and axle toys</p></div>
+            </div>
+            <div class="m-badges"><span>🌱</span><span>⚙️</span><span>⭐</span><span class="dim">🏆</span></div>
+          </div>
+        </div>
+        <div class="dash-panel" role="tabpanel" id="p-parent" aria-labelledby="t-parent" hidden>
+          <div class="dash-copy">
+            <h3>Parents see the work, not just marks</h3>
+            <ul class="ticks">
+              <li>What their child built this week, with photos</li>
+              <li>Scores for each of the five assessment parts</li>
+              <li>Teacher feedback and things to try at home</li>
+            </ul>
+            <a class="btn btn-primary" href="app.html#/login/parent">Open the parent demo</a>
+          </div>
+          <div class="mock mock-parent" aria-hidden="true">
+            <div class="m-top"><i></i><b>Aarav's week</b><span>3 activities done</span></div>
+            <div class="m-photos"><span></span><span></span><span></span></div>
+            <div class="m-bars"><p>Quiz<i style="--w:90%"></i></p><p>Activities<i style="--w:70%"></i></p><p>Portfolio<i style="--w:55%"></i></p></div>
+          </div>
+        </div>
+        <div class="dash-panel" role="tabpanel" id="p-school" aria-labelledby="t-school" hidden>
+          <div class="dash-copy">
+            <h3>Schools run it under their own name</h3>
+            <ul class="ticks">
+              <li>Choose projects per section and see a progress heatmap</li>
+              <li>Mark vivas and observations with one-tap rubrics</li>
+              <li>Export marks for internal assessment</li>
+              <li>Your school's name, colours and badge on every screen</li>
+            </ul>
+            <a class="btn btn-primary" href="app.html#/login/school">Open the school demo</a>
+          </div>
+          <div class="mock mock-school" aria-hidden="true">
+            <div class="m-top"><i></i><b>Greenwood Skills Studio</b><span>Grade 6</span></div>
+            <div class="m-heat"></div>
+          </div>
+        </div>
+        <div class="dash-panel" role="tabpanel" id="p-admin" aria-labelledby="t-admin" hidden>
+          <div class="dash-copy">
+            <h3>VINC runs the whole network</h3>
+            <ul class="ticks">
+              <li>Add schools, seats and plans</li>
+              <li>See activity across every school</li>
+              <li>Review the course content and question banks</li>
+            </ul>
+            <a class="btn btn-primary" href="app.html#/login/admin">Open the admin demo</a>
+          </div>
+          <div class="mock mock-admin" aria-hidden="true">
+            <div class="m-top"><i></i><b>VINC Lab admin</b><span>All schools</span></div>
+            <div class="m-kpis"><p><b>4</b>schools</p><p><b>212</b>students</p><p><b>71%</b>active</p></div>
+            <div class="m-spark"><svg viewBox="0 0 200 50" preserveAspectRatio="none"><path d="M0 40 L20 34 L40 36 L60 26 L80 30 L100 20 L120 22 L140 14 L160 16 L180 8 L200 10"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- White-label -->
+  <section id="brand" class="band-alt" aria-labelledby="brand-title">
+    <div class="wrap two-col">
+      <div>
+        <p class="label">For schools</p>
+        <h2 id="brand-title">Your school's name on every screen</h2>
+        <p class="lead-sm">Students and parents log in to your skill studio, in your colours. VINC Lab stays in the background. Try it: type your school's name.</p>
+        <form class="brand-form" id="brand-form" autocomplete="off">
+          <label for="b-name">School name</label>
+          <input id="b-name" name="name" maxlength="40" value="Greenwood Public School">
+          <label for="b-studio">Name for the skill studio</label>
+          <input id="b-studio" name="studio" maxlength="40" value="Greenwood Skills Studio">
+          <fieldset>
+            <legend>Brand colour</legend>
+            <div class="swatches" id="swatches"></div>
+          </fieldset>
+          <button class="btn btn-primary" type="submit">Open my branded demo</button>
+        </form>
+      </div>
+      <div class="phone" aria-label="Preview of the branded student portal">
+        <div class="phone-screen" id="brand-preview">
+          <div class="bp-head"><span class="bp-badge" id="bp-badge">GP</span><div><b id="bp-studio">Greenwood Skills Studio</b><small id="bp-school">Greenwood Public School</small></div></div>
+          <div class="bp-hello">Good morning, Aarav 👋</div>
+          <div class="bp-card"><div class="bp-ring"><span>64%</span></div><div><b>Maker Skills</b><small>Next: Use a propeller to make toys</small></div></div>
+          <div class="bp-grid"><span>Activities<b>11/18</b></span><span>Quiz best<b>9/10</b></span><span>Portfolio<b>6</b></span><span>Mela in<b>142 d</b></span></div>
+          <div class="bp-btn">Continue project</div>
+          <small class="bp-foot">Powered by VINC Lab</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Learning outcomes -->
+  <section id="outcomes" aria-labelledby="lo-title">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="label">What students learn</p>
+          <h2 id="lo-title">18 learning outcomes, tracked for every child</h2>
+          <p class="lead-sm">Kaushal Bodh sets four curricular goals. Tap an outcome to see what it means and where VINC Lab measures it.</p>
+        </div>
+      </div>
+      <div class="lo-grid" id="lo-grid"></div>
+      <div class="lo-detail" id="lo-detail" aria-live="polite"><span class="muted">Tap an outcome above.</span></div>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section id="roadmap" class="band-alt" aria-labelledby="road-title">
+    <div class="wrap">
+      <p class="label">Roadmap</p>
+      <h2 id="road-title">One grade at a time, done properly</h2>
+      <div class="road" id="road"></div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" aria-labelledby="faq-title">
+    <div class="wrap faq-wrap">
+      <div>
+        <p class="label">FAQ</p>
+        <h2 id="faq-title">Questions schools ask</h2>
+      </div>
+      <div class="faq">
+        <details><summary>Is VINC Lab part of CBSE or NCERT?</summary><p>No. VINC Lab is an independent platform built around NCERT's Kaushal Bodh activity books and the implementation guidance in CBSE circulars. Students still use the textbook. Every activity in VINC Lab points to its page.</p></details>
+        <details><summary>How is the assessment split?</summary><p>Following CBSE Circular Skill-81/2025: written test 10%, oral presentation or viva 30%, activity book 30%, portfolio 10% and teacher observation 20%. VINC Lab adds these up for every project and for the year.</p></details>
+        <details><summary>Do teachers need special training?</summary><p>No. Kaushal Bodh is taught by your existing teachers. VINC Lab gives them the plan for each class, the viva questions to ask and one-tap rubrics. VINC also runs optional teacher workshops.</p></details>
+        <details><summary>Can we use our own name and colours?</summary><p>Yes. Each school gets its own studio name, colour and badge. Students and parents see your brand; "Powered by VINC Lab" sits quietly in the footer.</p></details>
+        <details><summary>What do parents see?</summary><p>Their child's projects, photos from the portfolio, scores for each part of the assessment, teacher feedback and ideas to try at home.</p></details>
+        <details><summary>What about Grades 7 and 8?</summary><p>They are next. The Grade 7 book adds an AI Assistant project and the Grade 8 book adds Home Automation with Arduino. Both will arrive with the same quizzes, rubrics and dashboards.</p></details>
+        <details><summary>Where is the data stored in this preview?</summary><p>This preview runs entirely in your browser with demo accounts, so nothing you enter leaves your device. Pilot schools get a hosted version with secure logins.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="band-dark" aria-labelledby="contact-title">
+    <div class="wrap two-col">
+      <div>
+        <p class="label">Pilot with us</p>
+        <h2 id="contact-title">Run Kaushal Bodh with VINC Lab this session</h2>
+        <p class="lead-sm">Tell us about your school. We'll set up your branded studio, load your Grade 6 sections and walk your teachers through it.</p>
+        <p class="contact-alt">Or email <a href="mailto:vincdeeptech@gmail.com">vincdeeptech@gmail.com</a></p>
+      </div>
+      <form class="enquiry" id="enquiry" novalidate>
+        <div class="field"><label for="e-name">Your name</label><input id="e-name" name="name" required autocomplete="name"></div>
+        <div class="field"><label for="e-school">School</label><input id="e-school" name="school" required autocomplete="organization"></div>
+        <div class="field"><label for="e-role">You are</label>
+          <select id="e-role" name="role"><option>Principal</option><option>Teacher</option><option>School management</option><option>Parent</option><option>Other</option></select></div>
+        <div class="field"><label for="e-contact">Email or phone</label><input id="e-contact" name="contact" required></div>
+        <div class="field wide"><label for="e-msg">Anything we should know? <span class="muted">(optional)</span></label><textarea id="e-msg" name="message" rows="3"></textarea></div>
+        <input type="text" name="_honey" class="sr-only" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn btn-amber" type="submit">Request a pilot</button>
+        <p class="form-msg" id="form-msg" role="status"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<!-- Project drawer -->
+<dialog class="drawer" id="drawer" aria-labelledby="drawer-title">
+  <div class="drawer-inner" id="drawer-inner"></div>
+</dialog>
+
+<footer class="site-footer">
+  <div class="wrap foot-row">
+    <div>
+      <img class="logo-l" src="assets/logo/vinc-lab-logo.svg" alt="VINC Lab" width="140" height="32">
+      <img class="logo-d" src="assets/logo/vinc-lab-logo-dark.svg" alt="VINC Lab" width="140" height="32">
+      <p class="muted small">A VINC learning platform for skill education. Bengaluru.</p>
+    </div>
+    <nav aria-label="Footer"><a href="#course">Grade 6</a><a href="#assess">Assessment</a><a href="#brand">For schools</a><a href="app.html">Log in</a></nav>
+    <button class="theme-btn" id="theme-btn" aria-label="Switch colour theme">Theme</button>
+  </div>
+  <div class="wrap">
+    <p class="small muted fine">Kaushal Bodh is a textbook series published by NCERT. VINC Lab is independent and is not affiliated with or endorsed by NCERT or CBSE. Project titles and page numbers refer to the 2026–27 Kaushal Bodh Grade 6 edition.</p>
+  </div>
+</footer>
+
+<script type="module" src="assets/js/landing.js"></script>
+</body>
+</html>

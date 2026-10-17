@@ -1,0 +1,83 @@
+/* Project illustrations (assets/js/art.js). */
+.art { display: block; width: 100%; height: auto; overflow: visible; }
+.art .soil { fill: color-mix(in srgb, var(--amber-ink) 45%, var(--paper-2)); }
+.art .stem, .art .trunk { stroke: var(--olive); stroke-width: 4; stroke-linecap: round; fill: none; }
+.art .trunk { stroke: color-mix(in srgb, var(--amber-ink) 70%, var(--ink)); stroke-width: 8; }
+.art .leaf, .art .canopy { fill: var(--olive); }
+.art .canopy { fill: color-mix(in srgb, var(--olive) 85%, var(--paper)); }
+.art .fruit { fill: var(--rust); }
+.art .sun { fill: var(--band-accent); }
+.art .tool { fill: var(--teal); }
+.art .spout, .art .handle { stroke: var(--teal); stroke-width: 4; fill: none; stroke-linecap: round; }
+.art .drops circle { fill: var(--teal-2); }
+
+.art-garden .sprout { transform-box: fill-box; transform-origin: 50% 100%; animation: grow 4s ease-in-out infinite; }
+.art-garden .s2 { animation-delay: .6s; } .art-garden .s3 { animation-delay: 1.2s; }
+.art-garden .can { transform-box: fill-box; transform-origin: 80% 50%; animation: tilt 4s ease-in-out infinite; }
+.art-garden .drops circle { animation: drip 1.4s linear infinite; }
+.art-garden .drops circle:nth-child(2) { animation-delay: .45s; } .art-garden .drops circle:nth-child(3) { animation-delay: .9s; }
+@keyframes grow { 0%, 100% { transform: scale(.94) rotate(-2deg); } 50% { transform: scale(1.05) rotate(2deg); } }
+@keyframes tilt { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-12deg); } }
+@keyframes drip { 0% { transform: translateY(-6px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(34px); opacity: 0; } }
+
+.art-bio .flower .petal { fill: var(--plum); } .art-bio .flower .core { fill: var(--band-accent); }
+.art-bio .butterfly path:not(.body) { fill: var(--amber); }
+.art-bio .butterfly .body { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.art-bio .butterfly { animation: flutter-path 6s ease-in-out infinite; }
+.art-bio .wing { transform-box: fill-box; animation: flap .35s ease-in-out infinite alternate; }
+.art-bio .wl { transform-origin: 100% 50%; } .art-bio .wr { transform-origin: 0% 50%; }
+.art-bio .lens .glass { fill: color-mix(in srgb, var(--teal-soft) 60%, transparent); stroke: var(--ink); stroke-width: 4; }
+.art-bio .lens .grip { stroke: var(--ink); stroke-width: 6; stroke-linecap: round; }
+.art-bio .lens { animation: scan 6s ease-in-out infinite; }
+@keyframes flap { from { transform: scaleX(1); } to { transform: scaleX(.35); } }
+@keyframes flutter-path { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(10px, -10px); } 50% { transform: translate(-6px, -4px); } 75% { transform: translate(6px, 6px); } }
+@keyframes scan { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, 18px); } }
+
+.art-maker .base { fill: var(--amber); }
+.art-maker .beam { stroke: color-mix(in srgb, var(--amber-ink) 80%, var(--ink)); stroke-width: 6; stroke-linecap: round; }
+.art-maker .cup { fill: none; stroke: var(--ink); stroke-width: 3; }
+.art-maker .pivot { fill: var(--ink); }
+.art-maker .ball { fill: var(--rust); animation: launch 3s cubic-bezier(.3,.1,.4,1) infinite; }
+.art-maker .arm { transform-origin: 60px 96px; animation: swing 3s cubic-bezier(.3,.1,.4,1) infinite; }
+.art-maker .gear path { fill: var(--teal); } .art-maker .gear .hole { fill: var(--card); }
+.art-maker .gear { animation: spin 6s linear infinite; }
+@keyframes swing { 0%, 55%, 100% { transform: rotate(0); } 62% { transform: rotate(-58deg); } 80% { transform: rotate(-58deg); } }
+@keyframes launch { 0%, 58% { transform: translate(0, 0); opacity: 1; } 62% { transform: translate(-44px, -40px); } 75% { transform: translate(-90px, -64px); } 88% { transform: translate(-130px, -20px); opacity: 1; } 89%, 100% { opacity: 0; transform: translate(0,0); } }
+@keyframes spin { to { transform: translate(160px, 54px) rotate(360deg); } }
+.art-maker .gear { transform: translate(160px, 54px); }
+
+.art-games .screen { fill: var(--ink); } .art-games .stage { fill: color-mix(in srgb, var(--teal-soft) 80%, var(--card)); }
+.art-games .ground { fill: var(--olive); } .art-games .base { fill: var(--ink); }
+.art-games .coin circle { fill: var(--band-accent); stroke: var(--amber-ink); stroke-width: 2; }
+.art-games .coin { animation: bob 1.6s ease-in-out infinite; } .art-games .c2 { animation-delay: .3s; } .art-games .c3 { animation-delay: .6s; }
+.art-games .sprite .bod { fill: var(--amber); } .art-games .sprite circle { fill: var(--ink); }
+.art-games .sprite .ears { stroke: var(--amber); stroke-width: 3; fill: var(--amber); stroke-linejoin: round; }
+.art-games .sprite { animation: hop 2.4s ease-in-out infinite; }
+.art-games .flag path:not(.pole) { fill: var(--olive); } .art-games .pole { stroke: var(--ink-2); stroke-width: 2; }
+.art-games .b1 { fill: var(--amber); } .art-games .b2 { fill: var(--plum); }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes hop { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(24px, -26px); } 50% { transform: translate(48px, 0); } 75% { transform: translate(24px, -14px); } }
+
+.art-museum .roof, .art-museum .lintel, .art-museum .cols rect, .art-museum .step { fill: color-mix(in srgb, var(--ink-2) 25%, var(--paper-2)); stroke: var(--ink-2); stroke-width: 2; }
+.art-museum .beam { fill: var(--band-accent); opacity: .28; transform-origin: 100px 54px; animation: sweep 5s ease-in-out infinite; }
+.art-museum .plinth { fill: var(--ink-2); }
+.art-museum .vase { fill: var(--rust); } .art-museum .band { stroke: var(--band-accent); stroke-width: 3; }
+.art-museum .spark path { fill: var(--band-accent); }
+.art-museum .spark { transform-box: fill-box; transform-origin: center; animation: twinkle 2.2s ease-in-out infinite; }
+@keyframes sweep { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
+@keyframes twinkle { 0%, 100% { transform: scale(.4); opacity: .3; } 50% { transform: scale(1.1); opacity: 1; } }
+
+.art-cook .bowl { fill: var(--teal); }
+.art-cook .whisk .handle { stroke: var(--ink-2); stroke-width: 4; stroke-linecap: round; }
+.art-cook .whisk .loop { fill: none; stroke: var(--ink-2); stroke-width: 2.5; }
+.art-cook .whisk { transform-origin: 96px 30px; animation: stir 1.2s ease-in-out infinite alternate; }
+.art-cook .k1 { fill: var(--rust); } .art-cook .k2 { fill: var(--olive); } .art-cook .k3 { fill: var(--band-accent); }
+.art-cook .bits circle { animation: bob 1.1s ease-in-out infinite; } .art-cook .k2 { animation-delay: .2s; } .art-cook .k3 { animation-delay: .4s; }
+.art-cook .glass { fill: color-mix(in srgb, var(--card) 60%, transparent); stroke: var(--ink-2); stroke-width: 2.5; }
+.art-cook .juice { fill: var(--plum); opacity: .8; }
+.art-cook .straw { stroke: var(--amber); stroke-width: 4; stroke-linecap: round; }
+.art-cook .fizz circle { fill: var(--card); animation: rise 1.8s linear infinite; } .art-cook .fizz circle:nth-child(2) { animation-delay: .6s; } .art-cook .fizz circle:nth-child(3) { animation-delay: 1.2s; }
+@keyframes stir { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+@keyframes rise { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-26px); opacity: 0; } }
+
+.ic { width: 20px; height: 20px; flex: none; }
