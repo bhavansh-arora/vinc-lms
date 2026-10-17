@@ -216,7 +216,7 @@ export const LESSONS = {
         { label: 'Squeezed lemon halves', sprite: 'lemon', bin: 'wet', why: 'They are plant waste, so they go to compost.' },
         { label: 'Onion skins', sprite: 'onion-skins', bin: 'wet', why: 'Onion skins break down in the compost pit.' },
         { label: 'Coriander stalks', sprite: 'coriander', bin: 'wet', why: 'Stalks and leaves are wet, natural waste.' },
-        { label: 'Rinsed milk packet', sprite: 'milk-can', bin: 'dry', why: 'Clean plastic packets can be recycled.' },
+        { label: 'Rinsed milk packet', emoji: '🥛', bin: 'dry', why: 'Clean plastic packets can be recycled.' },
         { label: 'Empty plastic bottle', sprite: 'plastic-bottle', bin: 'dry', why: 'Bottles with a recycling symbol go for recycling.' },
         { label: 'Newspaper used to cover the table', sprite: 'newspaper', bin: 'dry', why: 'Clean, dry paper can be recycled.' },
         { label: 'Cardboard box from the bread', sprite: 'cardboard', bin: 'dry', why: 'Cardboard is recycled into new boxes.' },
