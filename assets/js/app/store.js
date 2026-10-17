@@ -329,6 +329,9 @@ function seedProgress(sec, r, now, star, teacher) {
   const pr1 = emptyProgress();
   const n1 = star ? P1.activities.length : Math.min(P1.activities.length, Math.round(P1.activities.length * (0.55 + keen * 0.5)));
   P1.activities.slice(0, n1).forEach((a, i) => { pr1.acts[a.n] = { done: true, at: start + (i * 7 + r() * 3) * DAY, note: r() > 0.3 ? reflection(a.title, r) : '' }; });
+  // Virtual labs played alongside the activities.
+  pr1.labs = {};
+  P1.activities.slice(0, n1).forEach((a, i) => { if (star || r() < 0.4 + keen * 0.5) pr1.labs[a.n] = { stars: star ? 3 - (i % 3 === 2 ? 1 : 0) : 1 + Math.round(r() * 2 * keen), at: start + (i * 7 + 1) * DAY, tries: 1 + Math.floor(r() * 3) }; });
   if (n1 >= P1.activities.length - 2) {
     const tries = star ? [7, 9] : [Math.round(5 + keen * 5 * r())];
     tries.forEach((sc, i) => pr1.quiz.push(seedQuiz(P1, Math.min(10, sc), start + (70 + i * 3) * DAY, r)));
@@ -348,6 +351,8 @@ function seedProgress(sec, r, now, star, teacher) {
   const pr2 = emptyProgress();
   const n2 = star ? 2 : Math.max(0, Math.round(P2.activities.length * (keen - 0.45) * 0.9));
   P2.activities.slice(0, n2).forEach((a, i) => { pr2.acts[a.n] = { done: true, at: now - ((n2 - i) * 3.2 + r() * 2 - 1.5) * DAY, note: r() > 0.4 ? reflection(a.title, r) : '' }; });
+  pr2.labs = {};
+  P2.activities.slice(0, n2).forEach((a, i) => { if (star || r() < 0.4 + keen * 0.5) pr2.labs[a.n] = { stars: star ? 2 + (i % 2) : 1 + Math.round(r() * 2 * keen), at: now - (n2 - i) * 3 * DAY, tries: 1 + Math.floor(r() * 2) }; });
   if (star) {
     pr2.portfolio.push({ id: uid('pf'), kind: 'photo', art: P2.art, title: (NOTE_LINES[p2] || ['First try'])[0], text: '', at: now - 3 * DAY });
     pr2.feedback.push({ at: now - 2 * DAY, by: teacher, text: FEEDBACK[p2] || 'A strong start on this project. Keep going!' });

@@ -2,7 +2,8 @@
 import { FORMS, projectById } from '../../data/courses.js';
 import { db, school, section, studentsOf, sectionsOf, progress, lastActive, user, setTaught, log } from '../store.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
-import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, FORM_COLOR } from '../ui.js';
+import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, FORM_COLOR } from '../ui.js';
+import { loadLessons, lessonsFor, lessonOf, launchLab, LAB_KIND } from './activity.js';
 import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, quizAnalysis, rubricAnalysis, rubricBars, quizBars, INACTIVE_DAYS } from './shared.js';
 
 const myGrades = me => [...new Set(sectionsOf(me).map(s => s.grade))];
@@ -168,6 +169,8 @@ function lessons(ctx) {
   // Spread the project's periods across its activities in double periods (two a session, two sessions a week).
   const S = Math.ceil(P.periods / 2), n = P.activities.length;
   const rows = P.activities.map((a, i) => { const from = Math.floor(i * S / n) + 1; return { a, from, to: Math.max(from, Math.floor((i + 1) * S / n)) }; });
+  const loaded = !!lessonsFor(pid);
+  const labShare = an => kids.length ? Math.round(kids.filter(k => progress(k.id, pid)?.labs?.[an]).length / kids.length * 100) : 0;
   return {
     title: 'Lesson plans', nav: 'lessons',
     html: `<div class="toolbar">
@@ -183,7 +186,8 @@ function lessons(ctx) {
         <label class="lcheck"><input type="checkbox" data-n="${a.n}" ${on ? 'checked' : ''}><span class="act-n">${on ? icon('check') : a.n}</span></label>
         <div class="l-body"><div class="l-top"><b>${esc(a.title)}</b><span class="chip">Session${to > from ? `s ${from}–${to}` : ` ${from}`} · wk ${Math.ceil(from / 2)}</span></div>
           <p>${esc(a.task)}</p>
-          <div class="l-meta"><span>${icon('book')} Page ${a.page}</span><span class="l-share">${bar(share, FORM_COLOR[P.form])}<small>${share}% of students done</small></span></div></div></li>`; }).join('')}</ol>
+          <div class="l-meta"><span>${icon('book')} Page ${a.page}</span><span class="l-share">${bar(share, FORM_COLOR[P.form])}<small>${share}% of students done</small></span></div>
+          ${loaded && lessonOf(pid, a.n) ? `<div class="l-tools"><button class="btn btn-ghost btn-sm" data-lesson="${a.n}">${icon('book')} Lesson</button>${lessonOf(pid, a.n).lab ? `<button class="btn btn-ghost btn-sm" data-lab="${a.n}">${LAB_KIND[lessonOf(pid, a.n).lab.type]?.[1] || '🧪'} Open the lab</button><small class="muted">${labShare(a.n)}% played it</small>` : ''}</div>` : ''}</div></li>`; }).join('')}</ol>
       <aside class="proj-side">
         <section class="card"><h3 class="h-card">${icon('flask')} Gather beforehand</h3><ul>${P.materials.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
         <section class="card"><h3 class="h-card">${icon('shield')} Safety briefing</h3><ul>${P.safety.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
@@ -194,6 +198,18 @@ function lessons(ctx) {
       $('#l-sec', el).addEventListener('change', e => { state.lessonSec = e.target.value; state.lessonProj = null; ctx.rerender(); });
       $$('[data-lproj]', el).forEach(b => b.addEventListener('click', () => { state.lessonSec = sec.id; state.lessonProj = b.dataset.lproj; ctx.rerender(); }));
       $('#print', el).addEventListener('click', () => print());
+      if (!loaded) loadLessons(pid).then(() => { state.lessonSec = sec.id; state.lessonProj = pid; ctx.rerender(); });
+      // Show the full in-app lesson, or open the lab on the class screen (teacher plays are not recorded).
+      $$('[data-lesson]', el).forEach(b => b.addEventListener('click', () => {
+        const an = +b.dataset.lesson, L = lessonOf(pid, an), A = P.activities[an - 1];
+        modal(`<p class="eyebrow">Activity ${an} · ${esc(L.time || '')} · ${esc(L.group || '')}</p><h2>${esc(A.title)}</h2><p>${esc(L.intro)}</p>
+          ${L.need?.length ? `<h3>You'll need</h3><ul>${L.need.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+          <h3>Steps</h3><ol>${L.steps.map(x => `<li><b>${esc(x.t)}.</b> ${esc(x.d)}</li>`).join('')}</ol>
+          ${L.safety?.length ? `<h3>Safety</h3><ul>${L.safety.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+          ${L.think?.length ? `<h3>Discuss</h3><ul>${L.think.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+          <div class="modal-actions"><button class="btn btn-ghost" data-close>Close</button></div>`, { wide: true });
+      }));
+      $$('[data-lab]', el).forEach(b => b.addEventListener('click', () => launchLab(ctx, P, +b.dataset.lab, lessonOf(pid, +b.dataset.lab), { record: false })));
       $$('.lcheck input', el).forEach(cb => cb.addEventListener('change', () => {
         setTaught(sec, pid, +cb.dataset.n, cb.checked);
         if (cb.checked) log(ctx.me.name, `taught "${P.activities[cb.dataset.n - 1].title}" to ${sec.name}`, ctx.me.schoolId);

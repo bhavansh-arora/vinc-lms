@@ -123,6 +123,7 @@ export function studentDetail(ctx, s, back) {
     <div class="score-cards">${ids.map(pid => { const p = projectById(pid), sc = projectScore(progress(s.id, pid), pid); return `<section class="card f-${p.form}">
       <h3 class="h-card"><span class="form-dot"></span>${esc(p.title)}</h3>
       <ul class="parts">${WEIGHTS.map(w => `<li><div class="part-top"><b>${esc(w.label)}</b><span class="muted">${w.weight}%</span><span class="part-val">${sc.parts[w.key] == null ? 'Not yet' : `${sc.parts[w.key]}%`}</span></div>${bar(sc.parts[w.key], PART_COLOR[w.key])}</li>`).join('')}</ul>
+      <p class="muted small">Virtual labs: ${Object.keys(progress(s.id, pid)?.labs || {}).length} of ${p.activities.length} played · ${Object.values(progress(s.id, pid)?.labs || {}).reduce((n, l) => n + l.stars, 0)} ★</p>
       <div class="total-row"><span>Score ${sc.complete ? '' : 'so far'}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${band(sc.score)}</span></div>
       <button class="btn btn-brand btn-sm" data-markp="${pid}">Mark this project</button></section>`; }).join('')}</div>
     <section class="card logins-card"><h2 class="h-card">${icon('key')} Logins</h2>
