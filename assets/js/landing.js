@@ -751,6 +751,21 @@ if ('IntersectionObserver' in window) {
 } else $$('[data-scene]').forEach(el => setScene(el, true));
 RM.addEventListener?.('change', () => $$('[data-scene]').forEach(el => setScene(el, el.classList.contains('play') && !reduced())));
 
+// Icons drawn inside scene SVGs (the open book's project tokens).
+$$('svg.nest[data-ic]').forEach(n => {
+  const m = icon(n.dataset.ic).match(/<svg[^>]*>([\s\S]*)<\/svg>/);
+  n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('fill', 'none'); n.setAttribute('stroke', 'currentColor');
+  n.setAttribute('stroke-width', '2'); n.setAttribute('stroke-linecap', 'round'); n.setAttribute('stroke-linejoin', 'round');
+  n.innerHTML = m ? m[1] : '';
+});
+// Dashboards: the person for the open tab is highlighted; tapping a person opens their tab.
+const people = $$('.people-net .pn');
+const markPerson = () => { const role = $('.dash-tabs [aria-selected="true"]')?.dataset.role; people.forEach(p => p.classList.toggle('on', p.dataset.role === role)); };
+people.forEach(p => p.addEventListener('click', () => $(`.dash-tabs [data-role="${p.dataset.role}"]`)?.click()));
+$('.dash-tabs')?.addEventListener('click', () => requestAnimationFrame(markPerson));
+$('.dash-tabs')?.addEventListener('keydown', () => requestAnimationFrame(markPerson));
+markPerson();
+
 // Why now: days left until Composite Skill Labs are due (Aug 2027), and how far along the road we are.
 (() => {
   const start = new Date(2025, 9, 1), end = new Date(2027, 7, 31), now = new Date();
