@@ -751,6 +751,8 @@ if ('IntersectionObserver' in window) {
 } else $$('[data-scene]').forEach(el => setScene(el, true));
 RM.addEventListener?.('change', () => $$('[data-scene]').forEach(el => setScene(el, el.classList.contains('play') && !reduced())));
 
+// Course card illustrations rest while the course grid is off screen.
+if ('IntersectionObserver' in window && $('#projects')) new IntersectionObserver(([e]) => $('#projects').classList.toggle('idle', !e.isIntersecting)).observe($('#projects'));
 // Icons drawn inside scene SVGs (the open book's project tokens).
 $$('svg.nest[data-ic]').forEach(n => {
   const m = icon(n.dataset.ic).match(/<svg[^>]*>([\s\S]*)<\/svg>/);

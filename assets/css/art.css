@@ -1,79 +1,254 @@
 /* Project illustrations (assets/js/art.js).
    Every loop is seamless: 0% and 100% match, or the element is invisible at the seam.
    Staggered loops use negative delays so nothing sits still and then jumps on first paint.
+   With "reduce motion" (tokens.css) every animation ends at once and each element falls back to its
+   un-animated style, so the base styles below always show a complete, sensible picture.
    Keyframes are prefixed "art-" so they never clash with landing.css or app.css. */
-.art { display: block; width: 100%; height: auto; overflow: visible; }
-.art .soil { fill: color-mix(in srgb, var(--amber-ink) 45%, var(--paper-2)); }
-.art .stem, .art .trunk { stroke: var(--olive); stroke-width: 4; stroke-linecap: round; fill: none; }
-.art .trunk { stroke: color-mix(in srgb, var(--amber-ink) 70%, var(--ink)); stroke-width: 8; }
-.art .leaf, .art .canopy { fill: var(--olive); }
-.art .canopy { fill: color-mix(in srgb, var(--olive) 85%, var(--paper)); }
-.art .fruit { fill: var(--rust); }
-.art .sun { fill: var(--band-accent); }
-.art .tool { fill: var(--teal); }
-.art .spout, .art .handle { stroke: var(--teal); stroke-width: 4; fill: none; stroke-linecap: round; }
-.art .drops circle { fill: var(--teal-2); }
+.art { display: block; width: 100%; height: auto; overflow: hidden; border-radius: 6% / 8.571%; }
+.ic { width: 20px; height: 20px; flex: none; }
 
-/* Shared loops */
-@keyframes art-sway { 0%, 100% { transform: scale(.95) rotate(-2deg); } 50% { transform: scale(1.04) rotate(2deg); } }
-@keyframes art-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-@keyframes art-twinkle { 0%, 100% { transform: scale(.45); opacity: .3; } 50% { transform: scale(1.1); opacity: 1; } }
+/* Scene palette: site tokens plus a few illustration-only tones, re-tuned for dark mode below. */
+.art {
+  --art-glow: #FFFBF1;
+  --art-glow-o: color-mix(in srgb, var(--art-glow) 74%, var(--olive-soft));
+  --art-glow-r: color-mix(in srgb, var(--art-glow) 74%, var(--rust-soft));
+  --art-glow-p: color-mix(in srgb, var(--art-glow) 74%, var(--plum-soft));
+  --art-hi: #FFFFFF;
+  --art-sh: rgba(70, 40, 15, .17);
+  --art-dk: #3A2719;
+  --art-white: #FFFDF8;
+  --art-cloud: #FFFDF8;
+  --art-tile: rgba(255, 255, 255, .6);
+  --art-gold: #F2B640;
+  --art-l0: color-mix(in srgb, var(--olive) 72%, #0F2208);
+  --art-l2: color-mix(in srgb, var(--olive) 60%, #E9F7C9);
+  --art-soil: #7E5232;
+  --art-soil-hi: #A87449;
+  --art-wood-l: #E8BE86;
+  --art-wood: #D29A5B;
+  --art-wood2: #A86C35;
+  --art-wood3: #7D4E25;
+  --art-steel: #E2DED8;
+  --art-metal: #C9C3BA;
+  --art-metal2: #8E877D;
+  --art-water: #93D5E0;
+  --art-water2: #4DAFC0;
+  --art-tealdk: #175A53;
+  --art-stone: #E6DACA;
+  --art-stone2: #BFAE97;
+  --art-skin: #E2A77B;
+  --art-pink: #F2B8B0;
+  --art-night: #2E2B4F;
+  --art-night2: #4D3866;
+  --art-floor: #EBD6CC;
+  --art-floor2: #D8BCB1;
+  --art-screen: #DCEBCF;
+  --art-stage: #CBE8EF;
+  --art-heart: #E0577A;
+  --art-grow: #C24A8F;
+  --art-ball: #F39A6E;
+  --art-curtain: #8E2F22;
+  --art-indigo: #3B4B9A;
+  --art-ecg: #5BE0B4;
+  --art-rice: #F1E4C8;
+  --art-root: #EADCB8;
+  --art-goat: #EBD5B2;
+  --art-goat-d: #B8946A;
+  --art-cat: #4E3D33;
+  --art-bulb-off: #F3ECE0;
+  --art-led: #7BE07B;
+  --art-moon: #F8EBC0;
+}
+@media (prefers-color-scheme: dark) {
+  .art {
+    --art-glow: #5C4632;
+    --art-hi: #FFF6E6;
+    --art-sh: rgba(0, 0, 0, .34);
+    --art-dk: #140D09;
+    --art-white: #EADFCC;
+    --art-cloud: rgba(255, 244, 226, .2);
+    --art-tile: rgba(255, 244, 226, .07);
+    --art-gold: #F0B44C;
+    --art-l0: color-mix(in srgb, var(--olive) 62%, #0B1606);
+    --art-l2: color-mix(in srgb, var(--olive) 72%, #E9F7C9);
+    --art-soil: #4A3020;
+    --art-soil-hi: #6B4529;
+    --art-wood-l: #C79660;
+    --art-wood: #A9733F;
+    --art-wood2: #7C4F28;
+    --art-wood3: #5A3519;
+    --art-steel: #C4BFB8;
+    --art-metal: #A49E96;
+    --art-metal2: #6F6961;
+    --art-water: #56B7C7;
+    --art-water2: #2D8597;
+    --art-tealdk: #1C635B;
+    --art-stone: #A69986;
+    --art-stone2: #7A6D5D;
+    --art-skin: #C98B62;
+    --art-pink: #D9958C;
+    --art-night: #141329;
+    --art-night2: #2C2042;
+    --art-floor: #4A2E36;
+    --art-floor2: #36202A;
+    --art-screen: #31411F;
+    --art-stage: #234A52;
+    --art-heart: #E86A8E;
+    --art-grow: #E070B0;
+    --art-ball: #F5A57E;
+    --art-curtain: #7A2618;
+    --art-indigo: #6B7BD0;
+    --art-rice: #DCCCAC;
+    --art-root: #D3C29C;
+    --art-goat: #CDB28A;
+    --art-goat-d: #8E7350;
+    --art-cat: #0F0A07;
+    --art-bulb-off: #6A5A49;
+    --art-moon: #EBD9A0;
+  }
+}
+.art-garden, .art-bio, .art-nursery, .art-habitat, .art-hydro, .art-animals { --art-f: var(--olive); --art-fs: var(--olive-soft); }
+.art-maker, .art-games, .art-tiedye, .art-ai, .art-wood, .art-auto { --art-f: var(--rust); --art-fs: var(--rust-soft); }
+.art-museum, .art-cook, .art-puppets, .art-health, .art-water, .art-ads { --art-f: var(--plum); --art-fs: var(--plum-soft); }
+
+/* Shared fills and strokes */
+.art .sh { fill: var(--art-sh); }
+.art .hi { fill: var(--art-hi); fill-opacity: .55; }
+.art .cl { fill: var(--art-cloud); }
+.art .spk { fill: var(--art-gold); }
+.art .l0 { fill: var(--art-l0); } .art .l1 { fill: var(--olive); } .art .l2 { fill: var(--art-l2); }
+.art .wo { fill: var(--art-wood); } .art .wo2 { fill: var(--art-wood2); }
+.art .dk { fill: var(--art-dk); } .art .wt { fill: var(--art-white); }
+.art .mt { fill: var(--art-metal); } .art .mt2 { fill: var(--art-metal2); }
+.art .rs { fill: var(--rust); } .art .am { fill: var(--amber); } .art .te { fill: var(--teal); } .art .pl { fill: var(--plum); }
+.art .gd { fill: var(--art-gold); } .art .wa { fill: var(--art-water); }
+.art .edge { fill: var(--art-hi); fill-opacity: .35; }
+.art .seam { fill: none; stroke: var(--art-sh); stroke-width: 1.2; }
+.art .flr { fill: color-mix(in srgb, var(--art-wood2) 32%, var(--art-fs)); }
+.art .hill { fill: color-mix(in srgb, var(--art-f) 16%, var(--art-fs)); }
+.art .hill2 { fill: color-mix(in srgb, var(--art-f) 30%, var(--art-fs)); }
+.art .stem { fill: none; stroke: var(--art-l0); stroke-width: 2.4; stroke-linecap: round; }
+.art .wing { fill: var(--art-hi); fill-opacity: .8; transform-box: fill-box; transform-origin: 50% 100%; animation: art-flapy .1s linear infinite alternate; }
+.art .stripe { stroke: var(--art-dk); stroke-width: 1.3; }
+.art .sp1, .art .sp2, .art .sp3, .art .st1, .art .st2, .art .st3 { transform-box: fill-box; transform-origin: center; animation: art-twinkle 2.6s ease-in-out infinite; }
+.art .sp2, .art .st2 { animation-delay: -.9s; } .art .sp3, .art .st3 { animation-delay: -1.7s; }
+
+/* Shared loops. A few take their amplitude from custom properties (--a, --dx, --dy, --rise, --do). */
 @keyframes art-spin { to { transform: rotate(360deg); } }
-@keyframes art-sweep { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
-@keyframes art-dangle { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
-@keyframes art-flap { from { transform: scaleX(1); } to { transform: scaleX(.35); } }
-/* Bubbles and dust fade in at the start of each loop, so the restart is never visible. */
-@keyframes art-rise { 0% { transform: translateY(0); opacity: 0; } 18% { opacity: 1; } 100% { transform: translateY(-24px); opacity: 0; } }
-@keyframes art-pulse { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes art-dash-7 { to { stroke-dashoffset: -14; } }
-@keyframes art-dash-10 { to { stroke-dashoffset: -20; } }
+@keyframes art-spin-r { to { transform: rotate(-360deg); } }
+@keyframes art-sway { 0%, 100% { transform: rotate(calc(-1 * var(--a, 3deg))); } 50% { transform: rotate(var(--a, 3deg)); } }
+@keyframes art-drift { from { transform: translateX(0); } to { transform: translateX(var(--dx, 10px)); } }
+@keyframes art-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--dy, -4px)); } }
+@keyframes art-twinkle { 0%, 100% { transform: scale(.35) rotate(0deg); opacity: .2; } 50% { transform: scale(1) rotate(45deg); opacity: 1; } }
+@keyframes art-flap { from { transform: scaleX(1); } to { transform: scaleX(.28); } }
+@keyframes art-flapy { from { transform: scaleY(1); } to { transform: scaleY(.25); } }
+/* Bubbles and motes fade in at the start of each loop, so the restart is never visible. */
+@keyframes art-rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(var(--rise, -24px)); opacity: 0; } }
+@keyframes art-glowpulse { 0%, 100% { opacity: var(--o1, .35); } 50% { opacity: var(--o2, .75); } }
+@keyframes art-ripple { 0% { transform: scale(.3); opacity: 0; } 12% { opacity: .9; } 70%, 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes art-dash { to { stroke-dashoffset: var(--do, -20px); } }
 
 /* ---- Grade 6 ---- */
-/* Kitchen garden: plants sway; the can tips and pours only while it is tilted. */
-.art-garden .sprout { transform-box: fill-box; transform-origin: 50% 100%; animation: art-sway 4s ease-in-out infinite; }
-.art-garden .s2 { animation-delay: -1.3s; } .art-garden .s3 { animation-delay: -2.6s; }
-.art-garden .can { transform-box: fill-box; transform-origin: 80% 50%; animation: art-pour 4s ease-in-out infinite; }
-.art-garden .drops circle { opacity: 0; animation: art-pour-drop 4s cubic-bezier(.33, 0, .67, .33) infinite; }
-.art-garden .drops circle:nth-child(2) { animation-delay: -3.84s; } .art-garden .drops circle:nth-child(3) { animation-delay: -3.68s; }
-@keyframes art-pour { 0%, 16%, 86%, 100% { transform: rotate(0); } 40%, 66% { transform: rotate(-14deg); } }
-@keyframes art-pour-drop {
-  0%, 40% { transform: translateY(-4px); opacity: 0; }
-  43% { opacity: 1; }
-  53% { transform: translateY(30px); opacity: 0; }
-  53.1% { transform: translateY(-4px); opacity: 0; }
-  56% { opacity: 1; }
-  66%, 100% { transform: translateY(30px); opacity: 0; }
+/* Kitchen garden: the sun turns, clouds drift, the can tips and waters the lettuce, which gives a happy wobble. */
+.art-garden .glow { fill: var(--art-gold); opacity: .3; transform-box: fill-box; transform-origin: center; animation: art-g-glow 4s ease-in-out infinite; }
+.art-garden .rays { stroke: var(--art-gold); stroke-width: 2.4; stroke-linecap: round; transform-origin: 34px 30px; animation: art-spin 24s linear infinite; }
+.art-garden .cl1 { --dx: 12px; animation: art-drift 9s ease-in-out infinite alternate; }
+.art-garden .cl2 { --dx: -10px; animation: art-drift 7s ease-in-out -3s infinite alternate; }
+.art-garden .fence { fill: var(--art-wood-l); opacity: .6; }
+.art-garden .furrow { fill: none; stroke: var(--art-soil); stroke-width: 1.6; stroke-linecap: round; opacity: .6; }
+.art-garden .nail { stroke: var(--art-wood3); stroke-width: 2.2; stroke-linecap: round; }
+.art-garden .tom { --a: 2deg; transform-origin: 44px 108px; animation: art-sway 5s ease-in-out infinite; }
+.art-garden .calyx { stroke: var(--art-l0); stroke-width: 1.4; stroke-linecap: round; }
+.art-garden .let { transform-origin: 98px 104px; animation: art-g-drink 4.5s ease-in-out infinite; }
+.art-garden .vein { fill: none; stroke: var(--art-l0); stroke-width: .8; opacity: .6; }
+.art-garden .car { --a: 4deg; animation: art-sway 3.4s ease-in-out infinite; }
+.art-garden .k1 { transform-origin: 150px 104px; } .art-garden .k2 { transform-origin: 176px 106px; animation-delay: -1.5s; }
+.art-garden .ctop { fill: none; stroke: var(--olive); stroke-width: 2.6; stroke-linecap: round; }
+.art-garden .cant { fill: none; stroke: var(--art-tealdk); stroke-width: 4; stroke-linecap: round; }
+.art-garden .band { stroke: var(--art-tealdk); stroke-width: 1.6; opacity: .5; }
+.art-garden .can { transform-origin: 157px 58px; animation: art-g-pour 4.5s ease-in-out infinite; }
+.art-garden .drops ellipse { opacity: 0; animation: art-g-drop 4.5s linear infinite; }
+.art-garden .drops ellipse:nth-child(2) { animation-delay: -4.32s; } .art-garden .drops ellipse:nth-child(3) { animation-delay: -4.14s; }
+.art-garden .bf { --dx: -16px; animation: art-drift 6.5s ease-in-out infinite alternate; }
+.art-garden .bfy { --dy: -9px; animation: art-bob 2.6s ease-in-out infinite; }
+.art-garden .wl, .art-garden .wr { transform-box: fill-box; animation: art-flap .26s ease-in-out infinite alternate; }
+.art-garden .wl { transform-origin: 100% 40%; } .art-garden .wr { transform-origin: 0 40%; }
+.art-garden .bfb { stroke: var(--art-dk); stroke-width: 1.8; stroke-linecap: round; }
+@keyframes art-g-glow { 0%, 100% { transform: scale(.9); opacity: .22; } 50% { transform: scale(1.12); opacity: .42; } }
+@keyframes art-g-pour { 0%, 12%, 80%, 100% { transform: rotate(0); } 26%, 62% { transform: rotate(-30deg); } }
+@keyframes art-g-drop {
+  0%, 27% { transform: translateY(0); opacity: 0; }
+  29% { opacity: 1; }
+  38% { transform: translateY(24px); opacity: 0; }
+  38.01% { transform: translateY(0); }
+  40% { opacity: 1; }
+  49% { transform: translateY(24px); opacity: 0; }
+  49.01% { transform: translateY(0); }
+  51% { opacity: 1; }
+  60%, 100% { transform: translateY(24px); opacity: 0; }
 }
+@keyframes art-g-drink { 0%, 36%, 72%, 100% { transform: scale(1); } 44% { transform: scale(1.07, .93); } 52% { transform: scale(.97, 1.04); } 60% { transform: scale(1.02, .98); } }
 
-/* Biodiversity register: the butterfly drifts on two out-of-step axes, so its path never repeats mechanically. */
-.art-bio .flower .petal { fill: var(--plum); } .art-bio .flower .core { fill: var(--band-accent); }
-.art-bio .butterfly path:not(.body) { fill: var(--amber); }
-.art-bio .butterfly .body { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
-.art-bio .butterfly { animation: art-drift-x 5.2s ease-in-out infinite alternate, art-drift-y 3.3s ease-in-out infinite alternate; }
-.art-bio .wing { transform-box: fill-box; animation: art-flap .32s ease-in-out infinite alternate; }
-.art-bio .wl { transform-origin: 100% 50%; } .art-bio .wr { transform-origin: 0% 50%; }
-.art-bio .lens .glass { fill: color-mix(in srgb, var(--teal-soft) 60%, transparent); stroke: var(--ink); stroke-width: 4; }
-.art-bio .lens .grip { stroke: var(--ink); stroke-width: 6; stroke-linecap: round; }
-.art-bio .lens { animation: art-lens 6s ease-in-out infinite; }
-@keyframes art-drift-x { from { translate: -8px 0; } to { translate: 10px 0; } }
-@keyframes art-drift-y { from { transform: translateY(5px); } to { transform: translateY(-10px); } }
-@keyframes art-lens { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, 18px); } }
+/* Biodiversity register: birds cross the sky, leaves fall, the lens finds a ladybird (magnified),
+   then a flower; a bee hovers, and the register ticks off each find. */
+.art-bio .br { fill: none; stroke: var(--art-wood2); stroke-width: 3; stroke-linecap: round; }
+.art-bio .bd { animation: art-b-fly 16s linear infinite; } .art-bio .bd2 { animation-duration: 19s; animation-delay: -6s; }
+.art-bio .bd path { fill: none; stroke: var(--art-dk); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transform-box: fill-box; transform-origin: center; animation: art-flapy .32s ease-in-out infinite alternate; }
+.art-bio .fl { transform-box: fill-box; transform-origin: center; animation: art-b-fall 7s ease-in-out infinite; } .art-bio .lf2 { animation-duration: 8s; animation-delay: -3.6s; }
+.art-bio .fw1 { --dy: -1.5px; animation: art-bob 3s ease-in-out infinite; }
+.art-bio .lens { animation: art-b-lens 7s ease-in-out infinite; }
+.art-bio .mag { animation: art-b-mag 7s ease-in-out infinite; }
+.art-bio .mag .ln { fill: none; stroke: var(--art-dk); stroke-width: 1; }
+.art-bio .rim { fill: none; stroke: var(--art-dk); stroke-width: 3; }
+.art-bio .grip { stroke: var(--art-wood2); stroke-width: 5.5; stroke-linecap: round; }
+.art-bio .lglint { fill: none; stroke: var(--art-hi); stroke-width: 1.8; stroke-linecap: round; opacity: .85; }
+.art-bio .bee { --dx: 14px; animation: art-drift 3.2s ease-in-out infinite alternate; }
+.art-bio .beey { --dy: -8px; animation: art-bob 1.4s ease-in-out infinite; }
+.art-bio .ringl { stroke: var(--art-dk); stroke-width: 1.6; stroke-linecap: round; }
+.art-bio .book .ln { stroke: var(--line); stroke-width: 1.6; stroke-linecap: round; }
+.art-bio .tk { fill: none; stroke: var(--olive); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 9; animation: art-b-tick 6s ease-out infinite; }
+.art-bio .t2 { animation-delay: -5s; } .art-bio .t3 { animation-delay: -4s; }
+@keyframes art-b-fly { from { transform: translate(90px, 6px); } to { transform: translate(-200px, -4px); } }
+@keyframes art-b-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  35% { transform: translate(8px, 14px) rotate(60deg); }
+  65% { transform: translate(-4px, 28px) rotate(140deg); }
+  86% { opacity: 1; }
+  100% { transform: translate(6px, 38px) rotate(220deg); opacity: 0; }
+}
+@keyframes art-b-lens { 0%, 26%, 100% { transform: translate(0, 0); } 40%, 62% { transform: translate(34px, -8px); } 76% { transform: translate(16px, -12px); } 88% { transform: translate(0, 0); } }
+@keyframes art-b-mag { 0%, 24%, 96%, 100% { opacity: 1; } 30%, 88% { opacity: 0; } }
+@keyframes art-b-tick { 0%, 10% { stroke-dashoffset: 9; opacity: 1; } 18%, 86% { stroke-dashoffset: 0; opacity: 1; } 94% { stroke-dashoffset: 0; opacity: 0; } 100% { stroke-dashoffset: 9; opacity: 0; } }
 
 /* Maker skills: a catapult. The ball rotates about the same pivot with the same keyframes as the arm,
    so it sits in the cup through the wind-up and the swing, then leaves at the top on a real arc
-   (constant sideways speed, quadratic rise and fall), bounces once, fades, and drops back into the cup. */
-.art-maker .base { fill: var(--amber); }
-.art-maker .beam { stroke: color-mix(in srgb, var(--amber-ink) 80%, var(--ink)); stroke-width: 6; stroke-linecap: round; }
-.art-maker .cup { fill: none; stroke: var(--ink); stroke-width: 3; }
-.art-maker .pivot { fill: var(--ink); }
-.art-maker .ball { fill: var(--rust); }
+   (constant sideways speed, quadratic rise and fall), lands with a puff of dust, bounces once, fades,
+   and drops back into the cup. Meanwhile the gears mesh (12 and 8 teeth, so 9 s and 6 s a turn)
+   and a balloon car races on the spot. */
+.art-maker .wall { fill: color-mix(in srgb, var(--rust) 8%, var(--rust-soft)); }
+.art-maker .hole { fill: var(--art-glow-r); }
+.art-maker .spoke { stroke: var(--teal); stroke-width: 3; }
+.art-maker .gr1 { transform-origin: 150px 40px; animation: art-spin 9s linear infinite; }
+.art-maker .gr2 { transform-origin: 174.6px 57.2px; animation: art-spin-r 6s linear infinite; }
+.art-maker .frame { fill: none; stroke: var(--art-wood2); stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; }
+.art-maker .beam { stroke: var(--art-wood3); stroke-width: 5; stroke-linecap: round; }
+.art-maker .cup { fill: none; stroke: var(--art-dk); stroke-width: 3; stroke-linecap: round; }
 .art-maker .arm, .art-maker .ball { transform-origin: 60px 96px; }
 .art-maker .arm { animation: art-cata-arm 4s linear infinite; }
 .art-maker .ball { animation: art-cata-ball 4s linear infinite; }
 .art-maker .ball-x { animation: art-cata-x 4s linear infinite; }
 .art-maker .ball-y { animation: art-cata-y 4s linear infinite; }
-.art-maker .gear path { fill: var(--teal); } .art-maker .gear .hole { fill: var(--card); }
-.art-maker .gear { transform: translate(160px, 54px); animation: art-gear 6s linear infinite; }
+.art-maker .dust { fill: var(--art-wood-l); }
+.art-maker .puff { opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; animation: art-m-puff 4s ease-out infinite; }
+.art-maker .bottle { fill: var(--art-water); fill-opacity: .75; stroke: var(--teal); stroke-width: 1.4; }
+.art-maker .straw { stroke: var(--art-white); stroke-width: 2.4; stroke-linecap: round; }
+.art-maker .spk2 { stroke: var(--art-white); stroke-width: 1.4; }
+.art-maker .wh { transform-box: fill-box; transform-origin: center; animation: art-spin .9s linear infinite; }
+.art-maker .cb { --dy: -1.2px; animation: art-bob .45s ease-in-out infinite; }
+.art-maker .bal { transform-box: fill-box; transform-origin: 70% 100%; animation: art-m-bal 1.8s ease-in-out infinite; }
+.art-maker .air .dust { fill: var(--art-white); transform-box: fill-box; transform-origin: center; animation: art-m-air 1.2s ease-out infinite; } .art-maker .air .a2 { animation-delay: -.6s; }
+.art-maker .speed { fill: none; stroke: color-mix(in srgb, var(--rust) 45%, transparent); stroke-width: 2; stroke-linecap: round; animation: art-m-speed .9s linear infinite; }
 @keyframes art-cata-arm {
   0% { rotate: 0deg; animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
   34% { rotate: 16deg; animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
@@ -107,19 +282,29 @@
   93% { translate: 0 -3px; animation-timing-function: cubic-bezier(.33, 0, .67, .33); }
   96%, 100% { translate: 0 0; opacity: 1; }
 }
-@keyframes art-gear { from { transform: translate(160px, 54px) rotate(0deg); } to { transform: translate(160px, 54px) rotate(360deg); } }
+@keyframes art-m-puff { 0%, 56% { opacity: 0; transform: scale(.3); } 58% { opacity: .9; transform: scale(.6); } 72%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes art-m-bal { 0%, 100% { transform: scale(1); } 50% { transform: scale(.9, 1.05); } }
+@keyframes art-m-air { 0% { transform: translateX(0) scale(.6); opacity: 0; } 20% { opacity: .9; } 100% { transform: translateX(-22px) scale(1.5); opacity: 0; } }
+@keyframes art-m-speed { 0% { transform: translateX(8px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-14px); opacity: 0; } }
 
-/* Animation and games: the sprite hops across and back; sideways and vertical motion are separate,
-   so each hop is an arc instead of a zig-zag with a stop at the top. */
-.art-games .screen { fill: var(--ink); } .art-games .stage { fill: color-mix(in srgb, var(--teal-soft) 80%, var(--card)); }
-.art-games .ground { fill: var(--olive); } .art-games .base { fill: var(--ink); }
-.art-games .coin circle { fill: var(--band-accent); stroke: var(--amber-ink); stroke-width: 2; }
-.art-games .coin { animation: art-bob 1.6s ease-in-out infinite; } .art-games .c2 { animation-delay: -1.3s; } .art-games .c3 { animation-delay: -1s; }
-.art-games .sprite .bod { fill: var(--amber); } .art-games .sprite circle { fill: var(--ink); }
-.art-games .sprite .ears { stroke: var(--amber); stroke-width: 3; fill: var(--amber); stroke-linejoin: round; }
-.art-games .sprite { animation: art-hop-x 2.8s linear infinite, art-hop-y 2.8s linear infinite; }
-.art-games .flag path:not(.pole) { fill: var(--olive); } .art-games .pole { stroke: var(--ink-2); stroke-width: 2; }
-.art-games .b1 { fill: var(--amber); } .art-games .b2 { fill: var(--plum); }
+/* Animation and games: the sprite hops (sideways and vertical motion are separate, so each hop is an arc),
+   grabs the coin with a "+1" and a star pop; on the left a Scratch block slides in and snaps into the script. */
+.art-games .tuft { fill: none; stroke: var(--art-l0); stroke-width: 1.2; }
+.art-games .brick { stroke: var(--art-wood3); stroke-width: 1; }
+.art-games .coin { fill: var(--art-gold); stroke: var(--amber); stroke-width: 1.4; }
+.art-games .cn { --dy: -3px; animation: art-bob 1.6s ease-in-out infinite; } .art-games .k3 { animation-delay: -.8s; }
+.art-games .flagp { stroke: var(--art-white); stroke-width: 1.4; }
+.art-games .cshine { stroke: var(--art-hi); stroke-width: 1.4; stroke-linecap: round; opacity: .85; }
+.art-games .coin1 { transform-box: fill-box; transform-origin: center; animation: art-gm-coin 2.8s linear infinite; }
+.art-games .plus { font: 700 8px var(--body); fill: var(--rust); opacity: 0; animation: art-gm-plus 2.8s ease-out infinite; }
+.art-games .score { transform-box: fill-box; transform-origin: center; animation: art-gm-star 2.8s ease-out infinite; }
+.art-games .sp, .art-games .sps { animation: art-hop-x 2.8s linear infinite; }
+.art-games .spy { animation: art-hop-y 2.8s linear infinite; }
+.art-games .spsy { transform-box: fill-box; transform-origin: center; animation: art-gm-shadow 2.8s linear infinite; }
+.art-games .tail { fill: none; stroke: var(--amber); stroke-width: 3; stroke-linecap: round; }
+.art-games .btx { stroke: var(--art-white); stroke-width: 2.6; stroke-linecap: round; opacity: .75; }
+.art-games .blk4 { animation: art-gm-snap 5.6s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.art-games .snap { opacity: 0; transform-box: fill-box; transform-origin: center; animation: art-gm-flash 5.6s ease-out infinite; }
 @keyframes art-hop-x {
   0%, 6% { translate: 0 0; animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
   40%, 56% { translate: 48px 0; animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
@@ -132,150 +317,386 @@
   73% { transform: translateY(-16px); animation-timing-function: cubic-bezier(.33, 0, .67, .33); }
   90%, 100% { transform: translateY(0); }
 }
+@keyframes art-gm-shadow {
+  0%, 6% { transform: scale(1); opacity: 1; animation-timing-function: cubic-bezier(.33, .67, .67, 1); }
+  23% { transform: scale(.5); opacity: .5; animation-timing-function: cubic-bezier(.33, 0, .67, .33); }
+  40%, 56% { transform: scale(1); opacity: 1; animation-timing-function: cubic-bezier(.33, .67, .67, 1); }
+  73% { transform: scale(.65); opacity: .65; animation-timing-function: cubic-bezier(.33, 0, .67, .33); }
+  90%, 100% { transform: scale(1); opacity: 1; }
+}
+@keyframes art-gm-coin { 0%, 17% { transform: scale(1); opacity: 1; } 23% { transform: scale(1.7); opacity: 0; } 86% { transform: scale(0); opacity: 0; } 92% { transform: scale(1.2); opacity: 1; } 96%, 100% { transform: scale(1); opacity: 1; } }
+@keyframes art-gm-plus { 0%, 20% { opacity: 0; transform: translateY(4px); } 24% { opacity: 1; } 44%, 100% { opacity: 0; transform: translateY(-9px); } }
+@keyframes art-gm-star { 0%, 22%, 40%, 100% { transform: scale(1) rotate(0deg); } 29% { transform: scale(1.5) rotate(24deg); } }
+@keyframes art-gm-snap { 0%, 10% { transform: translate(-30px, 8px); opacity: 0; } 14% { opacity: 1; } 26%, 88% { transform: translate(0, 0); opacity: 1; } 96%, 100% { transform: translate(0, 0); opacity: 0; } }
+@keyframes art-gm-flash { 0%, 23% { opacity: 0; transform: scale(.2); } 27% { opacity: 1; transform: scale(1.3); } 40%, 100% { opacity: 0; transform: scale(.6); } }
 
-.art-museum .roof, .art-museum .lintel, .art-museum .cols rect, .art-museum .step { fill: color-mix(in srgb, var(--ink-2) 25%, var(--paper-2)); stroke: var(--ink-2); stroke-width: 2; }
-.art-museum .beam { fill: var(--band-accent); opacity: .28; transform-origin: 100px 54px; animation: art-sweep 5s ease-in-out infinite; }
-.art-museum .plinth { fill: var(--ink-2); }
-.art-museum .vase { fill: var(--rust); } .art-museum .band { stroke: var(--band-accent); stroke-width: 3; }
-.art-museum .spark path { fill: var(--band-accent); }
-.art-museum .spark { transform-box: fill-box; transform-origin: center; animation: art-twinkle 2.2s ease-in-out infinite; }
+/* School museum: the spotlight sways, dust motes float in it, light glides across the glass case,
+   the pot sparkles, and a young visitor tilts their head as they point. */
+.art-museum .wain { fill: color-mix(in srgb, var(--plum) 12%, var(--plum-soft)); }
+.art-museum .trim { fill: var(--art-hi); fill-opacity: .5; }
+.art-museum .fline { fill: none; stroke: var(--art-sh); stroke-width: 1; }
+.art-museum .pic { fill: color-mix(in srgb, var(--teal-soft) 70%, var(--art-white)); }
+.art-museum .beam { --a: 6deg; transform-origin: 100px 5px; animation: art-sway 7s ease-in-out infinite; }
+.art-museum .mo { fill: var(--art-gold); --rise: -30px; animation: art-rise 5s linear infinite; } .art-museum .m2 { animation-delay: -1.7s; } .art-museum .m3 { animation-delay: -3.4s; }
+.art-museum .rope { fill: none; stroke: var(--plum); stroke-width: 2.6; stroke-linecap: round; }
+.art-museum .ped { fill: var(--art-stone); } .art-museum .ped2, .art-museum .lid { fill: var(--art-stone2); }
+.art-museum .lbl { stroke: var(--art-metal2); stroke-width: 1.2; }
+.art-museum .pband { fill: none; stroke: var(--plum); stroke-width: 2.4; }
+.art-museum .zig { fill: none; stroke: var(--art-white); stroke-width: 1.2; stroke-linejoin: round; }
+.art-museum .case { fill: var(--art-hi); fill-opacity: .14; stroke: var(--art-hi); stroke-opacity: .75; stroke-width: 1.4; }
+.art-museum .glare { fill: var(--art-hi); fill-opacity: .55; animation: art-mu-glare 4.5s ease-in-out infinite; }
+.art-museum .skin { fill: var(--art-skin); } .art-museum .hair { fill: var(--art-dk); }
+.art-museum .arm2 { fill: none; stroke: var(--teal); stroke-width: 3.6; stroke-linecap: round; }
+.art-museum .vh { --a: 5deg; transform-origin: 35px 90px; animation: art-sway 4s ease-in-out infinite; }
+.art-museum .vis { --dy: -1.5px; animation: art-bob 4s ease-in-out -1s infinite; }
+@keyframes art-mu-glare { 0%, 30% { transform: translateX(-26px); } 70%, 100% { transform: translateX(62px); } }
 
-.art-cook .bowl { fill: var(--teal); }
-.art-cook .whisk .handle { stroke: var(--ink-2); stroke-width: 4; stroke-linecap: round; }
-.art-cook .whisk .loop { fill: none; stroke: var(--ink-2); stroke-width: 2.5; }
-.art-cook .whisk { transform-origin: 96px 30px; animation: art-stir 1.2s ease-in-out infinite alternate; }
-.art-cook .k1 { fill: var(--rust); } .art-cook .k2 { fill: var(--olive); } .art-cook .k3 { fill: var(--band-accent); }
-.art-cook .bits circle { animation: art-bob 1.1s ease-in-out infinite; } .art-cook .bits .k2 { animation-delay: -.9s; } .art-cook .bits .k3 { animation-delay: -.7s; }
-.art-cook .glass { fill: color-mix(in srgb, var(--card) 60%, transparent); stroke: var(--ink-2); stroke-width: 2.5; }
-.art-cook .juice { fill: var(--plum); opacity: .8; }
-.art-cook .straw { stroke: var(--amber); stroke-width: 4; stroke-linecap: round; }
-.art-cook .fizz circle { fill: var(--card); animation: art-rise 1.8s cubic-bezier(.33, .67, .67, 1) infinite; }
-.art-cook .fizz circle:nth-child(2) { animation-delay: -1.2s; } .art-cook .fizz circle:nth-child(3) { animation-delay: -.6s; }
-@keyframes art-stir { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
-
-.ic { width: 20px; height: 20px; flex: none; }
+/* Cooking without fire: no stove, just chopping, stirring, fruit dropping into the bowl with a splash,
+   and a fizzy lemonade. */
+.art-cook .tiles { fill: none; stroke: var(--art-tile); stroke-width: 1; }
+.art-cook .hole { fill: var(--art-glow-p); }
+.art-cook .blade { fill: var(--art-steel); }
+.art-cook .knife { transform-origin: 55px 90px; animation: art-ck-chop 1.1s ease-in-out infinite; }
+.art-cook .bin { fill: var(--art-tealdk); }
+.art-cook .spn { stroke: var(--art-wood2); stroke-width: 4; stroke-linecap: round; }
+.art-cook .spoon { --a: 9deg; transform-origin: 134px 30px; animation: art-sway 1.8s ease-in-out infinite; }
+.art-cook .fall { animation: art-ck-fall 3.6s infinite; } .art-cook .fr2 { animation-delay: -1.8s; }
+.art-cook .seed { stroke: var(--art-gold); stroke-width: 1.3; stroke-linecap: round; }
+.art-cook .rim { stroke: var(--art-hi); stroke-opacity: .6; stroke-width: 1.4; }
+.art-cook .spl circle { opacity: 0; animation: art-ck-spl 1.8s ease-out -.144s infinite; }
+.art-cook .spl circle:nth-child(1) { --sx: -5px; } .art-cook .spl circle:nth-child(2) { --sx: 0px; } .art-cook .spl circle:nth-child(3) { --sx: 5px; }
+.art-cook .straw { fill: none; stroke: var(--rust); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.art-cook .ice { fill: var(--art-hi); fill-opacity: .55; }
+.art-cook .bbl circle { --rise: -20px; animation: art-rise 2.2s ease-out infinite; }
+.art-cook .bbl circle:nth-child(2) { animation-delay: -1.4s; } .art-cook .bbl circle:nth-child(3) { animation-delay: -.7s; }
+.art-cook .glass { fill: var(--art-hi); fill-opacity: .16; stroke: var(--art-hi); stroke-opacity: .8; stroke-width: 1.4; }
+.art-cook .lem { fill: var(--art-gold); } .art-cook .lem2 { fill: color-mix(in srgb, var(--art-gold) 45%, var(--art-white)); } .art-cook .lems { stroke: var(--art-gold); stroke-width: .8; }
+@keyframes art-ck-chop { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(10deg); } }
+@keyframes art-ck-fall {
+  0% { transform: translateY(-14px); opacity: 0; animation-timing-function: cubic-bezier(.5, 0, 1, 1); }
+  12% { opacity: 1; }
+  46% { transform: translateY(60px); opacity: 1; }
+  52%, 100% { transform: translateY(72px); opacity: 0; }
+}
+@keyframes art-ck-spl { 0% { transform: translate(0, 0); opacity: 1; } 28% { transform: translate(var(--sx), -6px); opacity: 0; } 100% { transform: translate(var(--sx), -6px); opacity: 0; } }
 
 /* ---- Grade 7 ---- */
-.art-nursery .pole { stroke: var(--ink-2); stroke-width: 3; }
-.art-nursery .net { fill: color-mix(in srgb, var(--olive) 55%, transparent); }
-.art-nursery .tray { fill: var(--ink-2); } .art-nursery .cells rect { fill: color-mix(in srgb, var(--amber-ink) 50%, var(--paper-2)); }
-.art-nursery .seedling { transform-box: fill-box; transform-origin: 50% 100%; animation: art-sway 3.2s ease-in-out infinite; }
-.art-nursery .sd1 { animation-delay: -2.9s; } .art-nursery .sd2 { animation-delay: -2.6s; } .art-nursery .sd3 { animation-delay: -2.3s; } .art-nursery .sd4 { animation-delay: -2s; }
+/* Plant nursery: misters puff under the shade-net, light shafts breathe, and the tray shows germination
+   from a wiggling seed to a sapling, each seedling swaying on its own beat. */
+.art-nursery .lt path { --o1: .25; --o2: .75; animation: art-glowpulse 5s ease-in-out infinite; } .art-nursery .lt .rr2 { animation-delay: -2.5s; }
+.art-nursery .soilc { fill: var(--art-soil); } .art-nursery .grav { stroke: var(--art-soil-hi); stroke-width: 2.4; stroke-linecap: round; }
+.art-nursery .pipe { stroke: var(--art-metal2); stroke-width: 2.4; }
+.art-nursery .cone { fill: var(--art-water); opacity: .3; }
+.art-nursery .mist { transform-box: fill-box; transform-origin: 50% 0; animation: art-n-mist 3s ease-in-out infinite; }
+.art-nursery .m1 { animation-delay: -1s; } .art-nursery .m2 { animation-delay: -2s; }
+.art-nursery .dr { fill: var(--art-water2); animation: art-n-drip 1.5s linear infinite; } .art-nursery .d2 { animation-delay: -.75s; }
+.art-nursery .net { fill: var(--olive); opacity: .6; }
+.art-nursery .mesh { stroke: var(--art-l0); stroke-width: .6; }
+.art-nursery .netedge { fill: none; stroke: var(--art-l0); stroke-width: 1.4; }
+.art-nursery .leg { stroke: var(--art-wood2); stroke-width: 3.4; }
+.art-nursery .cell { fill: var(--art-soil); }
+.art-nursery .crack { fill: none; stroke: var(--art-wood-l); stroke-width: .8; }
+.art-nursery .ntag { fill: var(--art-white); }
+.art-nursery .seed { transform-box: fill-box; transform-origin: 50% 100%; animation: art-n-wiggle 2.4s ease-in-out infinite; }
+.art-nursery .s0 { transform-box: fill-box; transform-origin: 0 100%; animation: art-n-peek 2.4s ease-in-out infinite; }
+.art-nursery .sd { --a: 4deg; transform-box: fill-box; transform-origin: 50% 100%; animation: art-sway 3.4s ease-in-out infinite; }
+.art-nursery .k2 { animation-delay: -.5s; } .art-nursery .k3 { animation-delay: -1s; } .art-nursery .k4 { animation-delay: -1.5s; }
+.art-nursery .k5 { animation-delay: -2s; } .art-nursery .k6 { animation-delay: -2.5s; } .art-nursery .k7 { animation-delay: -3s; }
+@keyframes art-n-mist { 0%, 100% { opacity: .35; transform: scaleY(.7); } 50% { opacity: 1; transform: scaleY(1); } }
+@keyframes art-n-drip { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(18px); opacity: 0; } }
+@keyframes art-n-wiggle { 0%, 60%, 100% { transform: rotate(0); } 68% { transform: rotate(-9deg); } 76% { transform: rotate(8deg); } 84% { transform: rotate(-4deg); } 92% { transform: rotate(0); } }
+@keyframes art-n-peek { 0%, 55%, 100% { transform: scale(1); } 70% { transform: scale(1.25, 1.35); } 85% { transform: scale(.9); } }
 
-.art-habitat .post { stroke: color-mix(in srgb, var(--amber-ink) 70%, var(--ink)); stroke-width: 6; }
-.art-habitat .roof { fill: var(--rust); } .art-habitat .box { fill: var(--amber); } .art-habitat .hole { fill: var(--ink); }
-.art-habitat .bbody { fill: var(--teal); } .art-habitat .beak { fill: var(--band-accent); } .art-habitat .eye { fill: #fff; }
-.art-habitat .bird { animation: art-peck 2.4s ease-in-out infinite; transform-origin: 104px 60px; }
-.art-habitat .flower .petal { fill: var(--plum); } .art-habitat .flower .core { fill: var(--band-accent); }
-/* The bee's resting place is set here too, so it stays by the flower when motion is reduced. */
-.art-habitat .bee { transform: translate(150px, 52px); animation: art-bee-x 3.7s ease-in-out infinite alternate, art-bee-y 1.6s ease-in-out infinite alternate; }
-.art-habitat .bee-b { fill: var(--band-accent); } .art-habitat .stripe { stroke: var(--ink); stroke-width: 1.6; }
-.art-habitat .wing { fill: color-mix(in srgb, #fff 70%, transparent); animation: art-flap .15s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: bottom; }
-.art-habitat .bath { fill: none; stroke: var(--teal-2); stroke-width: 4; stroke-linecap: round; }
-@keyframes art-peck { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(14deg); } 80% { transform: rotate(0); } 88% { transform: rotate(14deg); } }
-@keyframes art-bee-x { from { translate: -20px 0; } to { translate: 24px 0; } }
-@keyframes art-bee-y { from { transform: translate(150px, 64px); } to { transform: translate(150px, 38px); } }
+/* School habitat garden: a sparrow sips from the bird bath (ripples spread from its beak),
+   a bee visits the insect hotel, and a sunbird hovers at the hibiscus. */
+.art-habitat .trimr { fill: none; stroke: color-mix(in srgb, var(--rust) 60%, var(--art-dk)); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.art-habitat .cave { fill: var(--art-wood3); }
+.art-habitat .log { fill: var(--art-wood-l); stroke: var(--art-wood2); stroke-width: 1; }
+.art-habitat .lring { stroke: var(--art-wood2); stroke-width: 2.4; stroke-linecap: round; }
+.art-habitat .straw { stroke: var(--art-gold); stroke-width: 1.8; }
+.art-habitat .cone { stroke: var(--art-wood2); stroke-width: .9; }
+.art-habitat .div { fill: none; stroke: var(--art-wood); stroke-width: 2.4; }
+.art-habitat .bee { --dx: 18px; animation: art-drift 2.8s ease-in-out infinite alternate; }
+.art-habitat .beey { --dy: 10px; animation: art-bob 1.7s ease-in-out infinite; }
+.art-habitat .stone { fill: var(--art-stone); }
+.art-habitat .rip { fill: none; stroke: var(--art-hi); stroke-width: .9; opacity: 0; transform-box: fill-box; transform-origin: center; animation: art-ripple 3s ease-out -2.58s infinite; }
+.art-habitat .rp2 { animation-delay: -2.28s; }
+.art-habitat .spw { transform-origin: 129px 90px; animation: art-h-dip 3s ease-in-out infinite; }
+.art-habitat .tail2 { fill: var(--art-wood2); }
+.art-habitat .stamen { stroke: var(--art-gold); stroke-width: 1.2; stroke-linecap: round; }
+.art-habitat .fl1 { --a: 4deg; transform-box: fill-box; transform-origin: 50% 100%; animation: art-sway 3s ease-in-out infinite; }
+.art-habitat .sb { --dx: -4px; animation: art-drift 1.6s ease-in-out infinite alternate; }
+.art-habitat .sbw { --dy: -3px; animation: art-bob 1.1s ease-in-out infinite; }
+.art-habitat .beak { fill: none; stroke: var(--art-dk); stroke-width: 1.4; stroke-linecap: round; }
+.art-habitat .wing2 { fill: var(--teal); fill-opacity: .85; }
+.art-habitat .sbwing { transform-box: fill-box; transform-origin: 50% 100%; animation: art-flapy .09s linear infinite alternate; }
+.art-habitat .tufts { fill: none; stroke: var(--art-l0); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes art-h-dip { 0%, 40%, 100% { transform: rotate(0); } 12%, 24% { transform: rotate(-30deg); } }
 
-.art-tiedye .shirt { fill: var(--card); stroke: var(--ink-2); stroke-width: 2.5; stroke-linejoin: round; }
-.art-tiedye .r1 { fill: var(--plum); } .art-tiedye .r2 { fill: var(--amber); } .art-tiedye .r3 { fill: var(--teal-2); } .art-tiedye .r4 { fill: var(--card); }
-.art-tiedye .swirl { transform-origin: 100px 78px; animation: art-spin 12s linear infinite; }
-.art-tiedye .swirl circle { stroke: var(--card); stroke-width: 2; stroke-dasharray: 3 4; }
-.art-tiedye .dots circle { fill: var(--plum); animation: art-twinkle 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.art-tiedye .dots circle:nth-child(2n) { animation-delay: -1.8s; fill: var(--rust); }
-.art-tiedye .knot path:first-child { fill: var(--band-accent); } .art-tiedye .thread { stroke: var(--ink-2); stroke-width: 2; fill: none; }
+/* Tie and dye: the bandhani cloth sways on the line while its dye glows outward, drops fall from its hem,
+   and a tied bundle is dunked into the indigo pot. */
+.art-tiedye .cline { fill: none; stroke: var(--art-dk); stroke-width: 1.2; }
+.art-tiedye .cloth { --a: 1.8deg; transform-origin: 100px 22px; animation: art-sway 5s ease-in-out infinite; }
+.art-tiedye .bleed { transform-box: fill-box; transform-origin: center; animation: art-t-bleed 4s ease-in-out infinite; }
+.art-tiedye .dots, .art-tiedye .dots2 { fill: none; stroke: var(--art-white); stroke-width: 3; stroke-linecap: round; }
+.art-tiedye .dots2 { stroke-width: 2.6; }
+.art-tiedye .fold { stroke: var(--art-dk); stroke-opacity: .12; stroke-width: 3; }
+.art-tiedye .drip { transform-box: fill-box; transform-origin: 50% 0; animation: art-t-drip 2.6s cubic-bezier(.5, 0, 1, 1) infinite; } .art-tiedye .d2 { animation-delay: -1.3s; }
+.art-tiedye .pot { fill: color-mix(in srgb, var(--rust) 70%, var(--art-wood3)); }
+.art-tiedye .pot2 { fill: color-mix(in srgb, var(--rust) 55%, var(--art-wood-l)); }
+.art-tiedye .potb { stroke: var(--art-sh); stroke-width: 2; }
+.art-tiedye .dyey { fill: var(--art-gold); } .art-tiedye .dyei { fill: var(--art-indigo); }
+.art-tiedye .root { fill: none; stroke: var(--amber); stroke-width: 3; stroke-linecap: round; }
+.art-tiedye .bun { fill: color-mix(in srgb, var(--art-indigo) 45%, var(--art-white)); }
+.art-tiedye .str { stroke: var(--art-dk); stroke-width: 1; opacity: .55; }
+.art-tiedye .wrp { fill: none; stroke: var(--art-white); stroke-width: 1.6; }
+.art-tiedye .dip { animation: art-t-dip 2.8s ease-in-out infinite; }
+.art-tiedye .dd ellipse { opacity: 0; animation: art-t-dd 2.8s ease-in -.56s infinite; } .art-tiedye .dd ellipse:nth-child(2) { animation-delay: -.86s; }
+.art-tiedye .rip { fill: none; stroke: var(--art-hi); stroke-width: .8; opacity: 0; transform-box: fill-box; transform-origin: center; animation: art-ripple 2.8s ease-out -2.24s infinite; }
+@keyframes art-t-bleed { 0%, 100% { transform: scale(.55); opacity: .35; } 50% { transform: scale(1.15); opacity: .9; } }
+@keyframes art-t-drip { 0% { transform: translateY(-3px) scale(.3); opacity: 0; } 25% { transform: translateY(0) scale(1); opacity: 1; } 40% { transform: translateY(0) scale(1); animation-timing-function: cubic-bezier(.5, 0, 1, 1); } 76% { transform: translateY(17px) scale(1); opacity: 1; } 80%, 100% { transform: translateY(18px) scale(1); opacity: 0; } }
+@keyframes art-t-dip { 0%, 100% { transform: translateY(-8px); } 40%, 60% { transform: translateY(5px); } }
+@keyframes art-t-dd { 0% { transform: translateY(-3px); opacity: 0; } 10% { opacity: 1; } 40% { transform: translateY(5px); opacity: 0; } 100% { transform: translateY(5px); opacity: 0; } }
 
-/* AI assistant: the scan line sweeps, and the confidence bars grow, hold, then fade before they reset. */
-.art-ai .screen { fill: var(--ink); } .art-ai .photo { fill: color-mix(in srgb, var(--olive-soft) 80%, var(--card)); }
-.art-ai .mango { fill: var(--amber); } .art-ai .mstem { stroke: var(--olive); stroke-width: 3; fill: none; }
-.art-ai .scan { fill: var(--teal-2); opacity: .7; animation: art-scan-y 3s ease-in-out infinite; }
-.art-ai .base { fill: var(--ink); }
-.art-ai .labels rect { fill: var(--teal); transform-box: fill-box; transform-origin: left; animation: art-label 3s cubic-bezier(.22, 1, .36, 1) infinite; }
-.art-ai .labels .l2 { fill: var(--amber); animation-delay: -2.8s; } .art-ai .labels .l3 { fill: var(--rust); animation-delay: -2.6s; }
-.art-ai .nodes circle { fill: var(--plum); animation: art-twinkle 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.art-ai .nodes circle:nth-child(2) { animation-delay: -1.4s; } .art-ai .nodes circle:nth-child(3) { animation-delay: -1s; }
-.art-ai .link { fill: none; stroke: var(--ink-2); stroke-width: 1.5; }
-@keyframes art-scan-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(62px); } }
-@keyframes art-label { 0% { transform: scaleX(.15); opacity: 0; } 10% { opacity: 1; } 45%, 82% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+/* AI assistant: the camera scan sweeps the mango, the detector locks on with a label,
+   the class bars fill, and signals pulse through a small neural network. */
+.art-ai .desk { fill: color-mix(in srgb, var(--art-wood2) 28%, var(--art-fs)); }
+.art-ai .cam { fill: var(--art-metal2); }
+.art-ai .plate { fill: var(--olive); opacity: .3; }
+.art-ai .mstem { fill: none; stroke: var(--art-wood2); stroke-width: 2.4; stroke-linecap: round; }
+.art-ai .brk { fill: none; stroke: var(--teal); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.art-ai .box { transform-origin: 61px 65px; animation: art-ai-lock 4s cubic-bezier(.22, 1, .36, 1) infinite; }
+.art-ai .atag { animation: art-ai-tag 4s ease-out infinite; }
+.art-ai .tagt { font: 700 5.6px var(--mono); fill: #fff; letter-spacing: .02em; }
+.art-ai .scan { animation: art-ai-scan 4s ease-in-out infinite; }
+.art-ai .scanl { fill: var(--teal-2); }
+.art-ai .trk { fill: color-mix(in srgb, var(--art-dk) 10%, var(--art-white)); }
+.art-ai .cbar { transform-box: fill-box; transform-origin: 0 50%; animation: art-ai-bar 4s cubic-bezier(.22, 1, .36, 1) infinite; }
+.art-ai .br1 { animation-delay: -3.85s; } .art-ai .br2 { animation-delay: -3.7s; }
+.art-ai .lk { fill: none; stroke: color-mix(in srgb, var(--rust) 35%, transparent); stroke-width: 1; }
+.art-ai .pulse { fill: none; stroke: var(--rust); stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 6 60; --do: -66px; animation: art-dash 1.6s linear infinite; }
+.art-ai .nd { fill: var(--art-white); stroke: var(--rust); stroke-width: 1.6; transform-box: fill-box; transform-origin: center; animation: art-ai-node 1.6s ease-in-out infinite; }
+.art-ai .q1 { animation-delay: -1.5s; } .art-ai .q2 { animation-delay: -1.4s; } .art-ai .q3 { animation-delay: -1.1s; }
+.art-ai .q4 { animation-delay: -1s; } .art-ai .q5 { animation-delay: -.9s; } .art-ai .q6 { animation-delay: -.6s; }
+@keyframes art-ai-scan { 0% { transform: translateY(0); opacity: 0; } 5% { opacity: 1; } 36% { transform: translateY(70px); opacity: 1; } 42%, 100% { transform: translateY(70px); opacity: 0; } }
+@keyframes art-ai-lock { 0%, 30% { transform: scale(1.35); opacity: 0; } 44%, 88% { transform: scale(1); opacity: 1; } 96%, 100% { transform: scale(1); opacity: 0; } }
+@keyframes art-ai-tag { 0%, 42% { opacity: 0; transform: translateY(4px); } 50%, 88% { opacity: 1; transform: translateY(0); } 96%, 100% { opacity: 0; transform: translateY(0); } }
+@keyframes art-ai-bar { 0%, 44% { transform: scaleX(0); opacity: 1; } 62%, 88% { transform: scaleX(1); opacity: 1; } 96% { transform: scaleX(1); opacity: 0; } 100% { transform: scaleX(0); opacity: 0; } }
+@keyframes art-ai-node { 0%, 100% { transform: scale(1); fill: var(--art-white); } 50% { transform: scale(1.2); fill: var(--art-gold); } }
 
-.art-puppets .rod { fill: var(--ink-2); } .art-puppets .curtain { fill: var(--rust); }
-.art-puppets .spot { fill: var(--band-accent); opacity: .25; transform-origin: 100px 24px; animation: art-sweep 6s ease-in-out infinite; }
-.art-puppets .stage { fill: color-mix(in srgb, var(--amber-ink) 60%, var(--ink)); }
-.art-puppets .sockb { fill: var(--teal); } .art-puppets .eye { fill: #fff; } .art-puppets .pupil { fill: var(--ink); }
-.art-puppets .mouth { stroke: var(--ink); stroke-width: 3; fill: none; stroke-linecap: round; }
-.art-puppets .sock { animation: art-talk 1.2s ease-in-out infinite; transform-origin: 104px 104px; }
-.art-puppets .str { stroke: var(--ink-2); stroke-width: 1.2; } .art-puppets .mhead { fill: var(--amber); } .art-puppets .mbody { fill: var(--plum); }
-.art-puppets .strings { animation: art-dangle 2s ease-in-out infinite; transform-origin: 60px 24px; }
-@keyframes art-talk { 0%, 100% { transform: rotate(-3deg) translateY(0); } 50% { transform: rotate(3deg) translateY(-4px); } }
+/* Storytime with puppets: two sock puppets take turns to talk (mouths flap, heads bob, speech bubbles pop),
+   the curtains breathe and the stars twinkle on the backdrop. */
+.art-puppets .moon { fill: var(--art-moon); } .art-puppets .moonc { fill: var(--art-night); }
+.art-puppets .hair { fill: none; stroke: var(--art-gold); stroke-width: 2.4; stroke-linecap: round; }
+.art-puppets .mouth { fill: var(--art-dk); } .art-puppets .tongue { fill: var(--rust); }
+.art-puppets .ma, .art-puppets .mb { transform-box: fill-box; transform-origin: 50% 30%; animation: art-pp-talk 4s ease-in-out infinite; }
+.art-puppets .pa { transform-origin: 68px 110px; animation: art-pp-bob 4s ease-in-out infinite; }
+.art-puppets .pb { transform-origin: 132px 110px; animation: art-pp-bob 4s ease-in-out infinite; }
+.art-puppets .mb, .art-puppets .pb { animation-delay: -2s; }
+.art-puppets .pdot { fill: var(--art-white); opacity: .75; }
+.art-puppets .sbub { fill: var(--art-white); }
+.art-puppets .bdots { stroke: var(--art-dk); stroke-width: 3; stroke-linecap: round; }
+.art-puppets .ba, .art-puppets .bb { transform-box: fill-box; animation: art-pp-bub 4s ease-out infinite; }
+.art-puppets .ba { transform-origin: 20% 100%; } .art-puppets .bb { opacity: 0; transform-origin: 80% 100%; animation-delay: -2s; }
+.art-puppets .cu1 { --a: 1.5deg; transform-origin: 14px 16px; animation: art-sway 6s ease-in-out infinite; }
+.art-puppets .cu2 { --a: 1.5deg; transform-origin: 186px 16px; animation: art-sway 6s ease-in-out -3s infinite; }
+.art-puppets .val { fill: var(--plum); } .art-puppets .trimv { stroke: var(--art-gold); stroke-width: 2; }
+.art-puppets .booth { fill: color-mix(in srgb, var(--plum) 64%, var(--art-dk)); }
+@keyframes art-pp-talk { 0%, 44%, 100% { transform: scaleY(.25); } 6%, 18%, 30% { transform: scaleY(1); } 12%, 24%, 36% { transform: scaleY(.4); } }
+@keyframes art-pp-bob { 0%, 44%, 100% { transform: translateY(2px) rotate(0); } 10% { transform: translateY(-3px) rotate(-3deg); } 22% { transform: translateY(-1px) rotate(2deg); } 34% { transform: translateY(-3px) rotate(-2deg); } }
+@keyframes art-pp-bub { 0% { opacity: 0; transform: scale(.5); } 8%, 40% { opacity: 1; transform: scale(1); } 48%, 100% { opacity: 0; transform: scale(.9); } }
 
-.art-health .kit { fill: var(--card); stroke: var(--rust); stroke-width: 3; } .art-health .handle { fill: none; stroke: var(--rust); stroke-width: 3; }
-.art-health .cross { stroke: var(--rust); stroke-width: 6; stroke-linecap: round; fill: none; }
-.art-health .heart path { fill: var(--plum); } .art-health .heart { transform-origin: 150px 70px; animation: art-beat 1.1s ease-in-out infinite; }
-.art-health .ecg { fill: none; stroke: var(--teal-2); stroke-width: 3; stroke-linejoin: round; stroke-dasharray: 260; animation: art-ecg 2.2s linear infinite; }
-/* "Lub-dub", then rest. */
-@keyframes art-beat { 0%, 60%, 100% { transform: scale(1); } 14% { transform: scale(1.12); } 28% { transform: scale(1); } 42% { transform: scale(1.08); } }
-@keyframes art-ecg { from { stroke-dashoffset: 260; } to { stroke-dashoffset: -260; } }
+/* Family health handbook: the ECG scrolls, the heart beats "lub-dub" with a pulse ring, beside a healthy plate. */
+.art-health .scr { fill: var(--art-night); }
+.art-health .grid { stroke: var(--teal-2); stroke-opacity: .22; stroke-width: .6; }
+.art-health .ecgl { fill: none; stroke: var(--art-ecg); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.art-health .ecg { animation: art-he-ecg 2.2s linear infinite; }
+.art-health .bpm { transform-box: fill-box; transform-origin: center; animation: art-he-beat 1.1s ease-in-out infinite; }
+.art-health .bpmt { font: 700 7px var(--mono); fill: var(--art-ecg); }
+.art-health .hb { transform-origin: 150px 48px; animation: art-he-beat 1.1s ease-in-out infinite; }
+.art-health .hring { fill: none; stroke: var(--plum); stroke-width: 2; transform-origin: 150px 48px; animation: art-he-ring 1.1s ease-out infinite; }
+.art-health .plus { stroke: var(--art-white); stroke-width: 3; stroke-linecap: round; }
+.art-health .plate { fill: var(--art-white); } .art-health .plate2 { fill: none; stroke: var(--art-sh); stroke-width: 1; }
+.art-health .carrot { stroke: var(--amber); stroke-width: 2.4; stroke-linecap: round; }
+.art-health .rice { fill: var(--art-rice); }
+.art-health .dal { fill: var(--amber); }
+.art-health .tom { fill: color-mix(in srgb, var(--rust) 50%, var(--art-white)); }
+.art-health .fork { fill: none; stroke: var(--art-metal2); stroke-width: 1.6; stroke-linecap: round; }
+.art-health .stemd { fill: none; stroke: var(--art-wood2); stroke-width: 1.8; stroke-linecap: round; }
+@keyframes art-he-ecg { to { transform: translateX(-43px); } }
+@keyframes art-he-beat { 0%, 60%, 100% { transform: scale(1); } 14% { transform: scale(1.12); } 28% { transform: scale(1); } 42% { transform: scale(1.07); } }
+@keyframes art-he-ring { 0%, 10% { transform: scale(1); opacity: 0; } 16% { opacity: .7; } 70%, 100% { transform: scale(1.45); opacity: 0; } }
 
 /* ---- Grade 8 ---- */
-.art-hydro .bottle { fill: color-mix(in srgb, var(--card) 70%, transparent); stroke: var(--ink-2); stroke-width: 2.5; }
-.art-hydro .water { fill: color-mix(in srgb, var(--teal-2) 45%, transparent); }
-.art-hydro .neck { fill: none; stroke: var(--ink-2); stroke-width: 2.5; }
-.art-hydro .roots { fill: none; stroke: var(--card); stroke-width: 2; stroke-linecap: round; }
-.art-hydro .plant { transform-origin: 80px 64px; animation: art-sway 3.4s ease-in-out infinite; transform-box: view-box; }
-.art-hydro .bub circle { fill: var(--card); animation: art-rise 2s cubic-bezier(.33, .67, .67, 1) infinite; }
-.art-hydro .bub circle:nth-child(2) { animation-delay: -1.5s; } .art-hydro .bub circle:nth-child(3) { animation-delay: -1s; } .art-hydro .bub circle:nth-child(4) { animation-delay: -.5s; }
-.art-hydro .strip { fill: var(--card); stroke: var(--ink-2); stroke-width: 1.5; } .art-hydro .tip { fill: var(--olive); animation: art-ph 4s ease-in-out infinite; }
-.art-hydro .phlbl { font: 600 12px var(--mono); fill: var(--ink-2); }
-@keyframes art-ph { 0%, 100% { fill: var(--olive); } 50% { fill: var(--amber); } }
+/* Hydroponics: the grow light breathes, the pump hums, bubbles rise in the reservoir, water flows through
+   the pipe past dangling roots, and the lettuces sway (the middle one swells as it grows). */
+.art-hydro .wire { stroke: var(--art-dk); stroke-width: 1.2; }
+.art-hydro .cone { --o1: .55; --o2: 1; animation: art-glowpulse 4s ease-in-out infinite; }
+.art-hydro .leds { stroke: var(--art-grow); stroke-width: 2; stroke-dasharray: 3 5; stroke-linecap: round; }
+.art-hydro .leg { stroke: var(--art-metal2); stroke-width: 3; }
+.art-hydro .tube { fill: none; stroke: var(--art-white); stroke-width: 4; }
+.art-hydro .tflow { fill: none; stroke: var(--art-water2); stroke-width: 2; stroke-dasharray: 3 4; --do: -7px; animation: art-dash .8s linear infinite; }
+.art-hydro .tank { fill: var(--art-hi); fill-opacity: .3; stroke: var(--art-metal2); stroke-width: 1.4; }
+.art-hydro .wl { stroke: var(--art-hi); stroke-width: 1; stroke-opacity: .8; }
+.art-hydro .atube { fill: none; stroke: var(--art-dk); stroke-width: 1.2; }
+.art-hydro .pump { animation: art-hy-hum .18s linear infinite alternate; }
+.art-hydro .bbl circle { --rise: -12px; animation: art-rise 2.4s ease-in infinite; }
+.art-hydro .bu1 { animation-delay: -.5s; } .art-hydro .bu2 { animation-delay: -1s; } .art-hydro .bu3 { animation-delay: -1.5s; } .art-hydro .bu4 { animation-delay: -2s; }
+.art-hydro .pipe { fill: var(--art-white); fill-opacity: .55; stroke: var(--art-metal2); stroke-width: 1.4; }
+.art-hydro .flow { fill: none; stroke: var(--art-hi); stroke-width: 1.4; stroke-dasharray: 5 7; stroke-linecap: round; --do: -12px; animation: art-dash 1s linear infinite; }
+.art-hydro .root { fill: none; stroke: var(--art-root); stroke-width: 1.3; stroke-linecap: round; --a: 5deg; transform-box: fill-box; transform-origin: 50% 0; animation: art-sway 3s ease-in-out infinite; }
+.art-hydro .rt1 { animation-delay: -1s; } .art-hydro .rt2 { animation-delay: -2s; }
+.art-hydro .pipeh { stroke: var(--art-hi); stroke-width: 1.6; stroke-opacity: .8; }
+.art-hydro .cap { fill: var(--art-metal); }
+.art-hydro .lt { --a: 3deg; transform-box: fill-box; transform-origin: 50% 100%; animation: art-sway 4s ease-in-out infinite; }
+.art-hydro .k2 { animation: art-hy-grow 4s ease-in-out infinite; } .art-hydro .k3 { animation-delay: -2s; }
+.art-hydro .vein { fill: none; stroke: var(--art-l2); stroke-width: .8; opacity: .7; }
+.art-hydro .scr { fill: var(--art-night); }
+.art-hydro .ph { font: 700 6.4px var(--mono); fill: var(--art-ecg); }
+.art-hydro .okd { fill: var(--art-gold); }
+@keyframes art-hy-hum { from { transform: translateX(-.4px); } to { transform: translateX(.4px); } }
+@keyframes art-hy-grow { 0%, 100% { transform: scale(.94) rotate(-1.5deg); } 50% { transform: scale(1.05) rotate(1.5deg); } }
 
-.art-animals .cbody { fill: var(--card); stroke: var(--ink-2); stroke-width: 2.5; } .art-animals .spot { fill: var(--ink-2); }
-.art-animals .leg { stroke: var(--ink-2); stroke-width: 7; stroke-linecap: round; } .art-animals .snout { fill: var(--rust-soft); }
-.art-animals .eye { fill: var(--ink); } .art-animals .horn { stroke: var(--amber-ink); stroke-width: 4; stroke-linecap: round; }
-.art-animals .tail { fill: none; stroke: var(--ink-2); stroke-width: 3; stroke-linecap: round; transform-origin: 52px 76px; animation: art-wag 1.4s ease-in-out infinite; }
-.art-animals .chead { transform-origin: 130px 74px; animation: art-graze 4s ease-in-out infinite; }
-.art-animals .tapeline { fill: none; stroke: var(--band-accent); stroke-width: 4; stroke-dasharray: 4 3; animation: art-dash-7 1.5s linear infinite; }
-.art-animals .tapebox { fill: var(--amber); }
-.art-animals .grass path { fill: none; stroke: var(--olive); stroke-width: 3; stroke-linecap: round; }
-@keyframes art-wag { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(14deg); } }
-@keyframes art-graze { 0%, 55%, 100% { transform: rotate(0); } 65%, 85% { transform: rotate(22deg); } }
+/* Farm animals: the cow grazes, flicks an ear and wags its tail (a girth tape shows it being measured),
+   the goat chews at the trough, clouds drift and a little heart floats up. */
+.art-animals .cl1 { --dx: 12px; animation: art-drift 10s ease-in-out infinite alternate; }
+.art-animals .cl2 { --dx: -10px; animation: art-drift 8s ease-in-out -4s infinite alternate; }
+.art-animals .barn { fill: color-mix(in srgb, var(--rust) 50%, var(--olive-soft)); }
+.art-animals .barnr { fill: none; stroke: color-mix(in srgb, var(--rust) 70%, var(--art-dk)); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.art-animals .barnd { fill: none; stroke: var(--art-white); stroke-width: 1.2; opacity: .8; }
+.art-animals .fence path { fill: none; stroke: var(--art-wood-l); stroke-width: 2.4; }
+.art-animals .fence .post { stroke: var(--art-wood); stroke-width: 3.4; }
+.art-animals .cow { fill: var(--art-white); }
+.art-animals .cowl { fill: color-mix(in srgb, var(--art-white) 86%, var(--art-dk)); }
+.art-animals .hoof { stroke: var(--art-dk); stroke-width: 3; stroke-linecap: round; }
+.art-animals .udder, .art-animals .snout { fill: var(--art-pink); }
+.art-animals .tailp { fill: none; stroke: color-mix(in srgb, var(--art-white) 80%, var(--art-dk)); stroke-width: 2.6; stroke-linecap: round; }
+.art-animals .tail { transform-origin: 114px 78px; animation: art-an-wag 1.6s ease-in-out infinite; }
+.art-animals .tape { fill: var(--art-gold); } .art-animals .tks { stroke: var(--art-dk); stroke-width: .8; }
+.art-animals .head { transform-origin: 54px 80px; animation: art-an-graze 5s ease-in-out infinite; }
+.art-animals .ear { transform-box: fill-box; transform-origin: 0 50%; animation: art-an-ear 3s ease-in-out infinite; }
+.art-animals .horn { fill: none; stroke: var(--art-wood-l); stroke-width: 2.6; stroke-linecap: round; }
+.art-animals .tufts path { fill: none; stroke: var(--art-l0); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.art-animals .tufts { --a: 4deg; transform-box: fill-box; transform-origin: 50% 100%; animation: art-sway 3s ease-in-out infinite; } .art-animals .t2 { animation-delay: -1.5s; }
+.art-animals .love { opacity: 0; transform-box: fill-box; transform-origin: center; animation: art-an-love 5s ease-out infinite; }
+.art-animals .trough { fill: var(--art-wood2); } .art-animals .hay { stroke: var(--art-gold); stroke-width: 1.8; stroke-linecap: round; }
+.art-animals .goat { fill: var(--art-goat); }
+.art-animals .goatl { stroke: var(--art-goat-d); stroke-width: 3.6; stroke-linecap: round; }
+.art-animals .goatt { fill: none; stroke: var(--art-goat); stroke-width: 3; stroke-linecap: round; }
+.art-animals .beard { fill: none; stroke: var(--art-goat-d); stroke-width: 2; stroke-linecap: round; }
+.art-animals .ghorn { fill: none; stroke: var(--art-wood2); stroke-width: 2.4; stroke-linecap: round; }
+.art-animals .gh { transform-origin: 154px 92px; animation: art-an-chew 1.2s ease-in-out infinite; }
+@keyframes art-an-wag { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(16deg); } }
+@keyframes art-an-graze { 0%, 50%, 100% { transform: rotate(0); } 62%, 88% { transform: rotate(-24deg); } 70% { transform: rotate(-21deg); } 78% { transform: rotate(-25deg); } }
+@keyframes art-an-ear { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-25deg); } 90% { transform: rotate(10deg); } }
+@keyframes art-an-chew { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
+@keyframes art-an-love { 0%, 10% { opacity: 0; transform: translateY(6px) scale(.6); } 20% { opacity: 1; transform: translateY(0) scale(1); } 50%, 100% { opacity: 0; transform: translateY(-14px) scale(1); } }
 
-.art-wood .bench { fill: color-mix(in srgb, var(--amber-ink) 75%, var(--ink)); } .art-wood .legs { stroke: color-mix(in srgb, var(--amber-ink) 75%, var(--ink)); stroke-width: 6; }
-.art-wood .plank { fill: var(--amber); } .art-wood .grain { stroke: var(--amber-ink); stroke-width: 1.5; fill: none; opacity: .6; }
-.art-wood .cut { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 3 3; }
-.art-wood .blade { fill: color-mix(in srgb, var(--ink-2) 30%, var(--card)); stroke: var(--ink-2); stroke-width: 1.5; } .art-wood .shandle { fill: var(--rust); }
-.art-wood .saw { animation: art-saw .6s ease-in-out infinite alternate; }
-.art-wood .dust circle { fill: var(--amber-ink); animation: art-fall 1.2s cubic-bezier(.33, 0, .67, .33) infinite; }
-.art-wood .dust circle:nth-child(2) { animation-delay: -.8s; } .art-wood .dust circle:nth-child(3) { animation-delay: -.4s; }
-.art-wood .bamboo rect { fill: var(--olive); } .art-wood .node { stroke: var(--olive-soft); stroke-width: 2; }
-@keyframes art-saw { from { transform: translate(-6px, -6px); } to { transform: translate(6px, 6px); } }
-@keyframes art-fall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(18px); opacity: 0; } }
+/* Wood and bamboo: the saw strokes along its own axis while sawdust sprays from the kerf,
+   bamboo sways behind the bench, and a finished basket sits on the shelf. */
+.art-wood .bs { --a: 1.5deg; transform-box: fill-box; transform-origin: 50% 100%; animation: art-sway 5s ease-in-out infinite; }
+.art-wood .s1 { animation-delay: -1.6s; } .art-wood .s2 { animation-delay: -3.2s; }
+.art-wood .node { stroke: var(--art-l0); stroke-width: 1.6; }
+.art-wood .shelf { fill: var(--art-wood2); } .art-wood .brk2 { stroke: var(--art-metal2); stroke-width: 2; }
+.art-wood .weave { fill: none; stroke: var(--art-wood2); stroke-width: 1.1; } .art-wood .bh { fill: none; stroke: var(--amber); stroke-width: 2.4; }
+.art-wood .apron { fill: var(--art-wood3); }
+.art-wood .teeth { fill: var(--art-metal2); }
+.art-wood .hole2 { fill: var(--art-glow-r); }
+.art-wood .saw { animation: art-w-saw .9s ease-in-out infinite; }
+.art-wood .grain { fill: none; stroke: var(--art-wood2); stroke-width: .9; opacity: .55; } .art-wood .knot { fill: var(--art-wood2); opacity: .6; }
+.art-wood .kerf { stroke: var(--art-wood3); stroke-width: 1.6; }
+.art-wood .pen { stroke: var(--art-dk); stroke-width: .8; stroke-dasharray: 2 2; opacity: .6; }
+.art-wood .clamp { fill: none; stroke: var(--rust); stroke-width: 3.4; stroke-linejoin: round; }
+.art-wood .dust { fill: var(--art-wood-l); }
+.art-wood .sd circle { opacity: 0; animation: art-w-dust .9s ease-out infinite; }
+.art-wood .dp0 { --sx: -8px; } .art-wood .dp1 { --sx: 7px; animation-delay: -.3s; } .art-wood .dp2 { --sx: -4px; animation-delay: -.6s; }
+.art-wood .dp3 { --sx: 11px; animation-delay: -.45s; } .art-wood .dp4 { --sx: 2px; animation-delay: -.15s; }
+.art-wood .sq { fill: var(--art-metal); }
+@keyframes art-w-saw { 0%, 100% { transform: translate(-4px, 4.8px); } 50% { transform: translate(4px, -4.8px); } }
+@keyframes art-w-dust { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 45% { transform: translate(calc(var(--sx) * .5), -3px); } 100% { transform: translate(var(--sx), 14px); opacity: 0; } }
 
-/* Home automation: the motion sensor sends a pulse, then the LED glows up softly and dims, on one shared beat. */
-.art-auto .board { fill: var(--teal); } .art-auto .chip { fill: var(--ink); } .art-auto .pins rect { fill: var(--band-accent); }
-.art-auto .wire { fill: none; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 6 4; animation: art-dash-10 1.1s linear infinite; }
-.art-auto .w1 { stroke: var(--rust); } .art-auto .w2 { stroke: var(--plum); }
-.art-auto .pirbox { fill: var(--card); stroke: var(--ink-2); stroke-width: 2; } .art-auto .dome { fill: color-mix(in srgb, var(--card) 40%, var(--paper-2)); stroke: var(--ink-2); stroke-width: 1.5; }
-.art-auto .waves path { fill: none; stroke: var(--amber); stroke-width: 2.5; stroke-linecap: round; animation: art-sense 2.4s ease-out infinite; }
-.art-auto .waves path:nth-child(2) { animation-delay: -2.16s; }
-.art-auto .ledbulb { fill: var(--band-accent); animation: art-led 2.4s ease-in-out infinite; } .art-auto .leg { stroke: var(--ink-2); stroke-width: 2; }
-.art-auto .glow { fill: var(--band-accent); opacity: 0; transform-box: fill-box; transform-origin: center; animation: art-led-glow 2.4s ease-in-out infinite; }
-@keyframes art-sense { 0% { opacity: 0; } 12% { opacity: 1; } 42%, 100% { opacity: 0; } }
-@keyframes art-led { 0%, 100% { fill: color-mix(in srgb, var(--band-accent) 30%, var(--paper-2)); } 55% { fill: var(--band-accent); } }
-@keyframes art-led-glow { 0%, 100% { opacity: 0; transform: scale(.55); } 55% { opacity: .3; transform: scale(1); } }
+/* Home automation: a cat strolls past at night, the motion sensor pings, and the Arduino switches
+   the bulb on with a soft glow that fades after the cat has gone. */
+.art-auto .wf { fill: var(--art-wood); } .art-auto .mun { stroke: var(--art-wood); stroke-width: 2.4; }
+.art-auto .moon { fill: var(--art-moon); } .art-auto .moonc { fill: var(--art-night); }
+.art-auto .pcb2 { fill: var(--teal); }
+.art-auto .sled { fill: var(--rust); animation: art-au-sled 7s linear infinite; }
+.art-auto .dome { fill: var(--art-white); } .art-auto .facet { stroke: var(--art-sh); stroke-width: .7; }
+.art-auto .wv { fill: none; stroke: var(--art-gold); stroke-width: 2; stroke-linecap: round; animation: art-au-wave 7s ease-out infinite; }
+.art-auto .v2 { animation-delay: -6.85s; } .art-auto .v3 { animation-delay: -6.7s; }
+.art-auto .wire { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 5 4; --do: -9px; animation: art-dash 1s linear infinite; }
+.art-auto .w1 { stroke: var(--rust); } .art-auto .w2 { stroke: var(--teal); }
+.art-auto .catb { fill: var(--art-cat); } .art-auto .catt { fill: none; stroke: var(--art-cat); stroke-width: 3; stroke-linecap: round; }
+.art-auto .ceye { fill: var(--art-gold); }
+.art-auto .cat { animation: art-au-walk 7s linear infinite; }
+.art-auto .cat > g { --dy: -.8px; animation: art-bob .35s ease-in-out infinite; }
+.art-auto .lg1 { animation: art-au-step .35s ease-in-out infinite alternate; } .art-auto .lg2 { animation: art-au-step .35s ease-in-out -.35s infinite alternate; }
+.art-auto .pcb { fill: var(--teal); }
+.art-auto .pins { stroke: var(--art-gold); stroke-width: 2; stroke-dasharray: 1.4 1.8; }
+.art-auto .logo { fill: none; stroke: var(--art-white); stroke-width: .8; opacity: .7; }
+.art-auto .pled { fill: var(--art-led); animation: art-au-blink 1.4s steps(1) infinite; }
+.art-auto .glow, .art-auto .beams { transform-box: fill-box; transform-origin: center; animation: art-au-glow 7s ease-in-out infinite; }
+.art-auto .beams { stroke: var(--art-gold); stroke-width: 2; stroke-linecap: round; }
+.art-auto .bulb { fill: var(--art-gold); stroke: var(--art-hi); stroke-width: 1; animation: art-au-bulb 7s ease-in-out infinite; }
+.art-auto .fil { fill: none; stroke: var(--amber); stroke-width: 1; }
+.art-auto .screw { stroke: var(--art-metal2); stroke-width: 1; }
+@keyframes art-au-walk { from { transform: translateX(118px); } to { transform: translateX(-130px); } }
+@keyframes art-au-step { from { transform: translateX(-1.4px); } to { transform: translateX(1.4px); } }
+@keyframes art-au-wave { 0%, 34% { opacity: 0; } 38% { opacity: 1; } 44%, 46% { opacity: 0; } 50% { opacity: 1; } 56%, 100% { opacity: 0; } }
+@keyframes art-au-sled { 0%, 34%, 58%, 100% { opacity: .25; } 36%, 56% { opacity: 1; } }
+@keyframes art-au-glow { 0%, 42% { opacity: 0; transform: scale(.6); } 50%, 80% { opacity: 1; transform: scale(1); } 90%, 100% { opacity: 0; transform: scale(.7); } }
+@keyframes art-au-bulb { 0%, 42%, 90%, 100% { fill: var(--art-bulb-off); } 50%, 80% { fill: var(--art-gold); } }
+@keyframes art-au-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
-.art-water .tap, .art-water .knob { fill: color-mix(in srgb, var(--ink-2) 40%, var(--paper-2)); stroke: var(--ink-2); stroke-width: 2; }
-.art-water .drop path { fill: var(--teal-2); } .art-water .drop { animation: art-tap-drip 1.4s cubic-bezier(.33, 0, .67, .33) infinite; } .art-water .d2 { animation-delay: -.7s; }
-.art-water .jar { fill: color-mix(in srgb, var(--card) 60%, transparent); stroke: var(--ink-2); stroke-width: 2.5; }
-.art-water .fill { fill: color-mix(in srgb, var(--teal-2) 55%, transparent); transform-origin: 82px 126px; animation: art-fill 4s ease-in-out infinite; }
-.art-water .tick { stroke: var(--ink-2); stroke-width: 2; }
-.art-water .dial { fill: var(--card); stroke: var(--ink-2); stroke-width: 3; } .art-water .hub { fill: var(--ink); }
-.art-water .needle { stroke: var(--rust); stroke-width: 3; stroke-linecap: round; transform-origin: 154px 70px; animation: art-needle 4s ease-in-out infinite; }
-@keyframes art-tap-drip { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(36px); opacity: 0; } }
-@keyframes art-fill { 0%, 100% { transform: scaleY(.6); } 50% { transform: scaleY(1.6); } }
-@keyframes art-needle { 0%, 100% { transform: rotate(-60deg); } 50% { transform: rotate(50deg); } }
+/* Water audit: the tap drips (each drop swells, falls, splashes and ripples in the bucket)
+   while the water meter's needle turns and its last digit rolls on. */
+.art-water .tiles { fill: none; stroke: var(--art-tile); stroke-width: 1; }
+.art-water .form { transform-box: fill-box; transform-origin: 50% 0; animation: art-wa-form 1.8s ease-in infinite; }
+.art-water .drop { animation: art-wa-drop 1.8s infinite; }
+.art-water .rip { fill: none; stroke: var(--art-hi); stroke-width: .9; opacity: 0; transform-box: fill-box; transform-origin: center; animation: art-ripple 1.8s ease-out infinite; }
+.art-water .rp2 { animation-delay: -1.62s; }
+.art-water .spl circle { opacity: 0; animation: art-wa-spl 1.8s ease-out infinite; }
+.art-water .spl circle:nth-child(1) { --sx: -4px; } .art-water .spl circle:nth-child(2) { --sx: 4px; }
+.art-water .bh { fill: none; stroke: var(--art-metal2); stroke-width: 2; }
+.art-water .bin { fill: var(--art-tealdk); }
+.art-water .rim { fill: none; stroke: var(--art-hi); stroke-opacity: .6; stroke-width: 1.4; }
+.art-water .mk { stroke: var(--art-white); stroke-width: 1.4; opacity: .8; }
+.art-water .mring { fill: none; stroke: var(--art-hi); stroke-opacity: .35; stroke-width: 1.4; }
+.art-water .face { fill: var(--art-white); }
+.art-water .dial { stroke: var(--art-dk); stroke-width: 1.2; }
+.art-water .dig { font: 700 8px var(--mono); fill: var(--art-white); }
+.art-water .dw { fill: var(--art-gold); }
+.art-water .odo { animation: art-wa-odo 10s linear infinite; }
+.art-water .needle { transform-origin: 152px 66px; animation: art-spin 3s linear infinite; }
+.art-water .ndl { stroke: var(--rust); stroke-width: 2.2; stroke-linecap: round; }
+.art-water .ndl2 { stroke: var(--art-dk); stroke-width: 2.2; stroke-linecap: round; }
+@keyframes art-wa-form { 0% { transform: scale(.2); } 80% { transform: scale(1); } 80.01%, 100% { transform: scale(.2); } }
+@keyframes art-wa-drop { 0%, 79.9% { transform: translateY(0); opacity: 0; } 80% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(.5, 0, 1, 1); } 100% { transform: translateY(42px); opacity: 1; } }
+@keyframes art-wa-spl { 0% { transform: translate(0, 0); opacity: 1; } 25% { transform: translate(var(--sx), -6px); opacity: 0; } 100% { transform: translate(var(--sx), -6px); opacity: 0; } }
+@keyframes art-wa-odo { to { transform: translateY(-94px); } }
 
-.art-ads .board { fill: var(--card); stroke: var(--ink-2); stroke-width: 3; } .art-ads .post { stroke: var(--ink-2); stroke-width: 5; }
-.art-ads .burst path { fill: var(--band-accent); } .art-ads .burst { transform-origin: 74px 56px; animation: art-spin 8s linear infinite; }
-.art-ads .line { fill: var(--ink-2); opacity: .5; } .art-ads .cta { fill: var(--rust); animation: art-beat 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.art-ads .horn { fill: var(--plum); } .art-ads .mouth { fill: var(--ink-2); }
-.art-ads .mega { transform-origin: 150px 102px; animation: art-dangle 1.8s ease-in-out infinite; }
-.art-ads .sound path { fill: none; stroke: var(--plum); stroke-width: 2.5; stroke-linecap: round; animation: art-pulse 1.4s ease-out infinite; } .art-ads .sound path:nth-child(2) { animation-delay: -1.1s; }
+/* Creating advertisements: the poster's sunburst turns and its button pulses, the megaphone calls out
+   in waves, likes float up and the shop's awning flutters. */
+.art-ads .shopw { fill: color-mix(in srgb, var(--plum-soft) 55%, var(--art-white)); }
+.art-ads .win { fill: var(--art-water2); fill-opacity: .35; stroke: var(--art-wood2); stroke-width: 2; }
+.art-ads .shelf2 { stroke: var(--art-wood2); stroke-width: 1.6; }
+.art-ads .door { fill: var(--art-wood2); }
+.art-ads .awnw { fill: var(--art-white); } .art-ads .awnr { fill: var(--rust); }
+.art-ads .awn { transform-origin: 160px 30px; animation: art-ad-flutter 3s ease-in-out infinite; }
+.art-ads .easel { fill: none; stroke: var(--art-wood2); stroke-width: 3.4; stroke-linecap: round; }
+.art-ads .poster { fill: var(--art-white); }
+.art-ads .burst { transform-origin: 58px 48px; animation: art-spin 14s linear infinite; }
+.art-ads .ln { fill: var(--plum); } .art-ads .ln2 { fill: var(--art-sh); }
+.art-ads .cta { transform-box: fill-box; transform-origin: center; animation: art-ad-cta 1.6s ease-in-out infinite; }
+.art-ads .adbdg { transform-box: fill-box; transform-origin: center; animation: art-ad-badge 3.2s ease-in-out infinite; }
+.art-ads .mega { transform-origin: 124px 106px; animation: art-ad-mega 1.6s ease-in-out infinite; }
+.art-ads .bell { fill: color-mix(in srgb, var(--plum) 70%, var(--art-dk)); } .art-ads .bell2 { fill: var(--art-dk); opacity: .5; }
+.art-ads .swv { fill: none; stroke: var(--plum); stroke-width: 2.4; stroke-linecap: round; animation: art-ad-wave 1.6s ease-out infinite; }
+.art-ads .s2 { animation-delay: -1.4s; } .art-ads .s3 { animation-delay: -1.2s; }
+.art-ads .lk1, .art-ads .lk2 { transform-box: fill-box; transform-origin: center; animation: art-ad-like 3.2s ease-out infinite; } .art-ads .lk2 { animation-delay: -1.6s; }
+@keyframes art-ad-flutter { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.06); } }
+@keyframes art-ad-cta { 0%, 60%, 100% { transform: scale(1); } 20% { transform: scale(1.12); } 40% { transform: scale(.98); } }
+@keyframes art-ad-badge { 0%, 100% { transform: rotate(-10deg) scale(1); } 50% { transform: rotate(10deg) scale(1.08); } }
+@keyframes art-ad-mega { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-4deg); } }
+@keyframes art-ad-wave { 0% { opacity: 0; transform: translateX(-4px); } 20% { opacity: 1; } 70%, 100% { opacity: 0; transform: translateX(6px); } }
+@keyframes art-ad-like { 0% { transform: translate(0, 8px) scale(.4); opacity: 0; } 20% { opacity: 1; transform: translate(0, 0) scale(1); } 80%, 100% { transform: translate(4px, -22px) scale(1); opacity: 0; } }

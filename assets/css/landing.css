@@ -406,7 +406,7 @@ section { padding: clamp(64px, 9vw, 112px) 0; position: relative; }
 
 /* ---------- Ambient scenes that fill quiet corners (why, outcomes, roadmap, FAQ, contact) ----------
    Each loops only while on screen: landing.js adds .play to [data-scene] elements in view. */
-.scene:not(.play), .scene:not(.play) * { animation-play-state: paused !important; }
+.scene:not(.play), .scene:not(.play) * , #projects.idle .art * { animation-play-state: paused !important; }
 
 /* Why now: days left until Composite Skill Labs are due */
 .why-count { margin-top: 26px; padding: 18px 20px 14px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
