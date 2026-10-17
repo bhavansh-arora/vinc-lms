@@ -1,9 +1,9 @@
 // School dashboard: overview across Grades 6–8, teachers, year plan, students, marking, reports and branding.
 import { FORMS, GRADES, projectById, projectsOfGrade } from '../../data/courses.js';
-import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addStudent, addSection, addTeacher, assignSections, teachersOf, initials, user } from '../store.js';
+import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addStudent, addSection, addTeacher, assignSections, teachersOf, initials, user, parentsOf, newJoinCode } from '../store.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
-import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell } from '../ui.js';
-import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject } from './shared.js';
+import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell, bindCopy } from '../ui.js';
+import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCreds, resetFor } from './shared.js';
 
 export const nav = () => [
   { path: '', label: 'Overview', icon: 'home' },
@@ -115,19 +115,21 @@ function teachers(ctx, sch) {
   const unassigned = sortedSecs(sch).filter(s => !s.teacherId);
   return {
     title: 'Teachers', nav: 'teachers',
-    html: `<div class="toolbar"><p class="muted">Each section has one Kaushal Bodh teacher. Teachers see only their sections in the teacher portal.</p><button class="btn btn-brand btn-sm" id="add-t">${icon('plus')} Add teacher</button></div>
+    html: `<section class="card join-card"><div><h2 class="h-card">${icon('key')} Teacher joining code</h2><p class="muted">Teachers can create their own account: they choose ${esc(sch.name)} and enter this code. Or add them yourself below.</p></div>
+      <div class="big-code"><code>${esc(sch.joinCode)}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${esc(sch.joinCode)}">${icon('copy')} Copy</button><button type="button" class="icon-btn" id="new-join" aria-label="Make a new joining code" title="Make a new code">${icon('refresh')}</button></div></section>
+    <div class="toolbar"><p class="muted">Each section has one Kaushal Bodh teacher. Teachers see only their sections in the teacher portal.</p><button class="btn btn-brand btn-sm" id="add-t">${icon('plus')} Add teacher</button></div>
     ${unassigned.length ? `<p class="warn-bar round">${unassigned.length} section${unassigned.length > 1 ? 's have' : ' has'} no teacher: ${unassigned.map(s => esc(secLabel(s))).join(', ')}.</p>` : ''}
     <div class="teacher-cards">${ts.map(t => {
       const mine = sortedSecs(sch).filter(s => t.sectionIds.includes(s.id)); const kids = mine.flatMap(s => studentsOf(sch.id, s.id)); const st = stats(kids);
-      return `<section class="card teacher-card"><div class="tc-head"><span class="avatar lg">${esc(t.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><div><b>${esc(t.name)}</b><small class="muted">${esc(t.title || 'Kaushal Bodh teacher')}</small></div></div>
+      return `<section class="card teacher-card"><div class="tc-head"><span class="avatar lg">${esc(t.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><div><b>${esc(t.name)}</b><small class="muted">${esc(t.title || 'Kaushal Bodh teacher')} · <span class="mono">@${esc(t.login)}</span></small></div></div>
         <div class="chips">${mine.map(s => `<span class="chip">${esc(secLabel(s))}</span>`).join('') || '<span class="muted small">No sections yet</span>'}</div>
         <div class="gc-row"><span>${kids.length} students</span>${bar(st.completion)}<b>${st.completion}%</b></div>
         <p class="muted small">${st.vivaDue} viva${st.vivaDue === 1 ? '' : 's'} to mark · ${st.inactive} inactive</p>
-        <button class="btn btn-ghost btn-sm" data-assign="${t.id}">Change sections</button></section>`;
+        <div class="btn-row"><button class="btn btn-ghost btn-sm" data-assign="${t.id}">Change sections</button><button class="btn btn-sm linkish" data-reset="${t.id}">${icon('key')} Reset password</button></div></section>`;
     }).join('') || '<div class="empty"><p>No teachers yet.</p></div>'}</div>`,
     mount(el) {
       const form = (t) => `<form id="tf" class="form-grid">
-          ${t ? '' : '<label>Teacher\'s full name<input name="name" required maxlength="60"></label>'}
+          ${t ? '' : '<label>Teacher\'s full name<input name="name" required maxlength="60"></label><label>Email <small class="muted">optional</small><input name="email" type="email" maxlength="80"></label>'}
           <fieldset><legend>Sections</legend><div class="check-grid">${sortedSecs(sch).map(s => `<label class="check"><input type="checkbox" name="sec" value="${s.id}" ${t?.sectionIds.includes(s.id) ? 'checked' : ''}><span>${esc(secLabel(s))}<small class="muted">${s.teacherId && s.teacherId !== t?.id ? `now ${esc(user(s.teacherId)?.name || '')}` : 'unassigned'}</small></span></label>`).join('')}</div></fieldset>
           <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-brand">Save</button></div></form>`;
       const open = t => {
@@ -136,10 +138,22 @@ function teachers(ctx, sch) {
           e.preventDefault(); const f = e.target;
           const ids = $$('input[name=sec]:checked', f).map(x => x.value);
           if (t) { assignSections(t, ids); log(ctx.me.name, `updated sections for ${t.name}`, sch.id); }
-          else { if (!f.name.value.trim()) return; const nt = addTeacher(sch.id, f.name.value.trim(), ids); log(ctx.me.name, `added teacher ${nt.name}`, sch.id); }
+          else {
+            if (!f.name.value.trim()) return;
+            const { teacher: nt, pw } = addTeacher(sch.id, f.name.value.trim(), ids, { email: f.email.value.trim() || undefined });
+            log(ctx.me.name, `added teacher ${nt.name}`, sch.id); save(); d.close(); ctx.rerender();
+            showCreds(`${nt.name} can log in now`, [{ name: nt.name, role: 'Teacher', icon: 'book', login: nt.login, pw }]);
+            return;
+          }
           save(); d.close(); toast('Teacher saved.'); ctx.rerender();
         });
       };
+      bindCopy(el);
+      $('#new-join', el).addEventListener('click', () => {
+        if (!confirm('Make a new joining code? The old one will stop working.')) return;
+        sch.joinCode = newJoinCode(sch); log(ctx.me.name, 'made a new teacher joining code', sch.id); save(); toast('New joining code made.'); ctx.rerender();
+      });
+      $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => resetFor(ctx, user(b.dataset.reset), 'Teacher')));
       $('#add-t', el).addEventListener('click', () => open(null));
       $$('[data-assign]', el).forEach(b => b.addEventListener('click', () => open(user(b.dataset.assign))));
     },
@@ -176,9 +190,17 @@ function plan(ctx, sch) {
         log(ctx.me.name, 'updated the year plan', sch.id);
         save(); toast(changed ? 'Plan saved. Students will see their new projects.' : 'Plan saved.'); ctx.rerender();
       });
+      // Changing a project slides the timeline segments to their new lengths.
       $$('.plan-card select', el).forEach(sel => sel.addEventListener('change', () => {
         const c = sel.closest('.plan-card');
-        $('.plan-tl', c).innerHTML = $$('select', c).map(x => seg(projectById(x.value))).join('') + '<div class="seg mela" style="flex-grow:6"><b>Mela</b></div>';
+        const segs = $$('.plan-tl .seg:not(.mela)', c);
+        $$('select', c).forEach((x, i) => {
+          const p = projectById(x.value), sg = segs[i];
+          if (!sg || sg.querySelector('b').textContent === p.title) return;
+          sg.className = `seg ${p.form}`; sg.style.flexGrow = p.periods;
+          sg.querySelector('b').textContent = p.title; sg.querySelector('small').textContent = `${Math.round(p.periods / 4)} weeks`;
+          sg.animate([{ opacity: .35 }, { opacity: 1 }], { duration: 420, easing: 'ease-out' });
+        });
       }));
       $('#add-sec', el).addEventListener('click', () => {
         const d = modal(`<h2>Add a section</h2><form id="sf" class="form-grid">
@@ -199,7 +221,7 @@ function plan(ctx, sch) {
 
 /* ---------- Students ---------- */
 function students(ctx, sch) {
-  const rows = studentsOf(sch.id).map(s => ({ s, g: gradeOfStudent(sch, s), y: yearSummary(db().progress[s.id], projectsFor(s)), la: lastActive(s.id), parent: user(s.parentId) }))
+  const rows = studentsOf(sch.id).map(s => ({ s, g: gradeOfStudent(sch, s), y: yearSummary(db().progress[s.id], projectsFor(s)), la: lastActive(s.id), parents: parentsOf(s) }))
     .sort((a, b) => a.g - b.g || secName(sch, a.s.sectionId).localeCompare(secName(sch, b.s.sectionId)) || a.s.roll - b.s.roll);
   return {
     title: 'Students', nav: 'students',
@@ -211,10 +233,10 @@ function students(ctx, sch) {
     <section class="card tbl-card"><table class="tbl" id="stu-tbl">
       <thead><tr><th>Name</th><th>Grade</th><th>Section</th><th>Activities</th><th>Score so far</th><th>Last active</th><th>Parent</th></tr></thead>
       <tbody>${rows.map(r => `<tr data-name="${esc(r.s.name.toLowerCase())}" data-sec="${r.s.sectionId}">
-        <td><a href="#/school/student/${r.s.id}">${esc(r.s.name)}</a></td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>
+        <td><a href="#/school/student/${r.s.id}">${esc(r.s.name)}</a><small class="muted mono block">@${esc(r.s.login)}</small></td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>
         <td><div class="cell-bar">${bar(r.y.activityPct)}<span>${r.y.actsDone}/${r.y.actsTotal}</span></div></td>
         <td>${r.y.score == null ? '—' : `${r.y.score}% <small class="muted">${band(r.y.score)}</small>`}</td>
-        <td class="${!r.la || Date.now() - r.la > 14 * 86400000 ? 'warn-txt' : ''}">${timeAgo(r.la)}</td><td>${esc(r.parent?.name || '—')}</td></tr>`).join('')}</tbody>
+        <td class="${!r.la || Date.now() - r.la > 14 * 86400000 ? 'warn-txt' : ''}">${timeAgo(r.la)}</td><td>${r.parents.length ? r.parents.map(p => esc(p.name)).join(', ') : '—'}</td></tr>`).join('')}</tbody>
     </table><p class="muted small" id="count"></p></section>`,
     mount(el) {
       const filter = () => {
@@ -236,9 +258,13 @@ function students(ctx, sch) {
         $('#add-f', d).addEventListener('submit', e => {
           e.preventDefault(); const f = e.target;
           if (!f.name.value.trim()) return;
-          addStudent(sch.id, f.sec.value, f.name.value.trim(), f.parent.value.trim());
-          log(ctx.me.name, `added ${f.name.value.trim()}`, sch.id); save();
-          d.close(); toast('Student added, with a parent account.'); ctx.rerender();
+          const { student, parent, stPw, parPw } = addStudent(sch.id, f.sec.value, f.name.value.trim(), f.parent.value.trim());
+          log(ctx.me.name, `added ${student.name}`, sch.id); save();
+          d.close(); ctx.rerender();
+          showCreds(`${student.name} is added`, [
+            { name: student.name, role: `Student · ${secLabel(section(sch, student.sectionId))}`, icon: 'star', login: student.login, pw: stPw, code: student.familyCode },
+            { name: parent.name, role: 'Parent', icon: 'home', login: parent.login, pw: parPw },
+          ]);
         });
       });
     },

@@ -5,6 +5,7 @@ asks every school to use in Grades 6–8 (Circular Skill-81/2025). All three gra
 are built: 18 projects, 144 activities, 180 quiz questions.
 
 It is a static site with no build step: plain HTML, CSS and JavaScript modules.
+Light and dark mode follow the device setting automatically.
 
 ## What's here
 
@@ -32,6 +33,42 @@ It is a static site with no build step: plain HTML, CSS and JavaScript modules.
   student app, then open a full demo under that brand.
 - **Also on the page**: a learning-outcomes explorer, the roadmap, FAQ, and a
   pilot request form.
+
+### Logins and sign-up
+- Everyone logs in with a **User ID** (like `aarav.sharma`) and a **password**.
+  The User ID is case-insensitive; an email on the profile also works.
+- **Create account** works for all five roles. Each form asks for basic profile
+  details and suggests a User ID from the name, with a live availability check
+  and a password-strength meter:
+  - **Student**: name, school, class and section, optional date of birth and email.
+  - **Parent**: name, relation, mobile, optional email, and the child's
+    **family code** (shown on the student's Profile page).
+  - **Teacher**: name, school, the school's **joining code** (shown to the
+    coordinator on the Teachers page), the sections they teach, email.
+  - **School**: school name, city, board, coordinator's name and email, brand
+    colour. The school is set up with sections 6 A, 7 A and 8 A.
+  - **VINC Lab admin**: name, email and the admin access code.
+- **Profile** page for every role: edit name, User ID, email and mobile, change
+  the password, see or renew the family code or joining code, and (for
+  parents) link another child.
+- **Accounts made by others**: when a coordinator adds a student or teacher,
+  or the admin adds a school, the app shows the new User IDs and **temporary
+  passwords** once. A temporary password takes the person to their profile to
+  choose a new one.
+- **Resets**: coordinators and teachers reset student and parent passwords
+  from the student's page; coordinators reset teachers; the admin resets school
+  staff from Schools → Logins. "Forgot password?" on the login screen explains
+  who to ask.
+- A paused school's users cannot log in.
+
+### Motion
+Pages build in with a short staggered entrance, bars and rings fill, and
+numbers count up. When something changes on the same page (marking work,
+filtering, finishing an activity) bars, rings and numbers glide to their new
+values instead of replaying the entrance. The active page is marked by a pill
+that slides between menu items. Dialogs, toasts, the mobile menu and
+accordions open and close smoothly. All of it is switched off for people who
+ask their device for reduced motion.
 
 ### LMS dashboards
 - **Student**:
@@ -83,17 +120,26 @@ This preview has no server. Everything is stored in the visitor's browser
 (`localStorage`) and seeded with three schools, ten Grade 6–8 sections, four
 teachers and 109 students. The admin settings page resets or exports the data.
 
-Demo accounts (on the login screen; "View as" in the top bar switches roles):
+Demo accounts all use the password **`vinclab123`**. The login screen has a
+button for each; it types the User ID and password in and logs in.
 
-| Role | Account |
-|---|---|
-| Student | Aarav Sharma (Grade 6), Meera Iyer (Grade 7), Ananya Sharma (Grade 8) |
-| Parent | Priya Sharma, mother of Aarav and Ananya |
-| Teacher | Anjali Menon, teaches 6 A, 7 A and 8 A at Greenwood |
-| School | Kavita Rao, Kaushal Bodh coordinator at Greenwood |
-| Admin | Neha Kapoor, VINC Lab |
+| Role | User ID | Who |
+|---|---|---|
+| Student | `aarav.sharma` | Grade 6 A, Greenwood |
+| Student | `meera.iyer` | Grade 7 A, Greenwood |
+| Student | `ananya.sharma` | Grade 8 A, Greenwood |
+| Parent | `priya.sharma` | Mother of Aarav and Ananya |
+| Teacher | `anjali.menon` | Teaches 6 A, 7 A and 8 A at Greenwood |
+| School | `kavita.rao` | Kaushal Bodh coordinator at Greenwood |
+| Admin | `neha.kapoor` | VINC Lab |
 
-Links like `app.html#/login/teacher` or `#/login/student7` open a role directly.
+Every seeded student, parent, teacher and coordinator has a User ID made from
+their name and the same demo password. For trying sign-up: the admin access
+code is `VINC-2026`; the "Use Aarav's code" and "Use Greenwood's code" buttons
+on the forms fill in a family code and a joining code.
+
+Links like `app.html#/login/teacher` or `#/login/student7` fill in that demo
+account and log in; `app.html#/signup` opens the sign-up form.
 
 ## Structure
 
@@ -106,9 +152,10 @@ assets/js/data/grade7.js, grade8.js   Grade 7 and 8 courses
 assets/js/data/courses.js  One lookup for all grades (projectById, projectsOfGrade)
 assets/js/art.js      Animated project illustrations and icons
 assets/js/landing.js  Landing page behaviour
-assets/js/app/        main.js (router, shell), store.js (demo data), scoring.js, ui.js
-assets/js/app/views/  student, parent, teacher, school, admin; shared.js holds marking,
-                      heatmaps and class analytics used by teachers and schools
+assets/js/app/        main.js (router, shell, page transitions), auth.js (log in and sign up),
+                      store.js (demo data, logins), sha256.js, scoring.js, ui.js
+assets/js/app/views/  student, parent, teacher, school, admin, profile; shared.js holds marking,
+                      heatmaps, class analytics and password resets used by teachers and schools
 ```
 
 Each course file has the same shape: projects with activities (title, page,
@@ -129,7 +176,10 @@ Cloudflare Pages or S3.
 
 ## Before going live
 - **Backend**: replace `assets/js/app/store.js` with calls to a hosted database
-  and real logins. The data shapes (schools, users, progress, log) carry over.
+  and server-side logins. The data shapes (schools, users, progress, log) carry
+  over. In this preview, passwords are salted and hashed (SHA-256) but checked
+  in the browser, so they protect nothing on a shared computer; a live version
+  must check them on the server and use a slow hash such as bcrypt or Argon2.
 - **Pilot form**: requests go to vincdeeptech@gmail.com through FormSubmit.
   The first submission sends an activation email that must be confirmed once.
 - **Content**: project titles, page numbers and periods follow the 2026–27

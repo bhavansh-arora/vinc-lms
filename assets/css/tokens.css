@@ -48,11 +48,21 @@
   --brand: var(--amber);
   --brand-ink: var(--amber-ink);
   --brand-soft: var(--amber-soft);
+  /* Motion: one set of curves and timings for the whole product. */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-in: cubic-bezier(.55, 0, 1, .45);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --dur-1: 140ms;
+  --dur-2: 240ms;
+  --dur-3: 420ms;
+  --dur-4: 700ms;
+  --stagger: 55ms;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root {
     --paper: #1B130D;
     --paper-2: #231910;
     --card: #2B1F16;
@@ -89,18 +99,6 @@
     color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
-  --paper: #1B130D; --paper-2: #231910; --card: #2B1F16; --card-2: #33251A;
-  --ink: #F4EADB; --ink-2: #DCCBB4; --muted: #BBA58B; --line: #47352A; --grid: rgba(244, 234, 219, 0.05);
-  --amber: #E09A35; --amber-ink: #F0B44C; --amber-soft: #4A3216; --rust: #E0714A;
-  --teal: #3FB3A4; --teal-2: #4FC1B1; --teal-soft: #193D38; --plum: #D06A93; --olive: #8DBB5A;
-  --olive-soft: #2C3A1C; --rust-soft: #45261A; --plum-soft: #3E2030;
-  --band: #F4EADB; --on-band: #2B1A10; --band-accent: #9A5B0A; --focus: #F0B44C;
-  --ok: #8DBB5A; --warn: #F0B44C; --bad: #E57A66;
-  --shadow: 0 14px 34px -16px rgba(0, 0, 0, 0.7); --shadow-sm: 0 6px 16px -10px rgba(0, 0, 0, 0.7);
-  --glow: rgba(240, 180, 76, 0.12); --logo-light: none; --logo-dark: inline-block;
-  color-scheme: dark;
-}
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -124,12 +122,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
   min-height: 46px; padding: 0.7em 1.25em; border-radius: 999px;
   border: 2px solid transparent; font-weight: 700; font-size: 1rem; text-decoration: none;
-  cursor: pointer; transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease, border-color .2s;
+  cursor: pointer; transition: transform var(--dur-2) var(--ease-out), background-color var(--dur-2) ease, color var(--dur-2) ease, box-shadow var(--dur-2) ease, border-color var(--dur-2) ease;
   white-space: nowrap;
 }
 .btn svg { width: 18px; height: 18px; }
 .btn:hover { transform: translateY(-2px); }
-.btn:active { transform: translateY(0); }
+.btn:active { transform: translateY(0) scale(.97); transition-duration: var(--dur-1); }
 .btn-primary { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-sm); }
 .btn-primary:hover { background: var(--teal); color: #fff; }
 .btn-amber { background: var(--amber); color: #2B1A10; }

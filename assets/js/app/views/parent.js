@@ -14,7 +14,7 @@ export const nav = () => [
 
 export function render(ctx) {
   const kids = childrenOf(ctx.me);
-  if (!kids.length) return { title: 'Overview', html: '<div class="empty"><p>No child is linked to this account yet. Ask the school to link your child.</p></div>' };
+  if (!kids.length) return { title: 'Overview', html: `<div class="empty"><p>No child is linked to this account yet.</p><p>Ask your child for their family code (on their Profile page) and add it on your profile.</p><a class="btn btn-brand" href="#/parent/profile">${icon('link')} Link my child</a></div>` };
   let chosen = null;
   try { chosen = localStorage.getItem(CHILD_KEY); } catch { /* ignore */ }
   const kid = kids.find(k => k.id === chosen) || kids[0];

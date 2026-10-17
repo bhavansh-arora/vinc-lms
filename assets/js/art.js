@@ -1,4 +1,4 @@
-// Animated SVG illustrations for each Grade 6 project, plus small icons.
+// Animated SVG illustrations for every Grade 6, 7 and 8 project, plus small icons.
 // Motion lives in assets/css/art.css and switches off with "reduce motion".
 
 const ART = {
@@ -27,7 +27,7 @@ const ART = {
     <path d="M30 118 L 60 96 L 90 118 Z" class="base"/>
     <g class="arm"><path d="M60 96 L 112 70" class="beam"/><circle cx="114" cy="68" r="7" class="cup"/></g>
     <circle cx="60" cy="96" r="4" class="pivot"/>
-    <circle cx="114" cy="68" r="5" class="ball"/>
+    <g class="ball-x"><g class="ball-y"><circle cx="114" cy="68" r="5" class="ball"/></g></g>
     <g class="gear" transform="translate(160 54)"><path d="M-4 -22 h8 l2 6 6 3 6 -3 6 6 -3 6 3 6 6 2 v8 l-6 2 -3 6 3 6 -6 6 -6 -3 -6 3 -2 6 h-8 l-2 -6 -6 -3 -6 3 -6 -6 3 -6 -3 -6 -6 -2 v-8 l6 -2 3 -6 -3 -6 6 -6 6 3 6 -3 Z"/><circle r="6" class="hole"/></g>
   </svg>`,
   games: `

@@ -2,8 +2,10 @@
 // The shape mirrors what a hosted backend would hold: schools, users, per-project progress and a log.
 import { projectById } from '../data/courses.js';
 import { emptyProgress } from './scoring.js';
+import { sha256 } from './sha256.js';
 
-const KEY = 'vinclab:db:v2';
+const KEY = 'vinclab:db:v3';
+const OLD_KEY = 'vinclab:db:v2';
 const SESSION = 'vinclab:session:v1';
 const DAY = 86400000;
 
@@ -20,7 +22,12 @@ export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}
 
 export function load() {
   const raw = ls.get(KEY);
-  if (raw) { try { DB = JSON.parse(raw); if (DB?.version === 2) return DB; } catch { /* reseed */ } }
+  if (raw) { try { DB = JSON.parse(raw); if (DB?.version === 3) return DB; } catch { /* reseed */ } }
+  // Data saved before logins existed: keep it and give everyone a User ID and the demo password.
+  const old = ls.get(OLD_KEY);
+  if (old) {
+    try { const d = JSON.parse(old); if (d?.version === 2) { addLogins(d, Math.random); d.version = 3; DB = d; save(); ls.del(OLD_KEY); return DB; } } catch { /* reseed */ }
+  }
   DB = seed();
   save();
   return DB;
@@ -33,7 +40,7 @@ export function save() {
 }
 export const canPersist = () => persistOk;
 
-export function reset() { ls.del(KEY); ls.del(SESSION); DB = null; return load(); }
+export function reset() { ls.del(KEY); ls.del(OLD_KEY); ls.del(SESSION); DB = null; return load(); }
 
 export const session = {
   get() { try { return JSON.parse(ls.get(SESSION) || 'null'); } catch { return null; } },
@@ -41,11 +48,105 @@ export const session = {
   clear() { ls.del(SESSION); },
 };
 
+/* ---------------- Logins ----------------
+   Every account has a User ID (like "aarav.sharma") and a password. Passwords are stored as a
+   salted SHA-256 hash. Seeded demo accounts share DEMO_PW and are marked pw: 'demo'.
+   This is a browser-only preview: a live version must check passwords on a server. */
+export const DEMO_PW = 'vinclab123';
+export const ADMIN_CODE = 'VINC-2026';
+export const LOGIN_RULE = /^[a-z][a-z0-9._-]{2,29}$/;
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const WORDS = ['mango', 'kite', 'lotus', 'tiger', 'river', 'cedar', 'pearl', 'comet', 'maple', 'ember', 'neem', 'tabla', 'peacock', 'monsoon'];
+const randInt = (n, r = Math.random) => Math.floor(r() * n);
+const randHex = n => Array.from({ length: n }, () => randInt(16).toString(16)).join('');
+
+export const normLogin = id => String(id || '').trim().toLowerCase();
+export function loginTaken(id, except) {
+  const k = normLogin(id);
+  return db().users.some(u => u !== except && (u.login === k || (u.email && u.email.toLowerCase() === k)));
+}
+// "Aarav Sharma" -> "aarav.sharma", then aarav.sharma2, 3... if taken.
+export function makeLogin(name, taken = id => loginTaken(id)) {
+  const parts = String(name || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+  let base = parts.length > 1 ? `${parts[0]}.${parts[parts.length - 1]}` : (parts[0] || 'user');
+  if (base.length < 3) base = `${base}.user`;
+  base = base.slice(0, 26);
+  let id = base, n = 2;
+  while (taken(id)) id = `${base}${n++}`;
+  return id;
+}
+export function findByLogin(id) {
+  const k = normLogin(id);
+  if (!k) return null;
+  return db().users.find(u => u.login === k) || db().users.find(u => u.email && u.email.toLowerCase() === k) || null;
+}
+export function setPassword(u, pw, { temp = false } = {}) {
+  const salt = randHex(16);
+  u.pw = { s: salt, h: sha256(`${salt}|${pw}`) };
+  if (temp) u.pwTemp = true; else delete u.pwTemp;
+}
+export function checkPassword(u, pw) {
+  if (!u?.pw || typeof pw !== 'string') return false;
+  if (u.pw === 'demo') return pw === DEMO_PW;
+  return sha256(`${u.pw.s}|${pw}`) === u.pw.h;
+}
+export const tempPassword = () => `${WORDS[randInt(WORDS.length)]}-${1000 + randInt(9000)}`;
+// Give an account a User ID (if it has none) and a password. With no password, a temporary one
+// is made and returned so the person who created the account can pass it on.
+export function issueLogin(u, pw) {
+  if (!u.login) u.login = makeLogin(u.name);
+  if (pw === 'demo') { u.pw = 'demo'; delete u.pwTemp; return DEMO_PW; }
+  const p = pw || tempPassword();
+  setPassword(u, p, { temp: !pw });
+  return p;
+}
+export function resetPassword(u) { const p = tempPassword(); setPassword(u, p, { temp: true }); save(); return p; }
+
+function makeCode(len, taken, r = Math.random) {
+  let c;
+  do { c = Array.from({ length: len }, () => CODE_CHARS[randInt(CODE_CHARS.length, r)]).join(''); } while (taken(c));
+  return c;
+}
+// Family code: a student shares it so a parent can link their account.
+export const newFamilyCode = (d = db(), r) => makeCode(6, c => d.users.some(u => u.familyCode === c), r);
+// Joining code: a coordinator shares it so teachers can create accounts for that school.
+export const newJoinCode = (sch, d = db(), r) => `${(sch.initials || 'SC').slice(0, 3)}-${makeCode(4, c => d.schools.some(s => s.joinCode === `${(sch.initials || 'SC').slice(0, 3)}-${c}`), r)}`;
+export const findByFamilyCode = code => db().users.find(u => u.role === 'student' && u.familyCode === String(code || '').trim().toUpperCase()) || null;
+export const findByJoinCode = (schoolId, code) => { const s = school(schoolId); return s && s.joinCode === String(code || '').trim().toUpperCase() ? s : null; };
+
+// Check a sign-in. Returns { user } or { error, field }.
+export function authenticate(id, pw) {
+  if (!normLogin(id)) return { error: 'Enter your User ID.', field: 'uid' };
+  if (!pw) return { error: 'Enter your password.', field: 'pw' };
+  const u = findByLogin(id);
+  if (!u || !checkPassword(u, pw)) return { error: 'That User ID and password do not match. Check both and try again.', field: 'pw' };
+  if (u.role !== 'admin' && u.schoolId && school(u.schoolId)?.active === false) return { error: 'Your school\'s VINC Lab account is paused. Please contact your school.', field: 'uid' };
+  u.lastLogin = Date.now();
+  save();
+  return { user: u };
+}
+
+// Seeded and migrated data: staff and showcase accounts get the cleanest User IDs.
+const STAR_IDS = new Set(['u_aarav', 'u_meera', 'u_ananya', 'u_priya', 'u_suresh']);
+function addLogins(d, r) {
+  const taken = new Set(d.users.map(u => u.login).filter(Boolean));
+  const prio = u => u.role === 'admin' ? 0 : u.role === 'school' ? 1 : u.role === 'teacher' ? 2 : STAR_IDS.has(u.id) ? 3 : 4;
+  for (const u of [...d.users].sort((a, b) => prio(a) - prio(b))) {
+    if (!u.login) { u.login = makeLogin(u.name, id => taken.has(id)); taken.add(u.login); }
+    if (!u.pw) u.pw = 'demo';
+    if (u.role === 'student' && !u.familyCode) u.familyCode = newFamilyCode(d, r);
+    if (u.role === 'student' && /@student\.demo$/.test(u.email || '')) delete u.email;
+    if (u.role === 'parent' && /^parent\./.test(u.email || '')) delete u.email;
+  }
+  for (const s of d.schools) if (!s.joinCode) s.joinCode = newJoinCode(s, d, r);
+}
+
 export const school = id => db().schools.find(s => s.id === id);
 export const user = id => db().users.find(u => u.id === id);
 export const section = (sch, secId) => sch?.sections.find(s => s.id === secId);
 export const studentsOf = (schoolId, sectionId) => db().users.filter(u => u.role === 'student' && u.schoolId === schoolId && (!sectionId || u.sectionId === sectionId));
 export const childrenOf = parent => (parent.childIds || []).map(user).filter(Boolean);
+export const parentsOf = student => db().users.filter(u => u.role === 'parent' && (u.childIds || []).includes(student.id));
 export const gradeOf = student => section(school(student.schoolId), student.sectionId)?.grade || 6;
 export const teachersOf = schoolId => db().users.filter(u => u.role === 'teacher' && u.schoolId === schoolId);
 // Sections a teacher looks after, ordered by grade then name.
@@ -134,7 +235,7 @@ function seed() {
   const r = rng(20261017);
   const pick = a => a[Math.floor(r() * a.length)];
   const now = Date.now();
-  const d = { version: 2, createdAt: now, schools: [], users: [], progress: {}, log: [] };
+  const d = { version: 3, createdAt: now, schools: [], users: [], progress: {}, log: [] };
 
   const SCHOOLS = [
     { id: 'sch_greenwood', name: 'Greenwood Public School', studio: 'Greenwood Skills Studio', color: '#1F6F66', city: 'Bengaluru', plan: 'Pilot', seats: 160,
@@ -193,6 +294,7 @@ function seed() {
     d.schools.push(sch);
   }
   d.log = buildLog(d).slice(0, 160);
+  addLogins(d, r);
   return d;
 }
 
@@ -274,19 +376,33 @@ export function initials(name) {
 export function isoDate(d) { const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; }
 
 /* ---------------- Mutations used by the views ---------------- */
-export function addSchool({ name, studio, color, city, plan, seats }) {
+// New school with sections 6 A, 7 A and 8 A and a coordinator login. With withTeacher, a
+// placeholder teacher takes all three sections. Returns the school, its users and their passwords.
+export function addSchool({ name, studio, color, city, plan, seats, board, coord = {}, withTeacher = true, pw }) {
   const d = db();
   const id = uid('sch');
-  const sch = { id, name, studio: studio || studioName(name), color: color || '#1F6F66', initials: initials(name), city: city || '', board: 'CBSE', plan: plan || 'Pilot', seats: +seats || 60, active: true, createdAt: Date.now(), melaDate: d.schools[0]?.melaDate || melaDate(), sections: [] };
-  const teacher = { id: `u_${id}_t1`, role: 'teacher', name: 'Kaushal Bodh teacher', title: 'Kaushal Bodh teacher', email: `teacher@${id}.edu.in`, schoolId: id, sectionIds: [] };
+  const sch = { id, name, studio: studio || studioName(name), color: color || '#1F6F66', initials: initials(name), city: city || '', board: board || 'CBSE', plan: plan || 'Pilot', seats: +seats || 60, active: true, createdAt: Date.now(), melaDate: d.schools[0]?.melaDate || melaDate(), sections: [] };
+  sch.joinCode = newJoinCode(sch, d);
+  const coordinator = { id: `u_${id}_coord`, role: 'school', name: coord.name || `${name} coordinator`, title: 'Kaushal Bodh coordinator', schoolId: id, createdAt: Date.now() };
+  if (coord.email) coordinator.email = coord.email;
+  if (coord.phone) coordinator.phone = coord.phone;
+  coordinator.login = coord.login ? normLogin(coord.login) : makeLogin(coord.name || `${name.split(/\s+/)[0]} coordinator`);
+  const out = { sch, coord: coordinator, coordPw: issueLogin(coordinator, coord.password || pw) };
+  d.users.push(coordinator);
+  let teacher = null;
+  if (withTeacher) {
+    teacher = { id: `u_${id}_t1`, role: 'teacher', name: `${name.split(/\s+/)[0]} teacher`, title: 'Kaushal Bodh teacher', schoolId: id, sectionIds: [], createdAt: Date.now() };
+    out.teacherPw = issueLogin(teacher, pw);
+    out.teacher = teacher;
+    d.users.push(teacher);
+  }
   for (const g of [6, 7, 8]) {
-    const sec = { id: `${id}_${g}a`, name: `${g} A`, grade: g, teacherId: teacher.id, projects: defaultPicks(g), taught: {} };
-    sch.sections.push(sec); teacher.sectionIds.push(sec.id);
+    const sec = { id: `${id}_${g}a`, name: `${g} A`, grade: g, teacherId: teacher?.id || null, projects: defaultPicks(g), taught: {} };
+    sch.sections.push(sec); teacher?.sectionIds.push(sec.id);
   }
   d.schools.push(sch);
-  d.users.push({ id: `u_${id}_coord`, role: 'school', name: 'School coordinator', title: 'Kaushal Bodh coordinator', email: `coordinator@${id}.edu.in`, schoolId: id }, teacher);
   save();
-  return sch;
+  return out;
 }
 
 export function addSection(sch, grade, name, teacherId) {
@@ -297,11 +413,15 @@ export function addSection(sch, grade, name, teacherId) {
   return sec;
 }
 
-export function addTeacher(schoolId, name, sectionIds = []) {
-  const t = { id: uid('tch'), role: 'teacher', name, title: 'Kaushal Bodh teacher', schoolId, sectionIds: [] };
+export function addTeacher(schoolId, name, sectionIds = [], { email, phone, login, password, title } = {}) {
+  const t = { id: uid('tch'), role: 'teacher', name, title: title || 'Kaushal Bodh teacher', schoolId, sectionIds: [], createdAt: Date.now() };
+  if (email) t.email = email;
+  if (phone) t.phone = phone;
+  if (login) t.login = normLogin(login);
+  const pw = issueLogin(t, password);
   db().users.push(t);
   assignSections(t, sectionIds);
-  return t;
+  return { teacher: t, pw };
 }
 
 // Give a teacher exactly these sections; a section has one teacher, so others lose it.
@@ -316,15 +436,133 @@ export function assignSections(teacher, sectionIds) {
   save();
 }
 
-export function addStudent(schoolId, sectionId, name, parentName) {
+// A student added by the school, with a parent account. Both get a User ID and a temporary
+// password (or the given one), returned so the school can hand them to the family.
+export function addStudent(schoolId, sectionId, name, parentName, { pw } = {}) {
   const d = db();
-  const st = { id: uid('stu'), role: 'student', name, schoolId, sectionId, roll: studentsOf(schoolId, sectionId).length + 1 };
-  const par = { id: uid('par'), role: 'parent', name: parentName || `Parent of ${name.split(' ')[0]}`, schoolId, childIds: [st.id] };
+  const st = { id: uid('stu'), role: 'student', name, schoolId, sectionId, roll: studentsOf(schoolId, sectionId).length + 1, createdAt: Date.now() };
+  st.familyCode = newFamilyCode(d);
+  const stPw = issueLogin(st, pw);
+  d.users.push(st);
+  const par = { id: uid('par'), role: 'parent', name: parentName || `Parent of ${name.split(' ')[0]}`, schoolId, childIds: [st.id], createdAt: Date.now() };
+  const parPw = issueLogin(par, pw);
   st.parentId = par.id;
-  d.users.push(st, par);
+  d.users.push(par);
   d.progress[st.id] = {};
   save();
-  return st;
+  return { student: st, parent: par, stPw, parPw };
+}
+
+/* ---------------- Sign-up ----------------
+   Each returns the new user, or throws an Error whose .field names the form field at fault. */
+const fail = (field, msg) => { const e = new Error(msg); e.field = field; throw e; };
+function checkNewLogin(login, password) {
+  const k = normLogin(login);
+  if (!LOGIN_RULE.test(k)) fail('login', 'User IDs are 3 to 30 characters: letters, numbers, dots, dashes or underscores, starting with a letter.');
+  if (loginTaken(k)) fail('login', 'That User ID is taken. Try another.');
+  if (!password || password.length < 8) fail('password', 'Use at least 8 characters for your password.');
+  return k;
+}
+function finish(u, password) {
+  setPassword(u, password);
+  u.createdAt = Date.now();
+  u.lastLogin = Date.now();
+  db().users.push(u);
+  save();
+  return u;
+}
+
+export function signUp(role, f) {
+  const d = db();
+  const name = String(f.name || '').trim().replace(/\s+/g, ' ');
+  if (role !== 'school' && name.length < 2) fail('name', 'Enter your full name.');
+  const contact = { ...(f.email ? { email: f.email.trim() } : {}), ...(f.phone ? { phone: f.phone.trim() } : {}) };
+
+  if (role === 'student') {
+    const sch = school(f.schoolId);
+    if (!sch || !sch.active) fail('schoolId', 'Choose your school.');
+    const sec = section(sch, f.sectionId);
+    if (!sec) fail('sectionId', 'Choose your class and section.');
+    const login = checkNewLogin(f.login, f.password);
+    const st = { id: uid('stu'), role: 'student', name, login, schoolId: sch.id, sectionId: sec.id, roll: studentsOf(sch.id, sec.id).length + 1, familyCode: newFamilyCode(d), ...contact };
+    if (f.dob) st.dob = f.dob;
+    d.progress[st.id] = {};
+    log(name, `joined ${secLabelOf(sec)}`, sch.id);
+    return finish(st, f.password);
+  }
+  if (role === 'parent') {
+    const kid = findByFamilyCode(f.code);
+    if (!kid) fail('code', 'We could not find that family code. It is 6 letters and numbers, shown on your child\'s profile page.');
+    if (!f.phone && !f.email) fail('phone', 'Add a mobile number or email so the school can reach you.');
+    const login = checkNewLogin(f.login, f.password);
+    const par = { id: uid('par'), role: 'parent', name, login, relation: f.relation || 'Parent', schoolId: kid.schoolId, childIds: [kid.id], ...contact };
+    if (!kid.parentId || !user(kid.parentId)) kid.parentId = par.id;
+    log(name, `linked to ${kid.name} as a parent`, kid.schoolId);
+    return finish(par, f.password);
+  }
+  if (role === 'teacher') {
+    const sch = school(f.schoolId);
+    if (!sch || !sch.active) fail('schoolId', 'Choose your school.');
+    if (!findByJoinCode(sch.id, f.code)) fail('code', 'That joining code does not match this school. Ask your Kaushal Bodh coordinator for it.');
+    if (!f.email) fail('email', 'Enter your email.');
+    const login = checkNewLogin(f.login, f.password);
+    const t = { id: uid('tch'), role: 'teacher', name, login, title: (f.title || '').trim() || 'Kaushal Bodh teacher', schoolId: sch.id, sectionIds: [], ...contact };
+    finish(t, f.password);
+    assignSections(t, (f.sectionIds || []).filter(id => section(sch, id)));
+    log(name, 'joined as a Kaushal Bodh teacher', sch.id);
+    save();
+    return t;
+  }
+  if (role === 'school') {
+    const schoolName = String(f.schoolName || '').trim().replace(/\s+/g, ' ');
+    if (schoolName.length < 3) fail('schoolName', 'Enter your school\'s full name.');
+    if (d.schools.some(s => s.name.toLowerCase() === schoolName.toLowerCase())) fail('schoolName', 'A school with this name is already on VINC Lab. Ask its coordinator to add you, or sign in.');
+    if (!String(f.city || '').trim()) fail('city', 'Enter the city.');
+    if (name.length < 2) fail('name', 'Enter the coordinator\'s full name.');
+    if (!f.email) fail('email', 'Enter an email for the coordinator.');
+    checkNewLogin(f.login, f.password);
+    const { sch, coord } = addSchool({ name: schoolName, city: f.city.trim(), color: f.color, board: f.board, plan: 'Trial', seats: 60, withTeacher: false,
+      coord: { name, email: f.email.trim(), phone: f.phone?.trim(), login: f.login, password: f.password } });
+    coord.lastLogin = Date.now();
+    log(name, `registered ${sch.name}`, sch.id);
+    save();
+    return coord;
+  }
+  if (role === 'admin') {
+    if (String(f.code || '').trim().toUpperCase() !== ADMIN_CODE) fail('code', 'That admin access code is not right.');
+    if (!f.email) fail('email', 'Enter your work email.');
+    const login = checkNewLogin(f.login, f.password);
+    return finish({ id: uid('adm'), role: 'admin', name, login, title: 'VINC Lab admin', ...contact }, f.password);
+  }
+  fail('role', 'Choose who you are.');
+}
+const secLabelOf = sec => `Grade ${sec.grade} · ${sec.name}`;
+
+// Link another child to a parent with the child's family code.
+export function linkChild(parent, code) {
+  const kid = findByFamilyCode(code);
+  if (!kid) fail('code', 'We could not find that family code.');
+  if ((parent.childIds || []).includes(kid.id)) fail('code', `${kid.name} is already linked to your account.`);
+  parent.childIds = [...(parent.childIds || []), kid.id];
+  if (!parent.schoolId) parent.schoolId = kid.schoolId;
+  if (!kid.parentId || !user(kid.parentId)) kid.parentId = parent.id;
+  save();
+  return kid;
+}
+
+// Profile edits. Throws like signUp on a bad User ID.
+export function updateProfile(u, f) {
+  const name = String(f.name ?? u.name).trim().replace(/\s+/g, ' ');
+  if (name.length < 2) fail('name', 'Enter your full name.');
+  const login = normLogin(f.login ?? u.login);
+  if (login !== u.login) {
+    if (!LOGIN_RULE.test(login)) fail('login', 'User IDs are 3 to 30 characters: letters, numbers, dots, dashes or underscores, starting with a letter.');
+    if (loginTaken(login, u)) fail('login', 'That User ID is taken. Try another.');
+  }
+  Object.assign(u, { name, login });
+  for (const k of ['email', 'phone', 'title', 'relation', 'dob']) if (k in f) { const v = String(f[k] || '').trim(); if (v) u[k] = v; else delete u[k]; }
+  save();
+  return u;
 }
 
 // Branded demo from the landing page: a fresh school whose Grade 6–8 sections copy Greenwood's.
@@ -332,14 +570,14 @@ export function brandDemo({ name, studio, color }) {
   const d = db();
   let sch = d.schools.find(s => s.demo);
   if (!sch) {
-    sch = addSchool({ name, studio, color, city: 'Your city', plan: 'Pilot', seats: 60 });
+    sch = addSchool({ name, studio, color, city: 'Your city', plan: 'Pilot', seats: 60, coord: { name: 'Demo Coordinator', login: makeLogin('demo coordinator') }, pw: 'demo' }).sch;
     sch.demo = true;
     for (const sec of sch.sections) {
       const srcSec = school('sch_greenwood').sections.find(s => s.grade === sec.grade);
       sec.projects = { ...srcSec.projects };
       sec.taught = JSON.parse(JSON.stringify(srcSec.taught || {}));
       for (const s of studentsOf('sch_greenwood', srcSec.id)) {
-        const st = addStudent(sch.id, sec.id, s.name, user(s.parentId)?.name);
+        const { student: st } = addStudent(sch.id, sec.id, s.name, user(s.parentId)?.name, { pw: 'demo' });
         d.progress[st.id] = JSON.parse(JSON.stringify(d.progress[s.id] || {}));
       }
     }

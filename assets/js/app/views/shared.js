@@ -1,10 +1,25 @@
 // Pieces shared by the school and teacher dashboards: marking, heatmaps, scorecards and class analytics.
 import { WEIGHTS, VIVA_RUBRIC, OBSERVATION_RUBRIC, RUBRIC_LEVELS, LEARNING_OUTCOMES, projectById } from '../../data/courses.js';
-import { db, save, school, section, progress, projectsFor, lastActive, log, user } from '../store.js';
+import { db, save, school, section, progress, projectsFor, lastActive, log, user, parentsOf, resetPassword } from '../store.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
-import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, PART_COLOR, FORM_COLOR } from '../ui.js';
+import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, credsHtml, bindCopy, PART_COLOR, FORM_COLOR } from '../ui.js';
 
 export const secLabel = s => s ? `Grade ${s.grade} · ${s.name}` : '';
+
+/* ---------- Logins ---------- */
+export function showCreds(title, rows, note) {
+  modal(`<div class="creds-head"><span class="creds-ic">${icon('key')}</span><div><h2>${esc(title)}</h2><p class="muted">Here are the login details. The temporary password is shown only once.</p></div></div>
+    ${credsHtml(rows, note)}
+    <div class="modal-actions"><button class="btn btn-brand" data-close>Done</button></div>`);
+}
+export function resetFor(ctx, u, roleLabel) {
+  if (!u || !confirm(`Reset the password for ${u.name}? Their old password will stop working.`)) return;
+  const pw = resetPassword(u);
+  log(ctx.me.name, `reset the password for ${u.name}`, u.schoolId);
+  save();
+  showCreds(`New password for ${u.name}`, [{ name: u.name, role: roleLabel, icon: 'user', login: u.login, pw }]);
+}
+
 export const INACTIVE_DAYS = 14;
 
 export function stats(students) {
@@ -99,17 +114,28 @@ export function markModal(ctx, stu, pid) {
 export function studentDetail(ctx, s, back) {
   const sch = school(s.schoolId), sec = section(sch, s.sectionId);
   const ids = projectsFor(s); const y = yearSummary(db().progress[s.id], ids);
+  const parents = parentsOf(s);
   return {
     title: s.name,
     html: `<a class="back" href="${back.href}">← ${esc(back.label)}</a>
-    <section class="hero-card slim"><div class="hc-copy"><p class="eyebrow">${esc(secLabel(sec))} · Roll ${s.roll}</p><h2>${esc(s.name)}</h2><p>Parent: ${esc(user(s.parentId)?.name || '—')} · Last active ${timeAgo(lastActive(s.id))}${y.score != null ? ` · Score so far <b>${y.score}%</b> (${band(y.score)})` : ''}</p></div>
+    <section class="hero-card slim"><div class="hc-copy"><p class="eyebrow">${esc(secLabel(sec))} · Roll ${s.roll}</p><h2>${esc(s.name)}</h2><p>${parents.length > 1 ? 'Parents' : 'Parent'}: ${parents.length ? parents.map(p => esc(p.name)).join(', ') : '—'} · Last active ${timeAgo(lastActive(s.id))}${y.score != null ? ` · Score so far <b>${y.score}%</b> (${band(y.score)})` : ''}</p></div>
       <div class="hc-ring">${ring(y.activityPct, { size: 120, stroke: 12, sub: 'activities' })}</div></section>
     <div class="score-cards">${ids.map(pid => { const p = projectById(pid), sc = projectScore(progress(s.id, pid), pid); return `<section class="card f-${p.form}">
       <h3 class="h-card"><span class="form-dot"></span>${esc(p.title)}</h3>
       <ul class="parts">${WEIGHTS.map(w => `<li><div class="part-top"><b>${esc(w.label)}</b><span class="muted">${w.weight}%</span><span class="part-val">${sc.parts[w.key] == null ? 'Not yet' : `${sc.parts[w.key]}%`}</span></div>${bar(sc.parts[w.key], PART_COLOR[w.key])}</li>`).join('')}</ul>
       <div class="total-row"><span>Score ${sc.complete ? '' : 'so far'}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${band(sc.score)}</span></div>
-      <button class="btn btn-brand btn-sm" data-markp="${pid}">Mark this project</button></section>`; }).join('')}</div>`,
-    mount(el) { $$('[data-markp]', el).forEach(b => b.addEventListener('click', () => markModal(ctx, s, b.dataset.markp))); },
+      <button class="btn btn-brand btn-sm" data-markp="${pid}">Mark this project</button></section>`; }).join('')}</div>
+    <section class="card logins-card"><h2 class="h-card">${icon('key')} Logins</h2>
+      <ul class="login-list">
+        <li><span class="avatar">${icon('star')}</span><span><b>${esc(s.name)}</b><small class="muted">Student · <span class="mono">@${esc(s.login)}</span> · family code <span class="mono">${esc(s.familyCode || '')}</span></small></span><button class="btn btn-sm btn-ghost" data-reset="${s.id}">Reset password</button></li>
+        ${parents.map(p => `<li><span class="avatar">${icon('home')}</span><span><b>${esc(p.name)}</b><small class="muted">${esc(p.relation || 'Parent')} · <span class="mono">@${esc(p.login)}</span>${p.phone ? ` · ${esc(p.phone)}` : ''}</small></span><button class="btn btn-sm btn-ghost" data-reset="${p.id}">Reset password</button></li>`).join('')}
+      </ul>
+      <p class="muted small">${parents.length ? '' : 'No parent account yet. Parents can sign up with the family code. '}Resetting gives a temporary password; they choose a new one when they next log in.</p>
+    </section>`,
+    mount(el) {
+      $$('[data-markp]', el).forEach(b => b.addEventListener('click', () => markModal(ctx, s, b.dataset.markp)));
+      $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => { const u = user(b.dataset.reset); resetFor(ctx, u, u.role === 'student' ? 'Student' : 'Parent'); }));
+    },
   };
 }
 

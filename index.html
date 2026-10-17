@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>VINC Lab · Kaushal Bodh LMS</title>
 <meta name="description" content="VINC Lab turns NCERT's Kaushal Bodh activity books into a ready-to-run skill programme for CBSE schools: guided projects, quizzes, teacher rubrics, portfolios, and dashboards for students, parents, teachers, schools and admins. Grades 6, 7 and 8 are live.">
-<meta name="theme-color" content="#F7F0E3">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F7F0E3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1B130D" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="assets/logo/vinc-lab-mark.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +25,7 @@
       <img class="logo-l" src="assets/logo/vinc-lab-logo.svg" alt="VINC Lab" width="150" height="34">
       <img class="logo-d" src="assets/logo/vinc-lab-logo-dark.svg" alt="VINC Lab" width="150" height="34">
     </a>
-    <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+    <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav"><i aria-hidden="true"></i>Menu</button>
     <nav class="nav" id="nav" aria-label="Main">
       <a href="#course">Courses</a>
       <a href="#plan">Plan the year</a>
@@ -31,7 +33,10 @@
       <a href="#dashboards">Dashboards</a>
       <a href="#brand">For schools</a>
       <a href="#faq">FAQ</a>
-      <a class="btn btn-primary btn-sm" href="app.html">Log in</a>
+      <div class="nav-auth">
+        <a class="btn btn-ghost btn-sm" href="app.html#/signup">Sign up</a>
+        <a class="btn btn-primary btn-sm" href="app.html">Log in</a>
+      </div>
     </nav>
   </div>
   <div class="progress" aria-hidden="true"><i id="progress-bar"></i></div>
@@ -45,7 +50,7 @@
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="label">Kaushal Bodh LMS · CBSE Grades 6–8</p>
-        <h1 id="hero-title">Kaushal Bodh, brought to <em>life<svg class="scribble" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 16 C 42 5, 78 21, 118 10 S 176 6, 197 14"/></svg></em></h1>
+        <h1 id="hero-title"><span class="w">Kaushal</span> <span class="w">Bodh,</span> <span class="w">brought</span> <span class="w">to</span> <em class="w">life<svg class="scribble" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 16 C 42 5, 78 21, 118 10 S 176 6, 197 14"/></svg></em></h1>
         <p class="lead">VINC Lab turns NCERT's Kaushal Bodh activity books into a ready-to-run skill programme: guided projects, quizzes, teacher rubrics and digital portfolios, with a dashboard for every student, parent, teacher, school and admin.</p>
         <p class="live-chip"><span class="dot" aria-hidden="true"></span><b>Grades 6, 7 and 8 are live</b> · 18 projects</p>
         <div class="hero-ctas">
@@ -209,7 +214,7 @@
           <div class="mock mock-student" aria-hidden="true">
             <div class="m-top"><i></i><b>Hi Aarav</b><span>Grade 6 · A</span></div>
             <div class="m-row">
-              <div class="m-ring" style="--p:64"><span>64%</span></div>
+              <div class="m-ring" style="--ring-p:64"><span>64%</span></div>
               <div class="m-list"><p><i class="ok"></i>Make vermicompost</p><p><i class="ok"></i>Use levers to make toys</p><p><i class="cur"></i>Use a propeller to make toys</p><p><i></i>Wheel and axle toys</p></div>
             </div>
             <div class="m-badges"><span>🌱</span><span>⚙️</span><span>⭐</span><span class="dim">🏆</span></div>
@@ -228,7 +233,7 @@
           <div class="mock mock-parent" aria-hidden="true">
             <div class="m-top"><i></i><b>Aarav's week</b><span>3 activities done</span></div>
             <div class="m-photos"><span></span><span></span><span></span></div>
-            <div class="m-bars"><p>Quiz<i style="--w:90%"></i></p><p>Activities<i style="--w:70%"></i></p><p>Portfolio<i style="--w:55%"></i></p></div>
+            <div class="m-bars"><p>Quiz<i style="--bar-w:90%"></i></p><p>Activities<i style="--bar-w:70%"></i></p><p>Portfolio<i style="--bar-w:55%"></i></p></div>
           </div>
         </div>
         <div class="dash-panel" role="tabpanel" id="p-teacher" aria-labelledby="t-teacher" hidden>
@@ -244,7 +249,7 @@
           </div>
           <div class="mock mock-teacher" aria-hidden="true">
             <div class="m-top"><i></i><b>Anjali Menon</b><span>6 A · 7 A · 8 A</span></div>
-            <div class="m-grades"><p class="g6"><b>6</b>School Kitchen Garden<i style="--w:80%"></i></p><p class="g7"><b>7</b>AI Assistant<i style="--w:35%"></i></p><p class="g8"><b>8</b>Home Automation<i style="--w:55%"></i></p></div>
+            <div class="m-grades"><p class="g6"><b>6</b>School Kitchen Garden<i style="--bar-w:80%"></i></p><p class="g7"><b>7</b>AI Assistant<i style="--bar-w:35%"></i></p><p class="g8"><b>8</b>Home Automation<i style="--bar-w:55%"></i></p></div>
             <div class="m-next"><span>Next in 7 A</span><b>Train for recognition</b><small>Kaushal Bodh Grade 7, page 99</small></div>
           </div>
         </div>
@@ -397,7 +402,6 @@
       <p class="muted small">A VINC learning platform for skill education. Bengaluru.</p>
     </div>
     <nav aria-label="Footer"><a href="#course">Courses</a><a href="#assess">Assessment</a><a href="#brand">For schools</a><a href="app.html">Log in</a></nav>
-    <button class="theme-btn" id="theme-btn" aria-label="Switch colour theme">Theme</button>
   </div>
   <div class="wrap">
     <p class="small muted fine">Kaushal Bodh is a textbook series published by NCERT. VINC Lab is independent and is not affiliated with or endorsed by NCERT or CBSE. Project titles and page numbers refer to the 2026–27 Kaushal Bodh Grade 6, 7 and 8 editions.</p>

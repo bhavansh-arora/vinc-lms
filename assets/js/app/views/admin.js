@@ -1,6 +1,7 @@
 // VINC Lab admin: network overview, schools, course content and settings.
 import { COURSES, GRADES, FORMS, WEIGHTS, projectById } from '../../data/courses.js';
-import { db, save, reset, session, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf } from '../store.js';
+import { db, save, reset, session, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf, user } from '../store.js';
+import { showCreds, resetFor } from './shared.js';
 import { yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, fmtDate, toast, modal, download } from '../ui.js';
 
@@ -98,7 +99,7 @@ function schools(ctx) {
         <td><div class="cell-bar">${bar(st.completion, s.color)}<span>${st.completion}%</span></div></td>
         <td>${st.score == null ? '—' : `${st.score}% <small class="muted">${band(st.score)}</small>`}</td>
         <td><button class="tag ${s.active ? 'ok' : 'todo'} tag-btn" data-toggle="${s.id}" aria-label="${s.active ? 'Pause' : 'Activate'} ${esc(s.name)}">${s.active ? 'Active' : 'Paused'}</button></td>
-        <td><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button></td></tr>`; }).join('')}</tbody>
+        <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Logins</button></div></td></tr>`; }).join('')}</tbody>
     </table></section>`,
     mount(el) {
       $$('[data-open]', el).forEach(b => b.addEventListener('click', () => {
@@ -106,6 +107,15 @@ function schools(ctx) {
         if (!coord) { toast('This school has no coordinator yet.', 'warn'); return; }
         session.set({ userId: coord.id, at: Date.now(), by: ctx.me.id });
         ctx.go('/school');
+      }));
+      $$('[data-logins]', el).forEach(b => b.addEventListener('click', () => {
+        const s = D.schools.find(x => x.id === b.dataset.logins);
+        const staff = D.users.filter(u => u.schoolId === s.id && (u.role === 'school' || u.role === 'teacher')).sort((a, c) => (a.role === 'school' ? 0 : 1) - (c.role === 'school' ? 0 : 1));
+        const m = modal(`<h2>Logins at ${esc(s.name)}</h2><p class="muted">Coordinators reset passwords for their teachers, students and parents. You can reset staff passwords here.</p>
+          <ul class="login-list">${staff.map(u => `<li><span class="avatar">${icon(u.role === 'school' ? 'school' : 'book')}</span><span><b>${esc(u.name)}</b><small class="muted">${u.role === 'school' ? 'Coordinator' : 'Teacher'} · <span class="mono">@${esc(u.login)}</span>${u.email ? ` · ${esc(u.email)}` : ''}</small></span><button class="btn btn-sm btn-ghost" data-reset="${u.id}">Reset password</button></li>`).join('')}</ul>
+          <p class="muted small">Teacher joining code: <span class="mono">${esc(s.joinCode)}</span></p>
+          <div class="modal-actions"><button class="btn btn-ghost" data-close>Close</button></div>`, { wide: true });
+        $$('[data-reset]', m).forEach(r => r.addEventListener('click', () => { const u = user(r.dataset.reset); m.close(); resetFor(ctx, u, u.role === 'school' ? 'School coordinator' : 'Teacher'); }));
       }));
       $$('[data-toggle]', el).forEach(b => b.addEventListener('click', () => {
         const s = D.schools.find(x => x.id === b.dataset.toggle); s.active = !s.active;
@@ -120,14 +130,21 @@ function schools(ctx) {
             <label>Plan<select name="plan"><option>Pilot</option><option>Standard</option><option>Premium</option></select></label>
             <label>Seats<input name="seats" type="number" min="10" max="5000" value="60"></label>
             <label>Brand colour<input name="color" type="color" value="#1F6F66"></label>
+            <label>Coordinator's name<input name="coord" maxlength="60" placeholder="Who runs Kaushal Bodh at the school"></label>
+            <label>Coordinator's email<input name="coordEmail" type="email" maxlength="80"></label>
             <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-brand">Create school</button></div>
           </form>`);
         $('#sf', d).addEventListener('submit', e => {
           e.preventDefault(); const f = e.target;
           if (!f.name.value.trim()) return;
-          const s = addSchool({ name: f.name.value.trim(), studio: f.studio.value.trim(), city: f.city.value.trim(), plan: f.plan.value, seats: f.seats.value, color: f.color.value });
+          const { sch: s, coord, coordPw, teacher, teacherPw } = addSchool({ name: f.name.value.trim(), studio: f.studio.value.trim(), city: f.city.value.trim(), plan: f.plan.value, seats: f.seats.value, color: f.color.value,
+            coord: { name: f.coord.value.trim() || undefined, email: f.coordEmail.value.trim() || undefined } });
           log(ctx.me.name, `added ${s.name}`, s.id); save();
-          d.close(); toast(`${s.name} created with sections 6 A, 7 A and 8 A, a teacher and a coordinator login.`); ctx.rerender();
+          d.close(); ctx.rerender();
+          showCreds(`${s.name} is ready`, [
+            { name: coord.name, role: 'School coordinator', icon: 'school', login: coord.login, pw: coordPw },
+            { name: teacher.name, role: 'Teacher for 6 A, 7 A and 8 A', icon: 'book', login: teacher.login, pw: teacherPw },
+          ], `Sections 6 A, 7 A and 8 A are set up. Teachers can also join with the code ${s.joinCode}.`);
         });
       });
     },
@@ -172,7 +189,7 @@ function settings(ctx) {
         <div class="btn-row"><button class="btn btn-ghost" id="export">${icon('download')} Export data (JSON)</button><button class="btn btn-ghost danger" id="reset">Reset demo data</button></div>
       </section>
       <section class="card"><h2 class="h-card">${icon('shield')} Going live</h2>
-        <ul><li>Hosted database and secure logins for each school</li><li>Parent sign-in by phone OTP</li><li>Photo storage for portfolios</li><li>CBSE-ready mark sheets per section</li></ul>
+        <ul><li>Server-side logins (this preview checks passwords in the browser)</li><li>Parent sign-in by phone OTP</li><li>Photo storage for portfolios</li><li>CBSE-ready mark sheets per section</li></ul>
         <p class="muted small">The data shapes used here (schools, users, progress, log) map one-to-one onto the hosted version.</p>
       </section>
     </div>`,
@@ -180,7 +197,7 @@ function settings(ctx) {
       $('#export', el).addEventListener('click', () => download('vinclab-demo-data.json', JSON.stringify(D, null, 1), 'application/json'));
       $('#reset', el).addEventListener('click', () => {
         if (!confirm('Reset all demo data? Schools, students and marks go back to the starting sample.')) return;
-        reset(); session.set({ userId: 'u_admin', at: Date.now() }); toast('Demo data reset.'); ctx.go('/admin');
+        reset(); session.set({ userId: 'u_admin', at: Date.now() }); toast('Demo data reset. Demo accounts use the password vinclab123.'); ctx.go('/admin');
       });
     },
   };

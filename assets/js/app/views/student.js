@@ -244,6 +244,9 @@ function runQuiz(ctx, p, pr, host) {
       <p class="q-explain" aria-live="polite"></p>
       <div class="q-foot"><button class="btn btn-brand" id="q-next" hidden>${k === qs.length - 1 ? 'See my score' : 'Next question'} ${icon('arrow')}</button></div>
     </section>`;
+    // The progress bar glides on from the previous question.
+    const bi = $('.q-prog .bar i', host);
+    if (bi && k) { bi.style.transition = 'none'; bi.style.width = `${(k - 1) / qs.length * 100}%`; void bi.offsetWidth; bi.style.transition = ''; bi.style.width = `${k / qs.length * 100}%`; }
     $$('.q-opt', host).forEach(b => b.addEventListener('click', () => {
       if (host.dataset.locked) return;
       host.dataset.locked = '1';

@@ -19,7 +19,7 @@ export function render(ctx) {
   const [page, a] = ctx.params;
   if (state.who !== ctx.me.id) Object.assign(state, { who: ctx.me.id, sec: {}, proj: {}, lessonSec: null, lessonProj: null, markSec: null, markProj: null, q: '', g: 'all' });
   const secs = sectionsOf(ctx.me);
-  if (!secs.length) return { title: 'My classes', html: '<div class="empty"><p>No sections are assigned to you yet. Ask your school coordinator to add you to a section.</p></div>' };
+  if (!secs.length) return { title: 'My classes', html: `<div class="empty"><p><b>No sections are assigned to you yet.</b></p><p>Ask your Kaushal Bodh coordinator to add you to your sections. Your User ID is <span class="mono">${esc(ctx.me.login)}</span>.</p></div>` };
   if (/^g\d$/.test(page || '') && secs.some(s => s.grade === +page.slice(1))) return gradePage(ctx, +page.slice(1));
   if (page === 'lessons') return lessons(ctx);
   if (page === 'mark') return mark(ctx);
