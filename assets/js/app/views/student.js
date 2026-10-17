@@ -1,6 +1,6 @@
 // Student dashboard: home, project studio (activities, quiz, portfolio, scores), portfolio and badges.
-import { GRADE6, FORMS, WEIGHTS, projectById } from '../../data/grade6.js';
-import { db, save, school, section, projectsFor, progress, log, uid } from '../store.js';
+import { FORMS, WEIGHTS, projectById, projectsOfGrade } from '../../data/courses.js';
+import { db, save, school, section, projectsFor, progress, log, uid, gradeOf } from '../store.js';
 import { projectScore, nextActivity, yearSummary, band, PORTFOLIO_TARGET } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, fmtDate, timeAgo, daysUntil, toast, confetti, resizeImage, modal, FORM_COLOR, FORM_SOFT, PART_COLOR } from '../ui.js';
 
@@ -78,7 +78,7 @@ function home(ctx) {
     html: `
     <section class="hero-card">
       <div class="hc-copy">
-        <p class="eyebrow">${esc(sec?.name || 'Grade 6')} · Kaushal Bodh</p>
+        <p class="eyebrow">Grade ${sec?.grade || 6} · ${esc(sec?.name || '')} · Kaushal Bodh</p>
         <h2>${hello()}, ${esc(me.name.split(' ')[0])} 👋</h2>
         <p>${next ? `You're on <b>${esc(cp.title)}</b>. Next up: <b>${esc(next.title)}</b>.` : `You've finished all the activities in <b>${esc(cp.title)}</b>. Try the quiz!`}</p>
         <a class="btn btn-brand" href="#/student/p/${current}">${next ? 'Continue project' : 'Open project'} ${icon('arrow')}</a>
@@ -113,12 +113,13 @@ function home(ctx) {
 /* ---------- Projects list ---------- */
 function projectsPage(ctx) {
   const { ids, prog } = mine(ctx.me);
-  const others = GRADE6.projects.filter(p => !ids.includes(p.id));
+  const g = gradeOf(ctx.me);
+  const others = projectsOfGrade(g).filter(p => !ids.includes(p.id));
   return {
     title: 'My projects', nav: 'projects',
     html: `<p class="lead-in">Your school chose one project from each form of work for your section.</p>
       <div class="ptiles">${ids.map(id => projectTile(ctx.me, id, prog)).join('')}</div>
-      <h2 class="h-sec">Other Grade 6 projects</h2>
+      <h2 class="h-sec">Other Grade ${g} projects</h2>
       <p class="muted">These are in your Kaushal Bodh book too. Your class may do them next year, or you can try them at home.</p>
       <div class="mini-list">${others.map(p => `<div class="mini f-${p.form}"><div class="mini-art">${art(p.art)}</div><div><b>${esc(p.title)}</b><small>${esc(p.tagline)} · pp. ${p.pages[0]}–${p.pages[1]}</small></div></div>`).join('')}</div>`,
   };
@@ -162,7 +163,7 @@ function activitiesTab(ctx, p, pr) {
             <summary><span class="act-n">${st?.done ? icon('check') : a.n}</span><span class="act-t"><b>${esc(a.title)}</b><small>Book page ${a.page}${st?.done ? ` · done ${fmtDate(st.at)}` : ''}</small></span></summary>
             <div class="act-body">
               <p>${esc(a.task)}</p>
-              <p class="book-ref">${icon('book')}<span>Read and follow <b>Kaushal Bodh Grade 6, page ${a.page}</b>, then come back and write what you did.</span></p>
+              <p class="book-ref">${icon('book')}<span>Read and follow <b>Kaushal Bodh Grade ${p.grade}, page ${a.page}</b>, then come back and write what you did.</span></p>
               <label for="r-${a.n}">My reflection: what did I do, and what did I learn?</label>
               <textarea id="r-${a.n}" rows="3" maxlength="600" placeholder="We… I learnt… Next time I will…">${esc(st?.note || '')}</textarea>
               <div class="act-actions">

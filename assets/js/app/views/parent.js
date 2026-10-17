@@ -1,5 +1,5 @@
 // Parent dashboard: one child at a time; work, scores, feedback and ideas for home.
-import { FORMS, WEIGHTS, projectById } from '../../data/grade6.js';
+import { FORMS, WEIGHTS, projectById } from '../../data/courses.js';
 import { db, school, section, childrenOf, projectsFor, lastActive } from '../store.js';
 import { projectScore, nextActivity, yearSummary, band } from '../scoring.js';
 import { esc, icon, art, ring, bar, fmtDate, timeAgo, daysUntil, FORM_COLOR, PART_COLOR } from '../ui.js';
@@ -15,14 +15,24 @@ export const nav = () => [
 export function render(ctx) {
   const kids = childrenOf(ctx.me);
   if (!kids.length) return { title: 'Overview', html: '<div class="empty"><p>No child is linked to this account yet. Ask the school to link your child.</p></div>' };
-  const kid = kids[0];
+  let chosen = null;
+  try { chosen = localStorage.getItem(CHILD_KEY); } catch { /* ignore */ }
+  const kid = kids.find(k => k.id === chosen) || kids[0];
   const page = ctx.params[0] || '';
   const data = gather(kid);
-  if (page === 'work') return work(kid, data);
-  if (page === 'scores') return scores(kid, data);
-  if (page === 'home-ideas') return homeIdeas(kid, data);
-  return overview(ctx, kid, data);
+  const out = page === 'work' ? work(kid, data) : page === 'scores' ? scores(kid, data) : page === 'home-ideas' ? homeIdeas(kid, data) : overview(ctx, kid, data);
+  if (kids.length < 2) return out;
+  // Families with more than one child switch between them here.
+  const switcher = `<div class="kid-switch" role="group" aria-label="Choose a child">${kids.map(k => {
+    const sec = section(school(k.schoolId), k.sectionId);
+    return `<button class="kid ${k.id === kid.id ? 'on' : ''}" data-kid="${k.id}" aria-pressed="${k.id === kid.id}"><span class="avatar">${esc(k.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><span><b>${esc(k.name.split(' ')[0])}</b><small>Grade ${sec?.grade} · ${esc(sec?.name || '')}</small></span></button>`;
+  }).join('')}</div>`;
+  return { ...out, html: switcher + out.html, mount(el, c) {
+    el.querySelectorAll('[data-kid]').forEach(b => b.addEventListener('click', () => { try { localStorage.setItem(CHILD_KEY, b.dataset.kid); } catch { /* ignore */ } ctx.rerender(); }));
+    out.mount?.(el, c);
+  } };
 }
+const CHILD_KEY = 'vinclab:child';
 
 function gather(kid) {
   const ids = projectsFor(kid);
@@ -47,7 +57,7 @@ function overview(ctx, kid, { ids, prog, year, sch }) {
     html: `
     <section class="hero-card">
       <div class="hc-copy">
-        <p class="eyebrow">${esc(sec?.name || 'Grade 6')} · ${esc(sch.name)}</p>
+        <p class="eyebrow">Grade ${sec?.grade || 6} · ${esc(sec?.name || '')} · ${esc(sch.name)}</p>
         <h2>Hello, ${esc(ctx.me.name.split(' ')[0])}</h2>
         <p>${esc(first)} has finished <b>${year.actsDone} of ${year.actsTotal}</b> Kaushal Bodh activities this year${year.score != null ? ` and is scoring <b>${year.score}%</b> (${band(year.score)}) so far` : ''}. Last active ${timeAgo(last)}.</p>
         <a class="btn btn-brand" href="#/parent/work">See ${esc(first)}'s work ${icon('arrow')}</a>

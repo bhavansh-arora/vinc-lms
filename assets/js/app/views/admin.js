@@ -1,6 +1,6 @@
 // VINC Lab admin: network overview, schools, course content and settings.
-import { GRADE6, FORMS, NEXT_GRADES, WEIGHTS, projectById } from '../../data/grade6.js';
-import { db, save, reset, session, studentsOf, projectsFor, lastActive, addSchool, log } from '../store.js';
+import { COURSES, GRADES, FORMS, WEIGHTS, projectById } from '../../data/courses.js';
+import { db, save, reset, session, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf } from '../store.js';
 import { yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, fmtDate, toast, modal, download } from '../ui.js';
 
@@ -60,11 +60,19 @@ function overview(ctx) {
     title: 'Network overview', nav: '',
     html: `<div class="kpis">
       <div class="kpi"><span>${icon('school')}</span><b>${D.schools.filter(s => s.active).length}</b><p>Active schools</p></div>
-      <div class="kpi"><span>${icon('users')}</span><b>${students}</b><p>Grade 6 students</p></div>
+      <div class="kpi"><span>${icon('users')}</span><b>${students}</b><p>Students, Grades 6–8</p></div>
       <div class="kpi"><span>${icon('eye')}</span><b>${students ? Math.round(active / students * 100) : 0}%</b><p>Active in the last 14 days</p></div>
       <div class="kpi"><span>${icon('quiz')}</span><b>${quizzes}</b><p>Quiz attempts</p></div>
     </div>
     <section class="card"><div class="card-head"><h2 class="h-card">${icon('chart')} Activities completed per week</h2><span class="muted small">Last 12 weeks, all schools</span></div>${spark(wk)}</section>
+    <div class="grade-cards">${GRADES.map(g => {
+      const kids = D.users.filter(u => u.role === 'student' && gradeOf(u) === g);
+      const ys = kids.map(k => yearSummary(D.progress[k.id], projectsFor(k)));
+      const comp = ys.length ? Math.round(ys.reduce((n, y) => n + y.activityPct, 0) / ys.length) : 0;
+      const sc = ys.filter(y => y.score != null); const avg = sc.length ? Math.round(sc.reduce((n, y) => n + y.score, 0) / sc.length) : null;
+      return `<section class="card grade-card g${g}"><div class="gc-top"><span class="gnum">${g}</span><div><b>Grade ${g}</b><small class="muted">${kids.length} students · ${D.schools.reduce((n, s) => n + s.sections.filter(x => x.grade === g).length, 0)} sections</small></div></div>
+        <div class="gc-row"><span>Activities</span>${bar(comp)}<b>${comp}%</b></div><div class="gc-row"><span>Avg score</span>${bar(avg)}<b>${avg == null ? '—' : `${avg}%`}</b></div></section>`;
+    }).join('')}</div>
     <div class="grid-2">
       <section class="card"><h2 class="h-card">${icon('school')} Schools</h2>
         <ul class="sec-list">${rows.map(r => `<li><span class="badge sm" style="--brand:${r.s.color}">${esc(r.s.initials)}</span><div><b>${esc(r.s.name)}</b><small class="muted">${r.students} students · avg score ${r.score == null ? '—' : `${r.score}%`}</small></div>${bar(r.completion, r.s.color)}<span class="num">${r.completion}%</span></li>`).join('')}</ul>
@@ -83,10 +91,10 @@ function schools(ctx) {
     title: 'Schools', nav: 'schools',
     html: `<div class="toolbar"><p class="muted">Each school gets its own branded studio, sections and coordinator login.</p><button class="btn btn-brand btn-sm" id="add">${icon('plus')} Add school</button></div>
     <section class="card tbl-card"><table class="tbl">
-      <thead><tr><th>School</th><th>City</th><th>Plan</th><th>Seats</th><th>Activities</th><th>Avg score</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>School</th><th>City</th><th>Plan</th><th>Students</th><th>Teachers</th><th>Activities</th><th>Avg score</th><th>Status</th><th></th></tr></thead>
       <tbody>${D.schools.map(s => { const st = schoolStats(s); return `<tr>
         <td><div class="sch-cell"><span class="badge sm" style="--brand:${s.color}">${esc(s.initials)}</span><div><b>${esc(s.name)}</b><small class="muted">${esc(s.studio)}</small></div></div></td>
-        <td>${esc(s.city)}</td><td>${esc(s.plan)}</td><td>${st.students}/${s.seats}</td>
+        <td>${esc(s.city)}</td><td>${esc(s.plan)}</td><td>${st.students}/${s.seats}</td><td>${teachersOf(s.id).length}</td>
         <td><div class="cell-bar">${bar(st.completion, s.color)}<span>${st.completion}%</span></div></td>
         <td>${st.score == null ? '—' : `${st.score}% <small class="muted">${band(st.score)}</small>`}</td>
         <td><button class="tag ${s.active ? 'ok' : 'todo'} tag-btn" data-toggle="${s.id}" aria-label="${s.active ? 'Pause' : 'Activate'} ${esc(s.name)}">${s.active ? 'Active' : 'Paused'}</button></td>
@@ -119,7 +127,7 @@ function schools(ctx) {
           if (!f.name.value.trim()) return;
           const s = addSchool({ name: f.name.value.trim(), studio: f.studio.value.trim(), city: f.city.value.trim(), plan: f.plan.value, seats: f.seats.value, color: f.color.value });
           log(ctx.me.name, `added ${s.name}`, s.id); save();
-          d.close(); toast(`${s.name} created with section 6 A and a coordinator login.`); ctx.rerender();
+          d.close(); toast(`${s.name} created with sections 6 A, 7 A and 8 A, a teacher and a coordinator login.`); ctx.rerender();
         });
       });
     },
@@ -130,11 +138,10 @@ function schools(ctx) {
 function content(ctx) {
   return {
     title: 'Course content', nav: 'content',
-    html: `<section class="card"><div class="card-head"><h2 class="h-card">${icon('book')} Grade 6 · Kaushal Bodh</h2><span class="tag ok">Live</span></div>
-      <p class="muted">${GRADE6.projects.length} projects · ${GRADE6.projects.reduce((n, p) => n + p.activities.length, 0)} activities · ${GRADE6.projects.reduce((n, p) => n + p.quiz.length, 0)} quiz questions · ${GRADE6.projects.reduce((n, p) => n + p.viva.length, 0)} viva prompts. Assessment: ${WEIGHTS.map(w => `${esc(w.label)} ${w.weight}%`).join(' · ')}.</p>
-      <div class="mini-list">${GRADE6.projects.map(p => `<a class="mini f-${p.form}" href="#/admin/content/${p.id}"><div class="mini-art">${art(p.art)}</div><div><b>${esc(p.title)}</b><small>${esc(FORMS[p.form].short)} · ${p.activities.length} activities · ${p.quiz.length} questions · pp. ${p.pages[0]}–${p.pages[1]}</small></div></a>`).join('')}</div>
-    </section>
-    <div class="grid-2">${[7, 8].map(g => `<section class="card locked"><div class="card-head"><h2 class="h-card">${icon('book')} Grade ${g}</h2><span class="tag todo">In production</span></div><ul>${NEXT_GRADES[g].map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`).join('')}</div>`,
+    html: GRADES.map(g => { const C = COURSES[g]; const ps = C.projects; return `<section class="card g${g}"><div class="card-head"><h2 class="h-card"><span class="gnum sm">${g}</span> ${esc(C.book)}</h2><span class="tag ok">Live</span></div>
+      <p class="muted">${ps.length} projects · ${ps.reduce((n, p) => n + p.activities.length, 0)} activities · ${ps.reduce((n, p) => n + p.quiz.length, 0)} quiz questions · ${ps.reduce((n, p) => n + p.viva.length, 0)} viva prompts</p>
+      <div class="mini-list">${ps.map(p => `<a class="mini f-${p.form}" href="#/admin/content/${p.id}"><div class="mini-art">${art(p.art)}</div><div><b>${esc(p.title)}</b><small>${esc(FORMS[p.form].short)} · ${p.activities.length} activities · ${p.quiz.length} questions · pp. ${p.pages[0]}–${p.pages[1]}</small></div></a>`).join('')}</div>
+    </section>`; }).join('') + `<p class="muted small">Assessment for every project: ${WEIGHTS.map(w => `${esc(w.label)} ${w.weight}%`).join(' · ')}.</p>`,
   };
 }
 
@@ -144,7 +151,7 @@ function projectContent(ctx, pid) {
   return {
     title: p.title, nav: 'content',
     html: `<a class="back" href="#/admin/content">← Course content</a>
-    <section class="proj-head f-${p.form}"><div class="ph-art">${art(p.art)}</div><div class="ph-copy"><span class="form-tag">${esc(FORMS[p.form].name)}</span><h2>${esc(p.title)}</h2><p>${esc(p.summary)}</p></div></section>
+    <section class="proj-head f-${p.form}"><div class="ph-art">${art(p.art)}</div><div class="ph-copy"><span class="form-tag">Grade ${p.grade} · ${esc(FORMS[p.form].name)}</span><h2>${esc(p.title)}</h2><p>${esc(p.summary)}</p></div></section>
     <div class="grid-2">
       <section class="card"><h3 class="h-card">Activities</h3><ol class="plain-ol">${p.activities.map(a => `<li><b>${esc(a.title)}</b> <small class="muted">p. ${a.page}</small><br><small>${esc(a.task)}</small></li>`).join('')}</ol></section>
       <section class="card"><h3 class="h-card">Viva prompts</h3><ol class="plain-ol">${p.viva.map(v => `<li>${esc(v)}</li>`).join('')}</ol></section>

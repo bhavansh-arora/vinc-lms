@@ -1,5 +1,5 @@
 // VINC Lab landing page behaviour.
-import { GRADE6, FORMS, WEIGHTS, LEARNING_OUTCOMES, NEXT_GRADES } from './data/grade6.js';
+import { COURSES, GRADES, FORMS, WEIGHTS, LEARNING_OUTCOMES, projectById, projectsOfGrade } from './data/courses.js';
 import { art, icon } from './art.js';
 
 const LEADS_INBOX = 'vincdeeptech@gmail.com';
@@ -9,7 +9,9 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const FORM_VAR = { life: '--olive', machines: '--rust', services: '--plum' };
-const projects = GRADE6.projects;
+const DEMO_LOGIN = { 6: 'student', 7: 'student7', 8: 'student8' };
+const TECH = { 6: 'Scratch games and simple machines', 7: 'An AI Assistant with Teachable Machine', 8: 'Home Automation with Arduino' };
+let courseGrade = 6;
 
 /* ---------- Theme ---------- */
 const store = {
@@ -126,9 +128,8 @@ onScroll();
   planets.forEach(p => p.addEventListener('click', () => {
     planets.forEach(q => q.setAttribute('aria-pressed', q === p));
     const f = FORMS[p.dataset.form];
-    const list = projects.filter(x => x.form === f.key);
-    cap.innerHTML = `<strong>${esc(f.name)}</strong><span class="muted">Grade 6 offers two projects here. Schools pick one.</span>
-      <span class="pills">${list.map(x => `<a class="chip" href="#course" data-open="${x.id}">${esc(x.title)}</a>`).join('')}</span>`;
+    cap.innerHTML = `<strong>${esc(f.name)}</strong><span class="muted">Two projects in every grade. Schools pick one each year.</span>
+      ${GRADES.map(g => `<span class="pills"><span class="chip g-chip g${g}">Grade ${g}</span>${projectsOfGrade(g).filter(x => x.form === f.key).map(x => `<a class="chip" href="#course" data-open="${x.id}">${esc(x.title)}</a>`).join('')}</span>`).join('')}`;
     $$('[data-open]', cap).forEach(a => a.addEventListener('click', e => { e.preventDefault(); openDrawer(a.dataset.open); }));
   }));
   requestAnimationFrame(tick);
@@ -144,15 +145,20 @@ function countUp(el) {
 
 /* ---------- Projects ---------- */
 const grid = $('#projects');
-grid.innerHTML = projects.map(p => `
+let formFilter = 'all';
+function renderProjects(animate) {
+grid.innerHTML = projectsOfGrade(courseGrade).map(p => `
   <button class="pcard f-${p.form} reveal" data-id="${p.id}" data-form="${p.form}" aria-haspopup="dialog">
     <div class="art-box">${art(p.art)}</div>
-    <div class="meta"><span class="form-tag">${esc(FORMS[p.form].short)}</span><span class="chip">${p.periods} periods</span></div>
+    <div class="meta"><span class="form-tag">${esc(FORMS[p.form].short)}</span><span class="chip">Grade ${p.grade} · ${p.periods} periods</span></div>
     <h3>${esc(p.title)}</h3>
     <p>${esc(p.tagline)}</p>
     <span class="more">See the ${p.activities.length} activities ${icon('arrow')}</span>
   </button>`).join('');
+grid.classList.toggle('swap', !!animate);
 $$('.pcard', grid).forEach(card => {
+  if (animate) card.classList.add('in');
+  card.classList.toggle('dim', formFilter !== 'all' && card.dataset.form !== formFilter);
   card.addEventListener('click', () => openDrawer(card.dataset.id));
   card.addEventListener('pointermove', e => {
     const r = card.getBoundingClientRect();
@@ -160,23 +166,37 @@ $$('.pcard', grid).forEach(card => {
     card.style.setProperty('--my', `${e.clientY - r.top}px`);
   });
 });
+}
+renderProjects(false);
 $$('.filter').forEach(b => b.addEventListener('click', () => {
   $$('.filter').forEach(x => x.setAttribute('aria-pressed', x === b));
-  const f = b.dataset.filter;
-  $$('.pcard', grid).forEach(c => c.classList.toggle('dim', f !== 'all' && c.dataset.form !== f));
+  formFilter = b.dataset.filter;
+  $$('.pcard', grid).forEach(c => c.classList.toggle('dim', formFilter !== 'all' && c.dataset.form !== formFilter));
 }));
+// Grade tabs for the course explorer
+const gtabs = $('#grade-tabs');
+gtabs.innerHTML = GRADES.map(g => `<button role="tab" class="g${g}" data-g="${g}" aria-selected="${g === courseGrade}" tabindex="${g === courseGrade ? 0 : -1}"><span class="gn">${g}</span>Grade ${g}</button>`).join('');
+function selectGrade(g) {
+  courseGrade = g;
+  $$('[data-g]', gtabs).forEach(b => { const on = +b.dataset.g === g; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+  renderProjects(true);
+}
+$$('[data-g]', gtabs).forEach((b, i, all) => {
+  b.addEventListener('click', () => selectGrade(+b.dataset.g));
+  b.addEventListener('keydown', e => { if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return; const n = all[(i + (e.key === 'ArrowRight' ? 1 : all.length - 1)) % all.length]; selectGrade(+n.dataset.g); n.focus(); });
+});
 
 const drawer = $('#drawer'), inner = $('#drawer-inner');
 function openDrawer(id) {
-  const p = projects.find(x => x.id === id); if (!p) return;
+  const p = projectById(id); if (!p) return;
   const f = FORMS[p.form];
   inner.className = `drawer-inner f-${p.form}`;
   inner.innerHTML = `
     <button class="x" aria-label="Close">${icon('close')}</button>
-    <p class="label" style="color:var(--f)">${esc(f.name)} · Project ${p.num}</p>
+    <p class="label" style="color:var(--f)">Grade ${p.grade} · ${esc(f.name)} · Project ${p.num}</p>
     <h2 id="drawer-title">${esc(p.title)}</h2>
     <p class="lead-sm">${esc(p.summary)}</p>
-    <div class="facts"><span class="chip">${icon('book')} Book pp. ${p.pages[0]}–${p.pages[1]}</span><span class="chip">${icon('calendar')} ${p.periods} periods</span><span class="chip">${icon('school')} ${esc(p.subjects)}</span></div>
+    <div class="facts"><span class="chip">${icon('book')} Kaushal Bodh Grade ${p.grade}, pp. ${p.pages[0]}–${p.pages[1]}</span><span class="chip">${icon('calendar')} ${p.periods} periods</span><span class="chip">${icon('school')} ${esc(p.subjects)}</span></div>
     <div class="art-box">${art(p.art)}</div>
     <h4>Activities</h4>
     <ol class="acts">${p.activities.map(a => `<li><span class="n">${a.n}</span><div><b>${esc(a.title)}</b><small>${esc(a.task)}</small></div><span class="pg">p. ${a.page}</span></li>`).join('')}</ol>
@@ -189,7 +209,7 @@ function openDrawer(id) {
     <h4>How it's assessed</h4>
     <div class="weights-mini">${WEIGHTS.map((w, i) => `<i style="width:${w.weight}%;background:${segColor(i)}"></i>`).join('')}</div>
     <p class="small muted">${p.quiz.length}-question quiz · ${p.viva.length} viva prompts · activity book · portfolio · observation rubric</p>
-    <p><a class="btn btn-primary" href="app.html#/login/student">Try this project in the demo</a></p>`;
+    <p><a class="btn btn-primary" href="app.html#/login/${DEMO_LOGIN[p.grade]}">Open a Grade ${p.grade} student demo</a></p>`;
   $('.x', inner).addEventListener('click', () => drawer.close());
   drawer.showModal();
   inner.scrollTop = 0;
@@ -197,22 +217,34 @@ function openDrawer(id) {
 drawer.addEventListener('click', e => { if (e.target === drawer) drawer.close(); });
 
 /* ---------- Planner ---------- */
-const picks = { life: 'g6p1', machines: 'g6p3', services: 'g6p6' };
+const DEFAULT_PICKS = { 6: { life: 'g6p1', machines: 'g6p3', services: 'g6p6' }, 7: { life: 'g7p1', machines: 'g7p4', services: 'g7p6' }, 8: { life: 'g8p1', machines: 'g8p4', services: 'g8p5' } };
+let planGrade = 6;
+let picks = { ...DEFAULT_PICKS[6] };
 const pickWrap = $('#planner-picks');
-pickWrap.innerHTML = Object.values(FORMS).map(f => `
+const pgTabs = $('#plan-grades');
+pgTabs.innerHTML = GRADES.map(g => `<button class="g${g}" data-pg="${g}" aria-pressed="${g === planGrade}"><span class="gn">${g}</span>Grade ${g}</button>`).join('');
+$$('[data-pg]', pgTabs).forEach(b => b.addEventListener('click', () => {
+  planGrade = +b.dataset.pg; picks = { ...DEFAULT_PICKS[planGrade] };
+  $$('[data-pg]', pgTabs).forEach(x => x.setAttribute('aria-pressed', x === b));
+  renderPicks(); renderPlan();
+}));
+function renderPicks() {
+  pickWrap.innerHTML = Object.values(FORMS).map(f => `
   <div class="pick-group f-${f.key}" role="group" aria-labelledby="pg-${f.key}">
     <h3 id="pg-${f.key}">${esc(f.name)}</h3>
-    <div class="opts">${projects.filter(p => p.form === f.key).map(p => `<button class="pick" data-form="${f.key}" data-id="${p.id}" aria-pressed="${picks[f.key] === p.id}">${esc(p.title)}<small>${p.periods} periods</small></button>`).join('')}</div>
+    <div class="opts">${projectsOfGrade(planGrade).filter(p => p.form === f.key).map(p => `<button class="pick" data-form="${f.key}" data-id="${p.id}" aria-pressed="${picks[f.key] === p.id}">${esc(p.title)}<small>${p.periods} periods</small></button>`).join('')}</div>
   </div>`).join('');
-$$('.pick', pickWrap).forEach(b => b.addEventListener('click', () => {
-  const f = b.dataset.form;
-  picks[f] = picks[f] === b.dataset.id ? null : b.dataset.id;
-  $$(`.pick[data-form="${f}"]`, pickWrap).forEach(x => x.setAttribute('aria-pressed', picks[f] === x.dataset.id));
-  renderPlan();
-}));
+  $$('.pick', pickWrap).forEach(b => b.addEventListener('click', () => {
+    const f = b.dataset.form;
+    picks[f] = picks[f] === b.dataset.id ? null : b.dataset.id;
+    $$(`.pick[data-form="${f}"]`, pickWrap).forEach(x => x.setAttribute('aria-pressed', picks[f] === x.dataset.id));
+    renderPlan();
+  }));
+}
+renderPicks();
 function renderPlan() {
-  const total = GRADE6.periodsPerYear; // 160 periods ≈ 40 weeks × 4
-  const chosen = ['life', 'machines', 'services'].map(f => projects.find(p => p.id === picks[f])).filter(Boolean);
+  const total = COURSES[planGrade].periodsPerYear; // 160 periods ≈ 40 weeks × 4
+  const chosen = ['life', 'machines', 'services'].map(f => projectById(picks[f])).filter(Boolean);
   const used = chosen.reduce((s, p) => s + p.periods, 0);
   const mela = 4;
   const free = Math.max(0, total - used - mela);
@@ -352,14 +384,12 @@ $$('.lo').forEach(b => b.addEventListener('click', () => {
 }));
 
 /* ---------- Roadmap ---------- */
-$('#road').innerHTML = [
-  { g: 6, live: true, label: 'Live now', list: projects.map(p => p.title) },
-  { g: 7, live: false, label: 'Coming next', list: NEXT_GRADES[7] },
-  { g: 8, live: false, label: 'Then', list: NEXT_GRADES[8] },
-].map(r => `
-  <div class="road-card reveal ${r.live ? 'live' : ''}"><span class="big" aria-hidden="true">${r.g}</span>
-    <span class="chip ${r.live ? 'live' : ''}">${r.label}</span>
-    <h3>Grade ${r.g}</h3><ul>${r.list.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('');
+$('#road').innerHTML = GRADES.map(g => `
+  <div class="road-card g${g} reveal"><span class="big" aria-hidden="true">${g}</span>
+    <span class="chip live">Live</span>
+    <h3>Grade ${g}</h3><ul>${projectsOfGrade(g).map(p => `<li>${esc(p.title)}</li>`).join('')}</ul>
+    <p class="tech">${icon('flask')} ${esc(TECH[g])}</p>
+    <a class="btn btn-ghost btn-sm demo" href="app.html#/login/${DEMO_LOGIN[g]}">Try a Grade ${g} student</a></div>`).join('');
 
 /* ---------- Enquiry ---------- */
 const form = $('#enquiry'), msg = $('#form-msg');

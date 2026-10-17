@@ -1,5 +1,5 @@
 // Turns a student's progress on one project into the five CBSE assessment parts and a total.
-import { WEIGHTS, VIVA_RUBRIC, OBSERVATION_RUBRIC, projectById } from '../data/grade6.js';
+import { WEIGHTS, VIVA_RUBRIC, OBSERVATION_RUBRIC, projectById } from '../data/courses.js';
 
 export const PORTFOLIO_TARGET = 4;
 

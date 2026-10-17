@@ -5,12 +5,15 @@ import * as Student from './views/student.js';
 import * as Parent from './views/parent.js';
 import * as School from './views/school.js';
 import * as Admin from './views/admin.js';
+import * as Teacher from './views/teacher.js';
 
 load();
 
-const DEMO = { student: 'u_aarav', parent: 'u_priya', school: 'u_sch_greenwood_coord', admin: 'u_admin' };
-const ROLE_LABEL = { student: 'Student', parent: 'Parent', school: 'School', admin: 'Admin' };
-const VIEWS = { student: Student, parent: Parent, school: School, admin: Admin };
+const DEMO = { student: 'u_aarav', parent: 'u_priya', teacher: 'u_anjali', school: 'u_sch_greenwood_coord', admin: 'u_admin' };
+// Showcase students in the other grades, reachable from the landing page and login screen.
+const DEMO_EXTRA = { student7: 'u_meera', student8: 'u_ananya' };
+const ROLE_LABEL = { student: 'Student', parent: 'Parent', teacher: 'Teacher', school: 'School', admin: 'Admin' };
+const VIEWS = { student: Student, parent: Parent, teacher: Teacher, school: School, admin: Admin };
 const root = $('#app');
 
 /* ---------- Theme ---------- */
@@ -34,7 +37,7 @@ route();
 function route() {
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const [head, ...rest] = parts;
-  if (head === 'login' && rest[0] && DEMO[rest[0]]) { signIn(DEMO[rest[0]]); go(`/${rest[0]}`); return; }
+  if (head === 'login' && rest[0] && (DEMO[rest[0]] || DEMO_EXTRA[rest[0]])) { const id = DEMO[rest[0]] || DEMO_EXTRA[rest[0]]; signIn(id); go(`/${user(id).role}`); return; }
   if (head === 'brand-demo') {
     let draft = null;
     try { draft = JSON.parse(localStorage.getItem('vinclab-brand-draft') || 'null'); } catch { /* ignore */ }
@@ -56,7 +59,9 @@ function renderLogin() {
   document.title = 'Log in · VINC Lab';
   root.className = 'login-page';
   document.documentElement.style.removeProperty('--brand');
-  const others = db().users.filter(u => u.role === 'school' || (u.role === 'student' && u.roll <= 2));
+  const gradeLabel = u => { const sec = school(u.schoolId)?.sections.find(s => s.id === u.sectionId); return sec ? ` · Grade ${sec.grade} ${sec.name.replace(/^\d+\s*/, '')}` : ''; };
+  const order = { teacher: 0, school: 1, student: 2 };
+  const others = db().users.filter(u => u.role === 'school' || u.role === 'teacher' || (u.role === 'student' && u.roll <= 2)).sort((a, b) => order[a.role] - order[b.role]);
   root.innerHTML = `
     <div class="login-wrap">
       <a class="login-logo" href="index.html" aria-label="VINC Lab home">
@@ -68,7 +73,8 @@ function renderLogin() {
       <div class="role-grid">
         ${[
           ['student', 'Aarav Sharma', 'Grade 6 A · Greenwood Public School', 'star'],
-          ['parent', 'Priya Sharma', "Aarav's mother", 'home'],
+          ['parent', 'Priya Sharma', 'Mother of Aarav (Grade 6) and Ananya (Grade 8)', 'home'],
+          ['teacher', 'Anjali Menon', 'Teaches 6 A, 7 A and 8 A · Greenwood', 'book'],
           ['school', 'Kavita Rao', 'Kaushal Bodh coordinator · Greenwood', 'school'],
           ['admin', 'Neha Kapoor', 'VINC Lab admin', 'settings'],
         ].map(([role, name, sub, ic]) => `
@@ -79,14 +85,15 @@ function renderLogin() {
             <span class="go">Enter ${icon('arrow')}</span>
           </button>`).join('')}
       </div>
+      <p class="grade-links">Students in other grades: <button class="chip" data-user="u_meera">Meera Iyer · Grade 7</button> <button class="chip" data-user="u_ananya">Ananya Sharma · Grade 8</button></p>
       <details class="more-users"><summary>More demo accounts</summary>
         <label for="any-user" class="sr-only">Choose an account</label>
-        <select id="any-user">${others.map(u => `<option value="${u.id}">${esc(u.name)} · ${ROLE_LABEL[u.role]} · ${esc(school(u.schoolId)?.name || '')}</option>`).join('')}</select>
+        <select id="any-user">${others.map(u => `<option value="${u.id}">${esc(u.name)} · ${ROLE_LABEL[u.role]}${u.role === 'student' ? gradeLabel(u) : ''} · ${esc(school(u.schoolId)?.name || '')}</option>`).join('')}</select>
         <button class="btn btn-ghost btn-sm" id="any-go">Log in</button>
       </details>
       <p class="login-foot"><a href="index.html">← Back to vinclab</a> · <button class="linkish" id="theme-l">Switch theme</button></p>
     </div>`;
-  $$('.role-card', root).forEach(b => b.addEventListener('click', () => { signIn(b.dataset.user); go(`/${user(b.dataset.user).role}`); }));
+  $$('.role-card, .grade-links [data-user]', root).forEach(b => b.addEventListener('click', () => { signIn(b.dataset.user); go(`/${user(b.dataset.user).role}`); }));
   $('#any-go').addEventListener('click', () => { const id = $('#any-user').value; signIn(id); go(`/${user(id).role}`); });
   $('#theme-l').addEventListener('click', toggleTheme);
 }

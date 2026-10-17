@@ -276,11 +276,3 @@ export const GRADE6 = {
     },
   ],
 };
-
-// Grades 7 and 8 shown as coming next on the landing page.
-export const NEXT_GRADES = {
-  7: ['Plant Nursery', 'School Habitat Garden', 'Tie and Dye', 'AI Assistant', 'Storytime with Puppets', 'Family Health Handbook'],
-  8: ['Hydroponics', 'Feeding and Caring for Farm Animals', 'Working with Wood and Bamboo', 'Home Automation', 'Water Audit', 'Creating Advertisements'],
-};
-
-export const projectById = id => GRADE6.projects.find(p => p.id === id);
