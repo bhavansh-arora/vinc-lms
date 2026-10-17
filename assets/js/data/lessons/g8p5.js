@@ -269,7 +269,7 @@ export const LESSONS = {
     fact: 'Rivers clean themselves a little as they flow: plants take in minerals, oxygen in the water breaks down dirt, and sunlight kills some germs. A reed bed copies this.',
     lab: {
       type: 'layers', title: 'Greywater Rescue Filter', container: 'tank',
-      mission: 'Build a greywater filter from the bottom up: pebbles, gravel, charcoal, sand and a cloth on top. Leave out anything that would block or dirty the water.',
+      mission: 'Build a greywater filter from the bottom up: big stones at the bottom, finer layers above, and a catcher for hair and bits on top. Leave out anything that would block or dirty the water.',
       layers: [
         { label: 'Pebbles', texture: 'pebbles', why: 'Big stones at the bottom keep the outlet tap from clogging.' },
         { label: 'Gravel', texture: 'gravel', why: 'Smaller stones hold up the layers above and let water through.' },

@@ -54,6 +54,13 @@ function xRange(poly, y) {
   return lo === Infinity ? [W / 2 - 1, W / 2 + 1] : [lo, hi];
 }
 const ptsAttr = p => p.map(q => q.join(',')).join(' ');
+/** A tweenable transform about a fixed SVG point (GSAP's svgOrigin drifts on groups whose bbox changes mid-tween). */
+function xf(el, ox, oy, init = {}) {
+  const s = { x: 0, y: 0, sx: 1, sy: 1, rot: 0, ...init };
+  s.apply = () => el.setAttribute('transform', `translate(${n1(s.x + ox)} ${n1(s.y + oy)}) rotate(${n1(s.rot)}) scale(${s.sx.toFixed(4)} ${s.sy.toFixed(4)}) translate(${-ox} ${-oy})`);
+  s.apply();
+  return s;
+}
 
 /* ------------------------------------------------------------------------------------------------
    Textures. Every texture: a vertical gradient (g), an optional seeded pattern (pat), loose pieces
@@ -320,7 +327,7 @@ export function mount(stage, cfg, api) {
   const bands = layers.map((l, i) => { const y1 = yy, y0 = yy - weights[i] * unit; yy = y0; return { y0, y1 }; });
   const topSurface = yy;
 
-  const root = h(`<div class="lab-layers lyr-k-${kind}">
+  const root = h(`<div class="lab-layers lyr-k-${kind}${layers.length + distractors.length > 7 ? ' many' : ''}">
     <svg class="lyr-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>${patternDefs()}</defs></svg>
     <section class="lyr-tray" aria-label="Layers to add">
       <header class="lyr-tray-h"><h3 class="lab-h">Pick the next layer</h3><span class="lyr-count" aria-live="polite"><b>0</b> / ${layers.length}</span></header>
@@ -466,8 +473,8 @@ export function mount(stage, cfg, api) {
     const base = openSmooth(top) + `L${n1(xs1 + 12)} ${n1(y1 + 9)}L${n1(xs0)} ${n1(y1 + 9)}Z`;
     const edge = openSmooth(top);
     const g = gradId(l.texture), p = patId(l.texture);
-    return { box, base, edge, xs0, xs1, r, markup: `${g ? `<path class="lyr-base" d="${base}" fill="url(#${g})"/>` : ''}${p ? `<path class="lyr-pat" d="${base}" fill="url(#${p})"${l.texture === 'net' ? '' : ' opacity=".9"'}/>` : ''}
-      <g class="lyr-items">${t.items(box, r).join('')}</g>${t.bump || l.texture === 'cloth' ? `<path class="lyr-edge" d="${edge}" fill="none" stroke="#000" stroke-width="1.5" opacity=".18"/>` : ''}
+    return { box, base, edge, xs0, xs1, r, markup: `<g class="lyr-fill">${g ? `<path class="lyr-base" d="${base}" fill="url(#${g})"/>` : ''}${p ? `<path class="lyr-pat" d="${base}" fill="url(#${p})"${l.texture === 'net' ? '' : ' opacity=".9"'}/>` : ''}${t.bump || l.texture === 'cloth' ? `<path class="lyr-edge" d="${edge}" fill="none" stroke="#000" stroke-width="1.5" opacity=".18"/>` : ''}</g>
+      <g class="lyr-items">${t.items(box, r).join('')}</g>
       ${l.texture === 'net' ? `<path d="${edge}" fill="none" stroke="#1F5A2A" stroke-width="2.5"/>` : ''}` };
   }
 
@@ -479,37 +486,40 @@ export function mount(stage, cfg, api) {
     const B = { g, ...bm, idx, tex: l.texture };
     bandEls[idx] = B;
     ghostG.innerHTML = '';
-    const origin = `${C.cx} ${bands[idx].y1}`;
     const items = [...g.querySelectorAll('.lyr-items > *')];
+    const fillG = g.querySelector('.lyr-fill');
     if (l.texture === 'worms') addWorms(B, 5);
     if (l.texture === 'water') liveWater(B);
     api.sound(t.kind === 'liquid' ? 'whoosh' : 'drop');
     if (api.reduced) { gsap.from(g, { opacity: 0, duration: .3, onComplete: done }); return; }
     const tl = gsap.timeline({ onComplete: done });
     const fallH = bands[idx].y1 - C.top + 70;
+    const G = xf(g, C.cx, bands[idx].y1), F = xf(fillG, C.cx, bands[idx].y1);
+    const upd = o => ({ ...o, onUpdate: G.apply }), updF = o => ({ ...o, onUpdate: F.apply });
     if (t.kind === 'sheet') {
-      tl.from(g, { y: -(bands[idx].y0 - C.top + 90), rotation: -3, svgOrigin: origin, duration: .7, ease: 'power2.in' })
-        .fromTo(g, { scaleY: .7 }, { scaleY: 1, svgOrigin: origin, duration: .6, ease: 'elastic.out(1,.35)' });
+      tl.fromTo(G, { y: -(bands[idx].y0 - C.top + 90), rot: -3 }, upd({ y: 0, rot: 0, duration: .7, ease: 'power2.in' }))
+        .fromTo(G, { sy: .7 }, upd({ sy: 1, duration: .6, ease: 'elastic.out(1,.35)' }));
       tl.add(() => api.sound('pop'), .7);
     } else if (t.kind === 'seeds') {
       tl.from(items, { y: -fallH, opacity: 0, duration: .55, stagger: { each: .07, from: 'random' }, ease: 'bounce.out' });
       tl.add(() => api.sound('tick'), .3);
     } else if (t.kind === 'liquid') {
       stream(t.colors[0], bands[idx].y1, .9, true);
-      tl.from(g, { scaleY: 0, svgOrigin: origin, duration: 1, ease: 'power1.inOut' }, .25)
+      tl.fromTo(G, { sy: 0 }, upd({ sy: 1, duration: 1, ease: 'power1.inOut' }), .25)
         .add(() => ripple(bands[idx].y0), 1.1);
     } else if (t.kind === 'worms') {
-      tl.from(g.querySelectorAll('.lyr-base, .lyr-pat'), { opacity: 0, duration: .5 })
+      tl.from(fillG, { opacity: 0, duration: .5 })
         .from(g.querySelectorAll('.lyr-worm'), { y: -fallH, duration: .7, stagger: .12, ease: 'bounce.out' }, 0);
     } else {
       if (t.kind === 'grain') stream(t.colors, bands[idx].y1, .8, false);
       else flutter(t.colors, bands[idx].y1);
-      tl.from(g.querySelectorAll('.lyr-base, .lyr-pat, .lyr-edge'), { scaleY: 0, svgOrigin: origin, duration: .8, ease: 'power2.out' }, .2)
+      tl.fromTo(F, { sy: 0 }, updF({ sy: 1, duration: .8, ease: 'power2.out' }), .2)
         .from(items, t.kind === 'pieces'
           ? { y: () => -R(Math.random, fallH * .6, fallH), rotation: () => R(Math.random, -90, 90), opacity: 0, duration: .8, stagger: { amount: .5, from: 'random' }, ease: 'power2.in' }
           : { y: -fallH * .5, opacity: 0, duration: .55, stagger: { amount: .45, from: 'random' }, ease: 'power3.in' }, .15)
-        .fromTo(g, { scaleY: 1.12, scaleX: .985 }, { scaleY: 1, scaleX: 1, svgOrigin: origin, duration: .7, ease: 'elastic.out(1,.4)' }, '-=.15');
+        .fromTo(G, { sy: 1.12, sx: .985 }, upd({ sy: 1, sx: 1, duration: .7, ease: 'elastic.out(1,.4)' }), '-=.15');
     }
+    tl.add(() => { g.removeAttribute('transform'); fillG.removeAttribute('transform'); });
   }
 
   // Falling stream of particles (grain) or a liquid ribbon.
@@ -665,7 +675,8 @@ export function mount(stage, cfg, api) {
         .to(B.g.querySelectorAll('.lyr-items > :not(.lyr-worm)'), { opacity: .1, duration: 2.4 }, delay);
     });
     tl.add(() => addWorms(null, 6, stackBounds()), .2);
-    tl.to(stackG, { scaleY: .84, svgOrigin: `${C.cx} ${C.bottom}`, duration: 4.6, ease: 'power1.inOut' }, .3);
+    const S = xf(stackG, C.cx, C.bottom);
+    tl.to(S, { sy: .84, duration: 4.6, ease: 'power1.inOut', onUpdate: S.apply }, .3);
     for (let i = 0; i < 4; i++) {
       const x = C.cx - 50 + i * 33;
       const p = el('path', { d: `M${x} ${topSurface}q-8 -14 0 -26q8 -12 0 -26`, stroke: '#fff', 'stroke-width': 4, fill: 'none', 'stroke-linecap': 'round', opacity: 0 }, fxTop);
@@ -784,7 +795,8 @@ export function mount(stage, cfg, api) {
     tl.add(() => { api.say('Bubbles carry air (oxygen) down to the roots.', 'good'); sparkleAt(x, topSurface); }, 4);
   }
   function tlNone(tl) {
-    tl.fromTo(stackG, { scaleY: 1 }, { scaleY: 1.04, svgOrigin: `${C.cx} ${C.bottom}`, duration: .25, yoyo: true, repeat: 1, ease: 'power2.out' })
+    const S = xf(stackG, C.cx, C.bottom);
+    tl.to(S, { sy: 1.05, duration: .25, yoyo: true, repeat: 1, ease: 'power2.out', onUpdate: S.apply })
       .add(() => sparkleAt(C.cx, topSurface + 20));
   }
 
