@@ -180,7 +180,7 @@ Cloudflare Pages or S3.
   over. In this preview, passwords are salted and hashed (SHA-256) but checked
   in the browser, so they protect nothing on a shared computer; a live version
   must check them on the server and use a slow hash such as bcrypt or Argon2.
-- **Pilot form**: requests go to vincdeeptech@gmail.com through FormSubmit.
+- **Pilot form**: requests go to info@vinc-lab.com through FormSubmit.
   The first submission sends an activation email that must be confirmed once.
 - **Content**: project titles, page numbers and periods follow the 2026–27
   Kaushal Bodh Grade 6, 7 and 8 books. Summaries, quizzes and viva prompts are VINC Lab's

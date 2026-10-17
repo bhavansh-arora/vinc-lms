@@ -404,6 +404,119 @@ section { padding: clamp(64px, 9vw, 112px) 0; position: relative; }
 .form-msg.flash { animation: lp-rise var(--dur-3) var(--ease-out); }
 .contact-alt a { color: var(--band-accent); }
 
+/* ---------- Ambient scenes that fill quiet corners (why, outcomes, roadmap, FAQ, contact) ----------
+   Each loops only while on screen: landing.js adds .play to [data-scene] elements in view. */
+.scene:not(.play), .scene:not(.play) * { animation-play-state: paused !important; }
+
+/* Why now: days left until Composite Skill Labs are due */
+.why-count { margin-top: 26px; padding: 18px 20px 14px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.wc-top { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; }
+.wc-num { font: 700 2.4rem/1 var(--display); color: var(--rust); font-variant-numeric: tabular-nums; min-width: 3ch; }
+.wc-top span { color: var(--ink-2); font-size: var(--t-small); line-height: 1.4; }
+.wc-track { position: relative; height: 10px; border-radius: 6px; background: var(--paper-2); margin: 52px 0 10px; }
+.wc-fill { position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); border-radius: 6px; background: linear-gradient(90deg, var(--olive), var(--amber), var(--rust)); transition: width 1.6s var(--ease-out); }
+.wc-runner { position: absolute; top: 50%; left: var(--p, 0%); width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--card); border: 3px solid var(--rust); transition: left 1.6s var(--ease-out); }
+.wc-runner::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--rust); animation: lp-sc-ping 2s var(--ease-out) infinite; }
+@keyframes lp-sc-ping { from { scale: 1; opacity: .8; } to { scale: 2.4; opacity: 0; } }
+.wc-ic { position: absolute; bottom: 14px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; color: #fff; animation: lp-sc-bob 2.4s var(--ease-in-out) infinite; }
+.wc-ic .ic { width: 16px; height: 16px; }
+.wc-ic.i1 { left: 12%; background: var(--olive); }
+.wc-ic.i2 { left: 44%; background: var(--rust); animation-delay: -.8s; }
+.wc-ic.i3 { left: 76%; background: var(--plum); animation-delay: -1.6s; }
+@keyframes lp-sc-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+.wc-ends { display: flex; justify-content: space-between; font: 500 var(--t-label) var(--mono); color: var(--muted); }
+.wc-ends span { display: grid; } .wc-ends span:last-child { text-align: right; }
+.wc-ends small { font: 400 .75rem var(--body); }
+
+/* Outcomes: four goals around the learner, outcomes orbiting */
+.goal-web { width: min(340px, 100%); height: auto; flex: none; overflow: visible; }
+.gw-links path { stroke: var(--line); stroke-width: 2; stroke-dasharray: 4 7; fill: none; animation: lp-sc-flow 1.6s linear infinite; }
+@keyframes lp-sc-flow { to { stroke-dashoffset: -22; } }
+.gw-orbit { transform-origin: 170px 105px; animation: lp-sc-turn 36s linear infinite; }
+.gw-orbit circle { fill: var(--amber); opacity: .75; }
+.gw-orbit .c1 { fill: var(--teal); } .gw-orbit .c2 { fill: var(--plum); }
+@keyframes lp-sc-turn { to { rotate: 360deg; } }
+.gw-dot { stroke-width: 2.5; }
+.gw-node text { font: 700 12px var(--mono); text-anchor: middle; fill: #fff; }
+.gw-pulse { fill: none; stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: lp-sc-pulse 4s var(--ease-out) infinite; }
+@keyframes lp-sc-pulse { 0% { scale: 1; opacity: .7; } 40%, 100% { scale: 1.7; opacity: 0; } }
+.n1 .gw-dot { fill: var(--olive); } .n1 .gw-pulse { stroke: var(--olive); }
+.n2 .gw-dot { fill: var(--rust); } .n2 .gw-pulse { stroke: var(--rust); animation-delay: 1s; }
+.n3 .gw-dot { fill: var(--plum); } .n3 .gw-pulse { stroke: var(--plum); animation-delay: 2s; }
+.n4 .gw-dot { fill: var(--amber-ink); } .n4 .gw-pulse { stroke: var(--amber); animation-delay: 3s; }
+.gw-node { transform-box: fill-box; transform-origin: center; animation: lp-sc-node 4s var(--ease-in-out) infinite; }
+.n2 { animation-delay: 1s; } .n3 { animation-delay: 2s; } .n4 { animation-delay: 3s; }
+@keyframes lp-sc-node { 0%, 30%, 100% { scale: 1; } 10% { scale: 1.1; } }
+.gw-core { fill: var(--card); stroke: var(--teal); stroke-width: 2.5; }
+.gw-head { fill: var(--teal); }
+.gw-body { fill: none; stroke: var(--teal); stroke-width: 4; stroke-linecap: round; }
+.gw-kid { transform-box: fill-box; transform-origin: center; animation: lp-sc-breathe 4s var(--ease-in-out) infinite; }
+@keyframes lp-sc-breathe { 0%, 100% { scale: 1; } 50% { scale: 1.06; } }
+
+/* Roadmap: a learner climbs from Grade 6 to Grade 8 */
+.road-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+.road-head h2 { margin-bottom: 0; }
+.stairs { width: min(300px, 40%); height: auto; flex: none; overflow: visible; }
+.st { stroke: none; }
+.s6 { fill: color-mix(in srgb, var(--olive) 70%, var(--card)); } .s7 { fill: color-mix(in srgb, var(--teal) 70%, var(--card)); } .s8 { fill: color-mix(in srgb, var(--plum) 70%, var(--card)); }
+.stairs text { font: 700 18px var(--display); fill: #fff; text-anchor: middle; }
+.pole { stroke: var(--ink-2); stroke-width: 2.5; stroke-linecap: round; }
+.cloth { fill: var(--amber); transform-box: fill-box; transform-origin: left center; animation: lp-sc-wave 1.4s var(--ease-in-out) infinite alternate; }
+@keyframes lp-sc-wave { from { scale: 1 1; } to { scale: .75 1.1; } }
+.hp-head { fill: var(--ink); } .hp-body { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; }
+.hopper { animation: lp-sc-climb 6s infinite; }
+@keyframes lp-sc-climb {
+  0%, 10% { translate: 0 0; opacity: 1; animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
+  20% { translate: 47px -44px; animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
+  28%, 42% { translate: 94px -28px; animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
+  52% { translate: 141px -72px; animation-timing-function: cubic-bezier(.3, 0, .7, 1); }
+  60%, 84% { translate: 188px -56px; opacity: 1; }
+  92% { translate: 188px -56px; opacity: 0; }
+  96% { translate: 0 0; opacity: 0; }
+  100% { translate: 0 0; opacity: 1; }
+}
+.hop-in { transform-box: fill-box; transform-origin: center bottom; animation: lp-sc-squash 6s infinite; }
+@keyframes lp-sc-squash { 0%, 8%, 26%, 38%, 58%, 100% { scale: 1 1; } 10%, 28%, 60% { scale: 1.12 .82; } 13%, 31%, 63% { scale: .92 1.1; } }
+.sparks path { stroke: var(--amber); stroke-width: 2.5; stroke-linecap: round; opacity: 0; animation: lp-sc-spark 6s infinite; }
+@keyframes lp-sc-spark { 0%, 58% { opacity: 0; translate: 0 6px; } 64%, 78% { opacity: 1; translate: 0 0; } 86%, 100% { opacity: 0; translate: 0 -4px; } }
+
+/* FAQ: a short conversation that types itself out */
+.faq-chat { display: grid; gap: 10px; margin-top: 26px; max-width: 360px; }
+.bub { position: relative; margin: 0; padding: 10px 14px; border-radius: 18px; font-size: var(--t-small); line-height: 1.4; max-width: 88%; opacity: 0; }
+.bub.q { justify-self: start; background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.bub.a { justify-self: end; background: var(--teal); color: #fff; border-bottom-right-radius: 6px; }
+.b1 { animation: lp-sc-b1 14s var(--ease-out) infinite; }
+.b2 { animation: lp-sc-b2 14s var(--ease-out) infinite; }
+.b3 { animation: lp-sc-b3 14s var(--ease-out) infinite; }
+.b4 { animation: lp-sc-b4 14s var(--ease-out) infinite; }
+@keyframes lp-sc-b1 { 0% { opacity: 0; translate: 0 10px; } 4%, 90% { opacity: 1; translate: 0 0; } 96%, 100% { opacity: 0; } }
+@keyframes lp-sc-b2 { 0%, 10% { opacity: 0; translate: 0 10px; } 14%, 90% { opacity: 1; translate: 0 0; } 96%, 100% { opacity: 0; } }
+@keyframes lp-sc-b3 { 0%, 38% { opacity: 0; translate: 0 10px; } 42%, 90% { opacity: 1; translate: 0 0; } 96%, 100% { opacity: 0; } }
+@keyframes lp-sc-b4 { 0%, 48% { opacity: 0; translate: 0 10px; } 52%, 90% { opacity: 1; translate: 0 0; } 96%, 100% { opacity: 0; } }
+.bub .typing { position: absolute; left: 14px; top: 50%; translate: 0 -50%; display: flex; gap: 4px; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: lp-sc-dot 1s var(--ease-in-out) infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes lp-sc-dot { 0%, 100% { opacity: .35; translate: 0 0; } 50% { opacity: 1; translate: 0 -3px; } }
+.b2 .typing { animation: lp-sc-type2 14s linear infinite; } .b2 .txt { animation: lp-sc-text2 14s linear infinite; }
+.b4 .typing { animation: lp-sc-type4 14s linear infinite; } .b4 .txt { animation: lp-sc-text4 14s linear infinite; }
+@keyframes lp-sc-type2 { 0%, 23% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes lp-sc-text2 { 0%, 23% { opacity: 0; } 26%, 100% { opacity: 1; } }
+@keyframes lp-sc-type4 { 0%, 61% { opacity: 1; } 63%, 100% { opacity: 0; } }
+@keyframes lp-sc-text4 { 0%, 61% { opacity: 0; } 64%, 100% { opacity: 1; } }
+.faq-more { margin-top: 18px; color: var(--muted); font-size: var(--t-small); }
+.faq-more a { color: var(--ink); font-weight: 600; }
+
+/* Contact: a paper plane flies the three pilot steps */
+.journey { margin-top: 30px; }
+.jr-path { display: block; width: 100%; height: auto; overflow: visible; margin-bottom: -14px; }
+#jr-route { fill: none; stroke: color-mix(in srgb, var(--on-band) 35%, transparent); stroke-width: 2; stroke-dasharray: 5 7; vector-effect: non-scaling-stroke; animation: lp-sc-flow 1.6s linear infinite; }
+.plane path { fill: var(--band-accent); }
+.jr-steps { list-style: none; padding: 0; margin: 4px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; font-size: var(--t-small); color: color-mix(in srgb, var(--on-band) 85%, transparent); line-height: 1.35; }
+.jr-steps li { display: grid; justify-items: center; gap: 8px; }
+.jr-dot { position: relative; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 700 .95rem var(--mono); background: color-mix(in srgb, var(--on-band) 10%, transparent); border: 2px solid var(--band-accent); color: var(--band-accent); animation: lp-sc-step 6s var(--ease-out) infinite; }
+.jr-steps li:nth-child(2) .jr-dot { animation-delay: 2.16s; } .jr-steps li:nth-child(3) .jr-dot { animation-delay: 4.8s; }
+@keyframes lp-sc-step { 0% { background: var(--band-accent); color: var(--band); scale: 1.15; } 18%, 100% { background: color-mix(in srgb, var(--on-band) 10%, transparent); color: var(--band-accent); scale: 1; } }
+
 /* Footer */
 .site-footer { padding: 40px 0 28px; border-top: 1px solid var(--line); }
 .foot-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
@@ -468,6 +581,10 @@ section { padding: clamp(64px, 9vw, 112px) 0; position: relative; }
 }
 @media (max-width: 860px) {
   .hero-grid, .two-col, .dash-panel, .faq-wrap { grid-template-columns: 1fr; }
+  .goal-web { width: min(300px, 100%); margin: 0 auto; }
+  .road-head { flex-direction: column; align-items: flex-start; }
+  .stairs { width: min(260px, 80%); align-self: center; }
+  .faq-chat { max-width: none; }
   .orbit { width: min(380px, 92vw); }
   .road { grid-template-columns: 1fr; }
   .mock, .mock:hover { transform: none; }
@@ -503,6 +620,11 @@ section { padding: clamp(64px, 9vw, 112px) 0; position: relative; }
    so the page is complete and still on first paint instead of popping in piece by piece. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-delay: 0s !important; transition-delay: 0s !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bub, .bub .txt { animation: none !important; opacity: 1; }
+  .bub .typing { display: none; }
 }
 
 /* Scroll reveal: hidden until landing.js animates it in (opacity + translate only). Kept last so it wins. */

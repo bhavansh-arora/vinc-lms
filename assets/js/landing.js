@@ -2,7 +2,7 @@
 import { COURSES, GRADES, FORMS, WEIGHTS, LEARNING_OUTCOMES, projectById, projectsOfGrade } from './data/courses.js';
 import { art, icon } from './art.js';
 
-const LEADS_INBOX = 'vincdeeptech@gmail.com';
+const LEADS_INBOX = 'info@vinc-lab.com';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -735,6 +735,35 @@ renderProjects(false);
 reveal($('.planner-out'), delay => animate(tl, [{ clipPath: 'inset(0 100% 0 0 round 14px)' }, { clipPath: 'inset(0 0 0 0 round 14px)' }], { duration: 1100, delay: delay + 200, easing: EASE.inOut, fill: 'backwards' }));
 const donutWrap = $('.donut-wrap');
 if (io && !reduced()) onReveal.set(donutWrap, () => setTimeout(showDonut, 180)); else showDonut();
+
+/* ---------- Ambient scenes ----------
+   Small looping illustrations in quiet corners. They only play while on screen; the paper plane on the
+   contact section is SVG (SMIL) motion, so it is paused and unpaused by hand. */
+$$('.wc-ic[data-ic]').forEach(el => { el.innerHTML = icon(el.dataset.ic); });
+const plane = $('.jr-path');
+const setScene = (el, on) => {
+  el.classList.toggle('play', on && !reduced());
+  if (el.contains(plane) && plane.pauseAnimations) { if (on && !reduced()) plane.unpauseAnimations(); else plane.pauseAnimations(); }
+};
+if ('IntersectionObserver' in window) {
+  const sio = new IntersectionObserver(es => es.forEach(e => setScene(e.target, e.isIntersecting)), { threshold: 0.15 });
+  $$('[data-scene]').forEach(el => { setScene(el, false); sio.observe(el); });
+} else $$('[data-scene]').forEach(el => setScene(el, true));
+RM.addEventListener?.('change', () => $$('[data-scene]').forEach(el => setScene(el, el.classList.contains('play') && !reduced())));
+
+// Why now: days left until Composite Skill Labs are due (Aug 2027), and how far along the road we are.
+(() => {
+  const start = new Date(2025, 9, 1), end = new Date(2027, 7, 31), now = new Date();
+  const days = Math.max(0, Math.ceil((end - now) / 86400000));
+  const pct = Math.min(100, Math.max(0, (now - start) / (end - start) * 100));
+  const num = $('#lab-days'), card = $('.why-count');
+  if (!num || !card) return;
+  const show = () => { card.style.setProperty('--p', `${pct.toFixed(1)}%`); tweenNumber(num, days, { dur: 1600 }); };
+  if (reduced() || !('IntersectionObserver' in window)) { num.textContent = days; card.style.setProperty('--p', `${pct.toFixed(1)}%`); return; }
+  num._tw = { v: 0 }; num.textContent = '0';
+  const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) { o.disconnect(); setTimeout(show, 250); } }, { threshold: 0.4 });
+  o.observe(card);
+})();
 
 // Count-ups in the hero start once the stats have risen into place.
 const HERO_SETTLED = 1150;
