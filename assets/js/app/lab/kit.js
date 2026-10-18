@@ -53,7 +53,7 @@ export function dragDrop(api, { items, targets, accept, onDrop, onPress, overlap
   const ds = [];
   for (const it of items) {
     const [d] = Draggable.create(it, {
-      type: 'x,y', zIndexBoost: true, cursor: 'grab', activeCursor: 'grabbing',
+      type: 'x,y', zIndexBoost: true, dragClickables: true, cursor: 'grab', activeCursor: 'grabbing',
       onPress() { it.classList.add('dragging'); onPress?.(it); api.sound('click'); },
       onDrag() { targets.forEach(t => t.classList.toggle('over', this.hitTest(t, overlap))); },
       onRelease() {

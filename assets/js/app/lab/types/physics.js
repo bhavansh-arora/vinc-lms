@@ -357,7 +357,7 @@ const PRESETS = {
       { key: 'load', label: 'Load', min: 5, max: 30, step: 5, value: 10, unit: ' kg' },
     ],
     goal: { kind: 'distance', target: { x: .9, width: .1 }, text: 'Roll the toy truck all the way to the flag' },
-    push(L) { return L.goal.kind === 'least-force' || L.goal.kind === 'lift'; },
+    push(L) { if (L.canPush == null) L.canPush = L.goal.value ?? Math.round(this.massKg(L.P) * 10 * .45); return L.goal.kind === 'least-force' || L.goal.kind === 'lift'; },
     geo(P, push) {
       const th = rad(clamp(P.angle, 5, 60));
       if (push) { const hp = 130, xr = 720, len = hp / Math.sin(th); return { th, x0: xr - hp / Math.tan(th), y0: GY, x1: xr, y1: GY - hp, len, hp }; }
@@ -376,7 +376,7 @@ const PRESETS = {
       const body = M.Bodies.rectangle(px, py, bw, bh, { angle: ang, chamfer: { radius: push ? 6 : 12 }, friction: 0, frictionStatic: 0, frictionAir: 0, restitution: 0, label: 'load' });
       M.Body.setMass(body, push ? 2 : 1 + .05 * clamp(P.load, 0, 100)); M.Body.setInertia(body, Infinity);
       L.add(body); s.body = body; s.rest = 0; s.spin = 0; s.x0 = geo.x1; s.ang = ang; s.geo = geo;
-      if (push) { s.need = this.need(L); s.can = L.goal.value ?? 150; s.moved = 0; s.struggle = 0; }
+      if (push) { s.need = this.need(L); s.can = L.canPush; s.moved = 0; s.struggle = 0; }
       L.sound('whoosh');
     },
     step(L) {
@@ -395,7 +395,7 @@ const PRESETS = {
         s.moved += 1; L.read(s.need, true);
         return;
       }
-      const crr = onRamp ? surf.crr : .025, fric = Math.sign(sp) * Math.min(Math.abs(sp), crr * G * Math.cos(ang) + .0015 * sp * sp);
+      const crr = onRamp ? surf.crr : .06, fric = Math.sign(sp) * Math.min(Math.abs(sp), crr * G * Math.cos(ang) + .001 * sp * sp);
       L.push(body, -fric * Math.cos(ang), -fric * Math.sin(ang));
       s.spin += sp / 9;
       L.trail(body.position.x, body.position.y + 12);
@@ -406,7 +406,7 @@ const PRESETS = {
     },
     judge(L, r) {
       if (this.push(L)) {
-        const need = Math.round(this.need(L)), can = L.goal.value ?? 150, wt = this.massKg(L.P) * 10;
+        const need = Math.round(this.need(L)), can = L.canPush, wt = this.massKg(L.P) * 10;
         if (r.stuck) return { ok: false, val: `${need} N`, close: can / need, text: `It needs ${need} N but you can push only ${can} N. A gentler slope or a smoother surface needs less force.` };
         return { ok: true, val: `${need} N`, text: `Up it goes with ${need} N instead of ${wt} N to lift it straight up. A long, gentle ramp trades distance for force.` };
       }
@@ -551,7 +551,7 @@ const PRESETS = {
       M.Body.setMass(load, clamp(P.load, 1, 500) / 10); M.Body.setInertia(load, load.inertia * 3);
       L.add(load);
       const rope = M.Constraint.create({ pointA: { x: 470, y: this.beam + 14 }, bodyB: load, pointB: { x: 0, y: -28 }, stiffness: .6, damping: .1 });
-      L.add(rope); s.rope = rope; s.load = load; s.len0 = rope.length; s.n = n; s.need = this.need(P); s.can = L.goal.value ?? 150; s.pulled = 0; s.rest = 0; s.strain = 0;
+      L.add(rope); s.rope = rope; s.load = load; s.len0 = rope.length; s.n = n; s.need = this.need(P); s.can = L.canPush; s.pulled = 0; s.rest = 0; s.strain = 0;
       L.sound('click');
     },
     step(L) {
@@ -564,14 +564,14 @@ const PRESETS = {
       if (!ok && L.t > 200) L.finish({ ok: false });
     },
     judge(L, r) {
-      const P = L.P, need = Math.round(this.need(P)), can = L.goal.value ?? 150, n = clamp(Math.round(P.pulleys), 1, 4);
+      const P = L.P, need = Math.round(this.need(P)), can = L.canPush, n = clamp(Math.round(P.pulleys), 1, 4);
       if (!r.ok) return { ok: false, val: `${need} N`, close: can / need, text: `Too heavy! You must pull ${need} N but can pull only ${can} N. More rope strands share the weight.` };
       if (L.goal.kind === 'least-force' && n > 1 && this.need({ ...P, pulleys: n - 1 }) <= can) return { ok: true, val: `${need} N`, text: `Lifted with ${need} N.` };
       return { ok: true, val: `${need} N`, text: `Up it goes with ${need} N! ${n} strands share the load, but you pulled ${n}× as much rope.` };
     },
     ghostOf() { return null; },
     draw(g, L, t) {
-      const P = L.P, s = L.s, n = clamp(Math.round(P.pulleys), 1, 4), need = this.need(P), can = L.goal.value ?? 150;
+      const P = L.P, s = L.s, n = clamp(Math.round(P.pulleys), 1, 4), need = this.need(P), can = L.canPush;
       treehouse(g, this.top);
       // frame
       wood(g, 360, this.beam - 10, 260, 18, 5, undefined, 2);
@@ -782,13 +782,13 @@ const PRESETS = {
       const s = L.s, b = s.boat, P = L.P, pf = .7 + .3 * clamp(P.prop ?? 2, .5, 4);
       L.M.Body.setPosition(b, { x: b.position.x, y: this.wy - 6 + Math.sin(L.t * .08) * 1.5 }); L.M.Body.setVelocity(b, { x: b.velocity.x, y: 0 });
       let a = 0;
-      if (s.rem > 0) { const w = .05 * Math.sqrt(s.rem) / Math.sqrt(pf); s.rem = Math.max(0, s.rem - w); s.pa += w * TAU; a += .0027 * s.rem * pf / b.mass; if (L.t % 4 === 0) L.puff(b.position.x - 78, this.wy + 4, 1, '#ffffff', -1.5, -.5); }
-      const v = b.velocity.x; a -= (.004 * v + .006 * v * Math.abs(v) * (.8 + .2 * pf)) / b.mass * 1.6;
+      if (s.rem > 0) { const w = .05 * Math.sqrt(s.rem) / Math.sqrt(pf); s.rem = Math.max(0, s.rem - w); s.pa += w * TAU; a += .0046 * s.rem * pf / b.mass; if (L.t % 4 === 0) L.puff(b.position.x - 78, this.wy + 4, 1, '#ffffff', -1.5, -.5); }
+      const v = b.velocity.x; a -= (.014 * v + .006 * v * Math.abs(v) * (.8 + .2 * pf)) / b.mass * 1.6;
       L.push(b, a, 0);
       if (L.t % 6 === 0 && Math.abs(v) > .3) L.ripple(b.position.x - 60, this.wy);
       L.trail(b.position.x + 65, this.wy + 2);
       L.read((b.position.x - s.x0) / this.unit.px);
-      s.rest = (s.rem <= 0 && Math.abs(v) < .03) ? s.rest + 1 : 0;
+      s.rest = (s.rem <= 0 && Math.abs(v) < .08) ? s.rest + 1 : 0;
       if (s.rest > 20 || b.position.x > W + 120 || L.t > 1800) { L.M.Body.setVelocity(b, { x: 0, y: 0 }); L.finish({ x: b.position.x + 65, d: (b.position.x - s.x0) / this.unit.px }); }
     },
     judge(L, r) { return travelJudge(L, r, this, 'boat', 'More twists store more energy in the rubber band, so the propeller pushes for longer.'); },
