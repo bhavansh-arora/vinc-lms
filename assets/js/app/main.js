@@ -200,7 +200,7 @@ addEventListener('resize', () => { const on = $('.side-nav a.on, .tabbar a.on', 
 
 /* ---------- Page entrance ----------
    Top-level blocks rise in one after another; cards inside grids follow their parent. */
-const GRIDS = '.kpis, .grade-cards, .teacher-cards, .ptiles, .gallery, .mini-list, .grid-2, .score-cards, .badges, .kid-switch, .today-grid, .proj-strip, .act-list, .lesson-list';
+const GRIDS = '.kpis, .grade-cards, .teacher-cards, .ptiles, .gallery, .mini-list, .grid-2, .score-cards, .badges, .kid-switch, .today-grid, .proj-strip, .act-list, .lesson-list, .act-main, .steps';
 function stagger(view) {
   [...view.children].forEach((c, i) => c.style.setProperty('--i', Math.min(i, 9)));
   for (const g of $$(GRIDS, view)) [...g.children].forEach((c, j) => c.style.setProperty('--j', Math.min(j, 8)));

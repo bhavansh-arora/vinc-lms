@@ -72,7 +72,8 @@ ask their device for reduced motion.
 ### LMS dashboards
 - **Student**:
   - The three projects their section is doing.
-  - Activities with textbook page references and a written reflection for each.
+  - Activities, each with a full lesson inside the portal (no need to switch to
+    the textbook) and a virtual lab to play, plus a written reflection.
   - A 10-question quiz per project with instant feedback.
   - A portfolio for notes and photos.
   - Scores in the five CBSE parts, viva practice questions, badges and a Mela
@@ -106,6 +107,49 @@ ask their device for reduced motion.
   (add, pause, open a school's dashboard; new schools get 6 A, 7 A, 8 A and a
   teacher), the Grade 6–8 content and question banks, and demo-data reset or
   export.
+
+### Lessons and virtual labs
+Every activity in Grades 6–8 (144 in all) has its own page in the student
+portal:
+- **The lesson**: what you'll do, time, group size and place, what you need,
+  numbered steps to tick off, safety notes, a record table to fill in, "Think
+  about it" questions and a "Did you know?" fact. Ticks and the record table
+  save as the student types. The book page stays as a small reference chip.
+- **A virtual lab**: a short game version of the activity with a mission card,
+  a guide called Vinci, sounds (with mute), up to 3 stars and confetti. Stars are
+  saved, shown on the activity list, and earn the "Lab explorer" and "Lab star"
+  badges. Designs made in a lab can be saved to the portfolio.
+- **Teachers** can open any lesson in full and play any lab from Lesson plans,
+  and see what share of the class has played it. Student pages for teachers,
+  schools and parents show labs played and stars.
+
+The 15 lab types are reusable; each activity picks one and fills it with its
+own content:
+
+| Type | What the child does |
+|---|---|
+| sort | Drag items into bins, baskets and crates |
+| sequence | Put steps in order on a conveyor |
+| match | Join pairs with ropes |
+| layers | Build a pit, bin or filter layer by layer |
+| mix | Mix ingredients to hit a target (colour, pH, amounts) |
+| grow | Grow a plant over days, fixing problems that pop up |
+| calc | Work out a sum from a scene, with chalkboard working |
+| chart | Tally observations, then draw bar, pie or picture charts |
+| choice | Talk to a character and choose good questions and replies |
+| explore | Find things in a scene with a magnifier or camera |
+| design | Make a poster, label or card and save it |
+| train | Collect samples, train a small AI model and test it |
+| physics | Change a machine (catapult, lever, pulley, car...) and test it |
+| circuit | Wire batteries, switches, LEDs and sensors |
+| blocks | Snap code blocks to move a character or run a sensor |
+
+Labs use GSAP (with Draggable and MotionPath) for animation and Matter.js for
+physics, both stored in `assets/vendor/` and loaded only when a lab opens. The
+art is 300+ hand-made SVG sprites.
+
+The lesson text is written in VINC Lab's own words from the Kaushal Bodh
+activities, not copied from the books.
 
 ### Assessment
 Each project is marked on the split CBSE suggests: written test 10%, viva 30%,
@@ -158,7 +202,14 @@ assets/js/landing.js  Landing page behaviour
 assets/js/app/        main.js (router, shell, page transitions), auth.js (log in and sign up),
                       store.js (demo data, logins), sha256.js, scoring.js, ui.js
 assets/js/app/views/  student, parent, teacher, school, admin, profile; shared.js holds marking,
-                      heatmaps, class analytics and password resets used by teachers and schools
+                      heatmaps, class analytics and password resets used by teachers and schools;
+                      activity.js is the student activity page (lesson + lab)
+assets/js/data/lessons/   One file per project (g6p1.js ... g8p6.js): the lesson and lab for each activity
+assets/js/app/lab/    runtime.js (the lab player), kit.js (shared helpers), sprites*.js (SVG art),
+                      types/ (one file per lab type), SPEC.md (how to write a lesson or a lab type)
+assets/css/lab.css, assets/css/lab/   Lab player styles and one stylesheet per lab type
+assets/vendor/        GSAP 3.13 and Matter.js 0.20, with their licences
+lab-dev.html          Developer page: ?type=sort opens a type's demo, ?lesson=g6p1&n=3 opens a lesson's lab
 ```
 
 Each course file has the same shape: projects with activities (title, page,
@@ -188,6 +239,15 @@ Cloudflare Pages or S3.
 - **Content**: project titles, page numbers and periods follow the 2026–27
   Kaushal Bodh Grade 6, 7 and 8 books. Summaries, quizzes and viva prompts are VINC Lab's
   own. Have a teacher review them.
+- **Lessons**: written from the books in our own words. A teacher should check
+  them, in particular: the ORS step (the lesson says to follow the packet), the
+  burns advice (it adds "cool under running water, no ice", which goes beyond
+  the book), the LED resistor (the lesson gives 220–470 Ω rather than only
+  220 Ω on 9 V), and the cattle weight formula (the book's ÷330 gives about
+  twice the real weight, so the lab uses the goat formula and says to check with
+  the vet). Some "Did you know?" facts have not been checked against a source.
+- **Licences**: GSAP is used under its free Standard No-Charge License and
+  Matter.js under MIT (both in `assets/vendor/`).
 
 Kaushal Bodh is published by NCERT. VINC Lab is independent and not affiliated
 with NCERT or CBSE.

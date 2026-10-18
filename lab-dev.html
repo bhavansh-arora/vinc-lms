@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab dev harness</title>
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400..800&family=Lora:ital,wght@0,500..700;1,500..700&display=swap">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/lab.css">
+<style>
+  body { padding: 24px; } h1 { font-family: var(--display); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 24px; }
+  .row button { padding: .5em 1em; border-radius: 999px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font-weight: 700; }
+  .sprites { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+  .sprites figure { margin: 0; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; text-align: center; font: 500 .7rem var(--mono); }
+  .sprites svg { width: 72px; height: 72px; margin: 0 auto 4px; }
+</style>
+</head>
+<body>
+<h1>Lab dev harness</h1>
+<p>Open a lab type's demo config, or a lesson's lab: <code>lab-dev.html?lesson=g6p1&amp;n=3</code>. Sprites are listed below.</p>
+<div class="row" id="types"></div>
+<div class="row" id="lessons"></div>
+<h2>Sprites (<span id="n"></span>)</h2>
+<div class="sprites" id="sprites"></div>
+<script type="module">
+import { openLab } from './assets/js/app/lab/runtime.js';
+import { sprite, spriteNames } from './assets/js/app/lab/sprites.js';
+const TYPES = ['sort', 'sequence', 'match', 'layers', 'mix', 'grow', 'calc', 'chart', 'choice', 'explore', 'design', 'train', 'physics', 'circuit', 'blocks'];
+const types = document.getElementById('types');
+for (const t of TYPES) {
+  const b = document.createElement('button'); b.textContent = t; types.append(b);
+  b.onclick = async () => {
+    try { const m = await import(`./assets/js/app/lab/types/${t}.js`); const demos = Array.isArray(m.demo) ? m.demo : [m.demo]; for (const d of demos.slice(0, 1)) console.log('result', await openLab({ type: t, ...d }, { form: ['life', 'machines', 'services'][TYPES.indexOf(t) % 3], label: `Demo · ${t}`, onPortfolio: (u, ti) => console.log('portfolio', ti, u.length) })); }
+    catch (e) { alert(`${t}: ${e.message}`); console.error(e); }
+  };
+}
+const q = new URLSearchParams(location.search);
+async function openLesson(pid, n) {
+  const m = await import(`./assets/js/data/lessons/${pid}.js`);
+  const L = m.LESSONS[n];
+  console.log('result', await openLab(L.lab, { form: m.FORM || 'life', label: `${pid} · Activity ${n}` }));
+}
+if (q.get('lesson')) openLesson(q.get('lesson'), +q.get('n') || 1);
+if (q.get('type')) document.querySelectorAll('#types button').forEach(b => { if (b.textContent === q.get('type')) b.click(); });
+const names = spriteNames().sort();
+document.getElementById('n').textContent = names.length;
+document.getElementById('sprites').innerHTML = names.map(n => `<figure>${sprite(n)}<figcaption>${n}</figcaption></figure>`).join('');
+window.openLab = openLab; window.openLesson = openLesson;
+</script>
+</body>
+</html>

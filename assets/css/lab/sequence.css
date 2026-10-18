@@ -1,0 +1,91 @@
+/* Lab type: sequence. Everything is scoped under .lab-sequence. */
+.lab-sequence { flex: 1 0 auto; display: flex; flex-direction: column; gap: clamp(12px, 2.2vh, 22px); width: 100%; max-width: 1160px; margin: 0 auto; }
+.lab-sequence .seq-board { position: relative; margin: auto 0; padding: clamp(14px, 2.4vw, 26px); border-radius: 30px; border: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(180deg, var(--card), color-mix(in srgb, var(--paper-2) 45%, var(--card)));
+  box-shadow: 0 18px 40px -28px rgba(43, 26, 16, .6), inset 0 1px 0 rgba(255, 255, 255, .5); }
+
+/* conveyor belt */
+.lab-sequence .seq-belt { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+.lab-sequence .seq-belt path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.lab-sequence .seq-belt-bed { stroke: color-mix(in srgb, var(--ink) 16%, var(--paper-2)); stroke-width: 22; }
+.lab-sequence .seq-belt-roll { stroke: color-mix(in srgb, var(--ink) 30%, var(--paper-2)); stroke-width: 12; stroke-dasharray: 4 10; opacity: .7; }
+.lab-sequence .seq-belt-lit { stroke: var(--amber); stroke-width: 10; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--amber) 80%, transparent)); }
+.lab-sequence .seq-fx { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+.lab-sequence .seq-runner { filter: drop-shadow(0 0 8px var(--amber)); }
+.lab-sequence .seq-runner-shine { fill: #fff; }
+.lab-sequence .seq-runner-halo { fill: color-mix(in srgb, var(--amber) 35%, transparent); }
+.lab-sequence .seq-runner-dot { fill: #FFF3D6; stroke: var(--amber); stroke-width: 4; }
+
+/* slots */
+.lab-sequence .seq-slots { --cols: 4; position: relative; z-index: 1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: clamp(26px, 3.4vw, 40px) clamp(16px, 2.4vw, 30px); }
+.lab-sequence .seq-slot { position: relative; display: flex; min-width: 0; }
+.lab-sequence .seq-socket { --flash: 0; position: relative; flex: 1; display: flex; min-height: 150px; padding: 6px; border-radius: 22px; border: 2.5px dashed color-mix(in srgb, var(--ink) 18%, var(--line));
+  background: color-mix(in srgb, var(--paper) 80%, transparent); box-shadow: inset 0 3px 8px -4px rgba(43, 26, 16, .3), 0 0 0 calc(var(--flash) * 8px) color-mix(in srgb, var(--amber) calc(var(--flash) * 45%), transparent); transition: border-color .2s, background-color .2s; }
+.lab-sequence .seq-num { position: absolute; top: -14px; left: -10px; z-index: 3; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--lf) 70%, #fff), var(--lf)); color: #fff; font: 800 1rem var(--body); box-shadow: 0 0 0 3px var(--card), 0 6px 12px -4px rgba(0, 0, 0, .35); pointer-events: none; transition: background .3s; }
+.lab-sequence .seq-slot.is-target .seq-socket { border-color: var(--amber); border-style: solid; background: color-mix(in srgb, var(--amber-soft) 55%, transparent); }
+.lab-sequence .seq-slot.is-wrong .seq-socket { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, transparent); }
+.lab-sequence .seq-slot.is-locked .seq-socket { border-style: solid; border-color: color-mix(in srgb, var(--ok) 70%, transparent); background: color-mix(in srgb, var(--olive-soft) 60%, transparent); }
+.lab-sequence .seq-slot.is-locked .seq-num { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--ok) 60%, #fff), var(--ok)); }
+
+/* cards */
+.lab-sequence .seq-card { position: relative; flex: 1; min-width: 0; appearance: none; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 12px 12px; border-radius: 18px;
+  border: 2px solid var(--line); background: linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 88%, var(--paper-2))); color: var(--ink);
+  box-shadow: 0 10px 18px -12px rgba(43, 26, 16, .6), inset 0 -3px 0 color-mix(in srgb, var(--ink) 6%, transparent);
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; text-align: center; transition: border-color .2s, background-color .2s, box-shadow .25s; }
+.lab-sequence .seq-card:hover { border-color: color-mix(in srgb, var(--lf) 55%, var(--line)); }
+.lab-sequence .seq-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.lab-sequence .seq-grip { position: absolute; top: 8px; right: 9px; width: 9px; height: 15px; color: color-mix(in srgb, var(--ink) 28%, transparent); }
+.lab-sequence .seq-grip svg { width: 100%; height: 100%; display: block; }
+.lab-sequence .seq-art { width: 64px; height: 64px; flex: none; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--lf) 14%, transparent), transparent 70%); }
+.lab-sequence .seq-art .spr { width: 100%; height: 100%; }
+.lab-sequence .seq-art .lab-emoji { font-size: 2.3rem; }
+.lab-sequence .seq-text { font: 700 .96rem/1.3 var(--body); text-wrap: balance; }
+.lab-sequence .seq-lock { position: absolute; top: -10px; right: -10px; width: 30px; height: 30px; display: none; place-items: center; border-radius: 50%; background: var(--ok); color: #fff; box-shadow: 0 0 0 3px var(--card), 0 4px 8px -2px rgba(0, 0, 0, .3); }
+.lab-sequence .seq-lock svg { width: 18px; height: 18px; }
+.lab-sequence .seq-card.is-drag { cursor: grabbing; border-color: var(--lf); box-shadow: 0 28px 44px -16px rgba(43, 26, 16, .55); }
+.lab-sequence .seq-card.is-selected { border-color: var(--amber); background: color-mix(in srgb, var(--amber-soft) 60%, var(--card)); box-shadow: 0 0 0 5px color-mix(in srgb, var(--amber) 28%, transparent), 0 16px 26px -14px rgba(43, 26, 16, .6); }
+.lab-sequence .seq-card.is-locked { cursor: default; border-color: color-mix(in srgb, var(--ok) 70%, var(--line)); background: linear-gradient(180deg, var(--card), color-mix(in srgb, var(--olive-soft) 70%, var(--card))); }
+.lab-sequence .seq-card.is-locked .seq-lock { display: grid; }
+.lab-sequence .seq-card.is-locked .seq-grip { display: none; }
+.lab-sequence .seq-card.is-lit { border-color: var(--amber); box-shadow: 0 0 0 6px color-mix(in srgb, var(--amber) 35%, transparent), 0 0 34px 4px color-mix(in srgb, var(--amber) 45%, transparent); }
+.lab-sequence.is-done .seq-card { cursor: default; }
+.lab-sequence .seq-slot.is-visited .seq-num { background: radial-gradient(circle at 35% 30%, #FFE3A8, var(--amber)); }
+
+/* bottom bar */
+.lab-sequence .seq-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 0 4px; }
+.lab-sequence .seq-status { margin: 0; color: var(--ink-2); font-size: .98rem; }
+.lab-sequence .seq-status b { font: 700 1.05rem var(--display); color: var(--ink); }
+.lab-sequence .seq-status span { color: var(--muted); font-size: .9rem; }
+.lab-sequence .seq-check { min-height: 52px; padding: 0 26px; font-size: 1.05rem; box-shadow: 0 10px 22px -10px var(--lf); }
+.lab-sequence .seq-check svg { width: 22px; height: 22px; }
+
+@media (prefers-color-scheme: dark) {
+  .lab-sequence .seq-board { box-shadow: 0 18px 40px -24px rgba(0, 0, 0, .85); }
+  .lab-sequence .seq-num, .lab-sequence .seq-lock { color: #1B130D; }
+  .lab-sequence .seq-runner-dot { fill: #3A2A12; }
+}
+
+/* single column (phones): horizontal cards, the belt runs down the number badges */
+.lab-sequence.is-list .seq-slots { gap: 14px; }
+.lab-sequence.is-list .seq-socket { min-height: 0; padding: 4px; margin-left: 30px; border-radius: 18px; }
+.lab-sequence.is-list .seq-num { top: 50%; left: 0; translate: 0 -50%; width: 34px; height: 34px; }
+.lab-sequence.is-list .seq-card { flex-direction: row; justify-content: flex-start; text-align: left; gap: 10px; min-height: 64px; padding: 8px 30px 8px 8px; border-radius: 14px; }
+.lab-sequence.is-list .seq-art { width: 46px; height: 46px; }
+.lab-sequence.is-list .seq-art .lab-emoji { font-size: 1.8rem; }
+.lab-sequence.is-list .seq-text { font-size: .9rem; }
+.lab-sequence.is-list .seq-grip { top: 50%; translate: 0 -50%; }
+.lab-sequence.is-list .seq-lock { top: 50%; right: 6px; translate: 0 -50%; width: 26px; height: 26px; box-shadow: none; }
+.lab-sequence.is-list .seq-belt-bed { stroke-width: 14; }
+.lab-sequence.is-list .seq-belt-roll { stroke-width: 8; }
+.lab-sequence.is-list .seq-belt-lit { stroke-width: 7; }
+@media (max-width: 640px) {
+  .lab-sequence .seq-board { padding: 12px 10px; border-radius: 22px; }
+  .lab-sequence .seq-bar { position: sticky; bottom: -12px; margin: 0 -12px -12px; padding: 10px 12px; background: linear-gradient(180deg, transparent, var(--paper) 30%); z-index: 2; }
+  .lab-sequence .seq-status { font-size: .86rem; flex: 1 1 140px; }
+  .lab-sequence .seq-status span { display: none; }
+  .lab-sequence .seq-check { min-height: 48px; padding: 0 18px; font-size: .98rem; }
+}

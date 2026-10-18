@@ -1,0 +1,79 @@
+/* VINC Lab · layers: build something layer by layer in a cut-away container. Scoped under .lab-layers */
+.lab-layers { flex: 1 0 auto; min-height: 0; display: grid; grid-template-columns: minmax(230px, 320px) minmax(0, 1fr); gap: clamp(12px, 2vw, 24px); align-items: stretch; }
+.lab-layers .lyr-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+
+/* tray of layer cards */
+.lab-layers .lyr-tray { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px; box-shadow: 0 10px 26px -18px rgba(43, 26, 16, .45); display: flex; flex-direction: column; gap: 8px; min-height: 0; position: relative; z-index: 2; }
+.lab-layers .lyr-tray-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.lab-layers .lyr-tray-h .lab-h { margin: 0; }
+.lab-layers .lyr-count { font: 500 .9rem var(--mono); color: var(--muted); background: var(--paper-2); padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+.lab-layers .lyr-count b { color: var(--lf); font-weight: 700; }
+.lab-layers .lyr-tip { margin: 0; font-size: .9rem; color: var(--ink-2); line-height: 1.4; }
+.lab-layers .lyr-cards { display: grid; grid-template-columns: 1fr; gap: 8px; align-content: start; }
+.lab-layers .lyr-card { position: relative; display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 6px 12px 6px 6px; border-radius: 16px; border: 2px solid var(--line); background: var(--paper); color: var(--ink); font: 700 .98rem var(--body); text-align: left; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; box-shadow: 0 4px 10px -8px rgba(43, 26, 16, .5); transition: border-color .2s, background-color .2s, box-shadow .2s; }
+.lab-layers .lyr-card:hover { border-color: color-mix(in srgb, var(--lf) 50%, var(--line)); }
+.lab-layers .lyr-card.dragging { cursor: grabbing; border-color: var(--lf); box-shadow: 0 20px 34px -12px rgba(43, 26, 16, .5); background: var(--card); }
+.lab-layers .lyr-card.sel { border-color: var(--lf); background: var(--lf-soft); box-shadow: 0 0 0 4px color-mix(in srgb, var(--lf) 25%, transparent), 0 10px 20px -12px rgba(43, 26, 16, .5); transform: translateY(-2px); }
+.lab-layers .lyr-card.glow { border-color: var(--amber); box-shadow: 0 0 0 4px color-mix(in srgb, var(--amber) 35%, transparent); }
+.lab-layers .lyr-card.used { cursor: default; opacity: .5; border-style: dashed; background: transparent; box-shadow: none; }
+.lab-layers .lyr-card.used .lyr-sw { filter: grayscale(.4); }
+.lab-layers .lyr-sw { position: relative; width: 42px; height: 42px; flex: none; }
+.lab-layers .lyr-sw > svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .25)); }
+.lab-layers .lyr-sw-art { position: absolute; right: -6px; bottom: -6px; width: 24px; height: 24px; display: grid; place-items: center; }
+.lab-layers .lyr-sw-art .lab-emoji { font-size: 1.1rem; }
+.lab-layers .lyr-card-l { flex: 1; min-width: 0; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
+.lab-layers .lyr-tick { display: none; width: 24px; height: 24px; border-radius: 50%; background: var(--ok); color: #fff; place-items: center; font-size: .8rem; flex: none; }
+.lab-layers .lyr-card.used .lyr-tick { display: grid; }
+.lab-layers.busy .lyr-card:not(.used) { cursor: progress; }
+.lab-layers.done .lyr-tray { opacity: .75; }
+
+/* the scene */
+.lab-layers .lyr-scene { min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.lab-layers .lyr-drop { all: unset; box-sizing: border-box; display: block; width: 100%; max-width: calc((100dvh - 210px) * 1.18); border-radius: 26px; cursor: pointer; background: linear-gradient(180deg, color-mix(in srgb, var(--card) 70%, transparent), color-mix(in srgb, var(--paper-2) 60%, transparent)); border: 1px solid var(--line); box-shadow: 0 18px 40px -26px rgba(43, 26, 16, .55); overflow: hidden; position: relative; }
+.lab-layers .lyr-drop:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.lab-layers .lyr-drop svg { display: block; width: 100%; height: auto; }
+.lab-layers.done .lyr-drop { cursor: default; }
+.lab-layers .lyr-zone { fill: none; stroke: var(--lf); stroke-width: 4; stroke-dasharray: 10 8; opacity: 0; transition: opacity .25s; pointer-events: none; }
+.lab-layers.has-sel .lyr-zone, .lab-layers.dragging .lyr-zone { opacity: .75; animation: lyr-march 1s linear infinite; }
+.lab-layers .lyr-zone.over { opacity: 1; stroke-width: 6; fill: color-mix(in srgb, var(--lf) 14%, transparent); }
+.lab-layers .lyr-zone.bad { opacity: 1; stroke: var(--bad); fill: color-mix(in srgb, var(--bad) 18%, transparent); stroke-dasharray: none; animation: none; }
+@keyframes lyr-march { to { stroke-dashoffset: -36; } }
+.lab-layers .lyr-ghost-r { fill: rgba(255, 255, 255, .07); stroke: #fff; stroke-width: 2; stroke-dasharray: 7 6; opacity: .75; animation: lyr-breathe 1.6s ease-in-out infinite; }
+.lab-layers .lyr-ghost-q circle { fill: rgba(255, 255, 255, .85); }
+.lab-layers .lyr-ghost-q text { font: 800 15px var(--body); fill: #5E4634; text-anchor: middle; }
+@keyframes lyr-breathe { 50% { opacity: .35; } }
+
+/* tags beside the container */
+.lab-layers .lyr-lead { fill: none; stroke: var(--ink-2); stroke-width: 1.6; opacity: .7; }
+.lab-layers.lyr-k-trench .lyr-lead, .lab-layers.lyr-k-pit .lyr-lead { stroke: #FFF4DE; opacity: .9; }
+.lab-layers .lyr-dot { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
+.lab-layers .lyr-tag-bg { fill: var(--card); stroke: var(--line); stroke-width: 1.5; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .18)); }
+.lab-layers .lyr-num { fill: var(--lf); }
+.lab-layers .lyr-num-t { font: 800 11px var(--body); fill: #fff; text-anchor: middle; }
+.lab-layers .lyr-tag-t { font: 700 14px var(--body); fill: var(--ink); }
+.lab-layers .lyr-hud-bg { fill: var(--card); stroke: var(--line); stroke-width: 1.5; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .2)); }
+.lab-layers .lyr-hud-t { font: 800 17px var(--body); fill: var(--ink); }
+
+@media (min-width: 761px) and (max-height: 920px) {
+  .lab-layers.many .lyr-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .lab-layers.many .lyr-card { min-height: 50px; padding: 4px 8px 4px 4px; gap: 7px; font-size: .88rem; }
+  .lab-layers.many .lyr-sw { width: 38px; height: 38px; }
+}
+@media (max-width: 760px) {
+  .lab-layers { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 10px; }
+  .lab-layers .lyr-scene { order: -1; }
+  .lab-layers .lyr-drop { max-width: min(100%, calc(48dvh * 1.18)); margin: 0 auto; border-radius: 20px; }
+  .lab-layers .lyr-tray { padding: 10px; gap: 6px; border-radius: 18px; }
+  .lab-layers .lyr-tip { display: none; }
+  .lab-layers .lyr-tray-h .lab-h { font-size: 1rem; }
+  .lab-layers .lyr-cards { grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 6px; }
+  .lab-layers .lyr-card { min-height: 48px; padding: 4px 8px 4px 4px; gap: 7px; font-size: .86rem; border-radius: 14px; }
+  .lab-layers .lyr-sw { width: 36px; height: 36px; }
+}
+@media (min-width: 761px) and (max-height: 700px) {
+  .lab-layers .lyr-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lab-layers .lyr-card { font-size: .86rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-layers .lyr-zone, .lab-layers .lyr-ghost-r { animation: none !important; }
+}

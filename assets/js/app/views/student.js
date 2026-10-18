@@ -3,6 +3,7 @@ import { FORMS, WEIGHTS, projectById, projectsOfGrade } from '../../data/courses
 import { db, save, school, section, projectsFor, progress, log, uid, gradeOf } from '../store.js';
 import { projectScore, nextActivity, yearSummary, band, PORTFOLIO_TARGET } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, fmtDate, timeAgo, daysUntil, toast, confetti, resizeImage, modal, FORM_COLOR, FORM_SOFT, PART_COLOR } from '../ui.js';
+import { activityPage, loadLessons, lessonsFor, lessonOf, LAB_KIND, starsHtml } from './activity.js';
 
 export const nav = () => [
   { path: '', label: 'Home', icon: 'home' },
@@ -12,7 +13,8 @@ export const nav = () => [
 ];
 
 export function render(ctx) {
-  const [page, pid, tab] = ctx.params;
+  const [page, pid, tab, n] = ctx.params;
+  if (page === 'p' && projectById(pid) && tab === 'a') return activityPage(ctx, pid, +n);
   if (page === 'p' && projectById(pid)) return projectPage(ctx, pid, tab || 'activities');
   if (page === 'projects') return projectsPage(ctx);
   if (page === 'portfolio') return portfolioPage(ctx);
@@ -43,6 +45,8 @@ export function badges(me) {
     { key: 'whiz', emoji: '⭐', name: 'Quiz whiz', how: 'Score 9 or 10 on any quiz', got: s.some(x => x.pr?.quiz.some(q => q.score >= 9)) },
     { key: 'story', emoji: '📸', name: 'Storyteller', how: `Add ${PORTFOLIO_TARGET + 1} portfolio items`, got: portfolio > PORTFOLIO_TARGET },
     { key: 'safe', emoji: '🦺', name: 'Safety star', how: 'Get top marks for safety in a viva', got: s.some(x => x.pr?.viva?.safety === 4) },
+    { key: 'lab', emoji: '🧪', name: 'Lab explorer', how: 'Play your first virtual lab', got: s.some(x => Object.keys(x.pr?.labs || {}).length) },
+    { key: 'labstar', emoji: '🌟', name: 'Lab star', how: 'Get 3 stars in 5 virtual labs', got: s.reduce((n, x) => n + Object.values(x.pr?.labs || {}).filter(l => l.stars === 3).length, 0) >= 5 },
     { key: 'mela', emoji: '🏆', name: 'Mela ready', how: 'Complete all three projects', got: s.every(x => x.sc.complete) },
   ];
 }
@@ -81,7 +85,7 @@ function home(ctx) {
         <p class="eyebrow">Grade ${sec?.grade || 6} · ${esc(sec?.name || '')} · Kaushal Bodh</p>
         <h2>${hello()}, ${esc(me.name.split(' ')[0])} 👋</h2>
         <p>${next ? `You're on <b>${esc(cp.title)}</b>. Next up: <b>${esc(next.title)}</b>.` : `You've finished all the activities in <b>${esc(cp.title)}</b>. Try the quiz!`}</p>
-        <a class="btn btn-brand" href="#/student/p/${current}">${next ? 'Continue project' : 'Open project'} ${icon('arrow')}</a>
+        <a class="btn btn-brand" href="#/student/p/${current}${next ? `/a/${next.n}` : ''}">${next ? 'Continue: open the lesson' : 'Open project'} ${icon('arrow')}</a>
       </div>
       <div class="hc-ring">${ring(year.activityPct, { size: 150, stroke: 14, sub: 'of the year' })}</div>
     </section>
@@ -153,56 +157,36 @@ function projectPage(ctx, pid, tab) {
 
 function activitiesTab(ctx, p, pr) {
   const next = nextActivity(pr, p.id);
+  const loaded = !!lessonsFor(p.id);
+  pr.labs ||= {};
+  const labStars = Object.values(pr.labs).reduce((n, l) => n + (l.stars || 0), 0);
   return {
     html: `<div class="proj-grid">
-      <ol class="act-list">${p.activities.map(a => {
-        const st = pr.acts[a.n];
-        const open = next && next.n === a.n;
-        return `<li class="act ${st?.done ? 'done' : ''} f-${p.form}">
-          <details ${open ? 'open' : ''}>
-            <summary><span class="act-n">${st?.done ? icon('check') : a.n}</span><span class="act-t"><b>${esc(a.title)}</b><small>Book page ${a.page}${st?.done ? ` · done ${fmtDate(st.at)}` : ''}</small></span></summary>
-            <div class="act-body">
-              <p>${esc(a.task)}</p>
-              <p class="book-ref">${icon('book')}<span>Read and follow <b>Kaushal Bodh Grade ${p.grade}, page ${a.page}</b>, then come back and write what you did.</span></p>
-              <label for="r-${a.n}">My reflection: what did I do, and what did I learn?</label>
-              <textarea id="r-${a.n}" rows="3" maxlength="600" placeholder="We… I learnt… Next time I will…">${esc(st?.note || '')}</textarea>
-              <div class="act-actions">
-                ${st?.done
-                  ? `<button class="btn btn-ghost btn-sm" data-save="${a.n}">Update reflection</button><button class="btn btn-sm linkish" data-undo="${a.n}">Mark as not done</button>`
-                  : `<button class="btn btn-brand btn-sm" data-done="${a.n}">${icon('check')} Mark as done</button>`}
-              </div>
-            </div>
-          </details>
-        </li>`;
-      }).join('')}</ol>
+      <div>
+        <p class="lead-in">Open an activity to read the lesson, tick off the steps as you go and play its virtual lab.</p>
+        <ol class="act-list">${p.activities.map(a => {
+          const st = pr.acts[a.n], lab = pr.labs[a.n], L = loaded ? lessonOf(p.id, a.n) : null, kind = L?.lab ? LAB_KIND[L.lab.type] : null;
+          const isNext = next && next.n === a.n;
+          return `<li class="act-row ${st?.done ? 'done' : ''} ${isNext ? 'next' : ''} f-${p.form}">
+            <a href="#/student/p/${p.id}/a/${a.n}">
+              <span class="act-n">${st?.done ? icon('check') : a.n}</span>
+              <span class="act-t"><b>${esc(a.title)}</b><small>${esc(a.task)}</small></span>
+              <span class="act-meta">
+                ${isNext ? '<span class="tag todo">Up next</span>' : st?.done ? `<span class="muted small">Done ${fmtDate(st.at)}</span>` : ''}
+                ${kind ? `<span class="lab-pill" title="Virtual lab: ${esc(L.lab.title)}"><span aria-hidden="true">${kind[1]}</span>${lab ? starsHtml(lab.stars) : '<span class="muted">Lab</span>'}</span>` : ''}
+              </span>
+              <span class="act-go" aria-hidden="true">${icon('arrow')}</span>
+            </a>
+          </li>`;
+        }).join('')}</ol>
+      </div>
       <aside class="proj-side">
+        <section class="card lab-sum"><h3 class="h-card">${icon('flask')} Virtual labs</h3><p><b class="big-num">${Object.keys(pr.labs).length}</b> of ${p.activities.length} played · <b>${labStars}</b> ★</p><p class="muted small">Every activity has a short game that lets you practise it on screen. Try for three stars!</p></section>
         <section class="card"><h3 class="h-card">${icon('shield')} Stay safe</h3><ul>${p.safety.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
-        <section class="card"><h3 class="h-card">${icon('flask')} You'll need</h3><ul>${p.materials.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
         <section class="card"><h3 class="h-card">${icon('star')} By the end you can</h3><ul>${p.goals.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
       </aside>
     </div>`,
-    mount(el) {
-      const saveAct = (n, done) => {
-        const note = $(`#r-${n}`, el).value.trim();
-        const wasDone = !!pr.acts[n]?.done;
-        pr.acts[n] = { done, at: done ? (pr.acts[n]?.at || Date.now()) : null, note };
-        if (!done) delete pr.acts[n];
-        if (done && !wasDone) log(ctx.me.name, `completed "${p.activities[n - 1].title}"`, ctx.me.schoolId);
-        save();
-        const sc = projectScore(pr, p.id);
-        if (done && !wasDone) {
-          if (sc.done === sc.total) { confetti(); toast(`All ${sc.total} activities done! Time for the quiz.`); } else toast('Activity marked as done. Nice work!');
-        } else toast(done ? 'Reflection saved.' : 'Marked as not done.');
-        ctx.rerender();
-      };
-      $$('[data-done]', el).forEach(b => b.addEventListener('click', () => {
-        const n = +b.dataset.done;
-        if (!$(`#r-${n}`, el).value.trim()) { $(`#r-${n}`, el).focus(); toast('Write a line or two about what you did first.', 'warn'); return; }
-        saveAct(n, true);
-      }));
-      $$('[data-save]', el).forEach(b => b.addEventListener('click', () => saveAct(+b.dataset.save, true)));
-      $$('[data-undo]', el).forEach(b => b.addEventListener('click', () => saveAct(+b.dataset.undo, false)));
-    },
+    mount() { if (!loaded) loadLessons(p.id).then(() => ctx.rerender()); },
   };
 }
 

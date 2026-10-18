@@ -1,0 +1,161 @@
+/* Circuit lab. Everything is scoped under .lab-circuit. */
+.lab-stage > .lab-circuit { flex: 1 1 auto; min-height: 0; }
+.lab-circuit { --night: 0; display: grid; grid-template-columns: clamp(150px, 15vw, 200px) minmax(0, 1fr) clamp(200px, 20vw, 260px); gap: clamp(10px, 1.4vw, 18px); min-height: 460px; height: 100%; }
+.lab-circuit .lc-h { margin: 0 0 8px; font: 600 1.05rem var(--display); }
+
+/* palette */
+.lab-circuit .lc-palette { display: flex; flex-direction: column; min-height: 0; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px; box-shadow: 0 10px 26px -18px rgba(43, 26, 16, .45); }
+.lab-circuit .lc-cards { display: grid; gap: 8px; overflow: auto; min-height: 0; padding: 2px; }
+.lab-circuit .lc-card { position: relative; display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 8px; min-height: 56px; padding: 4px 10px 4px 4px; border-radius: 14px; border: 2px solid var(--line); background: var(--paper); color: var(--ink); font: 700 .82rem/1.2 var(--body); text-align: left; cursor: grab; touch-action: none; user-select: none; transition: transform .15s, border-color .15s, box-shadow .15s; }
+.lab-circuit .lc-card:hover { transform: translateY(-2px); border-color: var(--lf); box-shadow: 0 8px 16px -10px rgba(43, 26, 16, .5); }
+.lab-circuit .lc-card.sel { border-color: var(--lf); background: var(--lf-soft); }
+.lab-circuit .lc-card.empty { opacity: .38; cursor: default; transform: none; }
+.lab-circuit .lc-card svg { width: 56px; height: 44px; overflow: visible; }
+.lab-circuit .lc-card b { position: absolute; top: 4px; right: 6px; font: 600 .7rem var(--mono); color: var(--muted); }
+.lab-circuit .lc-tip { margin: 10px 0 0; font-size: .78rem; color: var(--muted); line-height: 1.35; }
+.lab .lc-ghost { position: fixed; z-index: 20; translate: -50% -50%; pointer-events: none; width: 170px; box-shadow: 0 20px 40px -14px rgba(0, 0, 0, .5); transform: rotate(-4deg) scale(1.05); }
+
+/* board */
+.lab-circuit .lc-main { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
+.lab-circuit .lc-boardwrap { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; }
+.lab-circuit .lc-board { width: 100%; height: 100%; max-height: 100%; display: block; overflow: visible; touch-action: none; user-select: none; -webkit-user-select: none; font-family: var(--body); }
+.lab-circuit .lc-bg { fill: #8B5A2B; filter: drop-shadow(0 14px 18px rgba(43, 26, 16, .35)); }
+.lab-circuit.board-breadboard .lc-bg { fill: #d8d0bf; }
+.lab-circuit .lc-small { font: 700 13px var(--mono); text-anchor: middle; fill: #2B1A10; }
+.lab-circuit .lc-pol { font-size: 11px; fill: #5E4634; }
+
+.lab-circuit .lc-slot rect { fill: rgba(255, 255, 255, .16); stroke: rgba(70, 40, 10, .35); stroke-width: 2.5; stroke-dasharray: 10 8; transition: fill .2s, stroke .2s; }
+.lab-circuit .lc-slot.occ rect { fill: rgba(0, 0, 0, .05); stroke: transparent; }
+.lab-circuit .lc-slot .lc-plus { stroke: rgba(70, 40, 10, .35); stroke-width: 4; stroke-linecap: round; }
+.lab-circuit .lc-slot.ready rect, .lab-circuit .lc-board.dropping .lc-slot:not(.occ) rect { fill: rgba(255, 255, 255, .35); stroke: var(--lf); animation: lc-pulse 1s ease-in-out infinite; cursor: pointer; }
+.lab-circuit .lc-slot.over rect { fill: color-mix(in srgb, var(--lf) 30%, transparent); stroke: var(--lf); stroke-dasharray: none; }
+.lab-circuit .lc-slot:focus-visible rect { stroke: var(--focus); stroke-width: 4; }
+@keyframes lc-pulse { 50% { stroke-opacity: .4; } }
+
+.lab-circuit .lc-part .lc-body { cursor: grab; outline: none; }
+.lab-circuit .lc-t-arduino .lc-body { cursor: default; }
+.lab-circuit .lc-part.dragging { opacity: .85; }
+.lab-circuit .lc-part .lc-body:focus-visible { outline: none; filter: drop-shadow(0 0 0 var(--focus)) drop-shadow(0 0 6px var(--focus)); }
+.lab-circuit .lc-x { display: none; cursor: pointer; }
+.lab-circuit .lc-x circle { fill: var(--bad); stroke: #fff; stroke-width: 3; }
+.lab-circuit .lc-x path { stroke: #fff; stroke-width: 3.5; stroke-linecap: round; }
+.lab-circuit .lc-part.picked .lc-x { display: inline; }
+.lab-circuit .lc-part.picked .lc-body { filter: url(#lc-drop) drop-shadow(0 0 8px var(--lf)); }
+
+/* terminals */
+.lab-circuit .lc-term { cursor: crosshair; outline: none; }
+.lab-circuit .lc-hit { fill: transparent; }
+.lab-circuit .lc-pad { fill: url(#lc-metal); stroke: #5d646e; stroke-width: 2; transition: r .15s; }
+.lab-circuit .lc-padin { fill: #3a3f46; }
+.lab-circuit .lc-term:hover .lc-pad, .lab-circuit .lc-term.hot .lc-pad, .lab-circuit .lc-term:focus-visible .lc-pad { r: 13; stroke: var(--lf); stroke-width: 3; }
+.lab-circuit .lc-term.sel .lc-pad { r: 13; stroke: var(--amber); stroke-width: 4; animation: lc-pulse .8s infinite; }
+.lab-circuit .lc-tl { font: 700 12px var(--mono); text-anchor: middle; fill: #fff; paint-order: stroke; stroke: rgba(0, 0, 0, .55); stroke-width: 3px; pointer-events: none; }
+.lab-circuit .lc-tl.lc-big { font-size: 18px; fill: #fff; }
+.lab-circuit .lc-t-pir .lc-tl, .lab-circuit .lc-t-arduino .lc-tl { font-size: 11px; }
+
+/* wires */
+.lab-circuit .lc-wire path { fill: none; stroke-linecap: round; }
+.lab-circuit .lc-wshadow { stroke: rgba(43, 26, 16, .22); stroke-width: 10; transform: translate(2px, 5px); }
+.lab-circuit .lc-wout { stroke: rgba(0, 0, 0, .45); stroke-width: 9; }
+.lab-circuit .lc-wcol { stroke-width: 6.5; }
+.lab-circuit .lc-whi { stroke: rgba(255, 255, 255, .45); stroke-width: 2; transform: translate(-1px, -1.5px); }
+.lab-circuit .lc-whit { stroke: transparent; stroke-width: 22; cursor: pointer; }
+.lab-circuit .lc-wire:hover .lc-wout { stroke: var(--bad); }
+.lab-circuit .lc-dots { stroke: #FFF2A8; stroke-width: 5; stroke-dasharray: 0 18; opacity: 0; filter: drop-shadow(0 0 3px #ffd54a); }
+.lab-circuit .lc-wire.flow .lc-dots { opacity: 1; animation: lc-flow var(--flow, 1s) linear infinite; }
+.lab-circuit .lc-wire.flow.rev .lc-dots { animation-direction: reverse; }
+@keyframes lc-flow { to { stroke-dashoffset: -36; } }
+.lab-circuit .lc-temp { fill: none; stroke-width: 6; stroke-linecap: round; stroke-dasharray: 2 10; pointer-events: none; }
+
+/* parts that react */
+.lab-circuit .lc-glow { opacity: 0; transition: opacity .25s; pointer-events: none; }
+.lab-circuit .lc-dome { fill: url(#lc-led); transition: fill .2s; }
+.lab-circuit .lc-t-led.on .lc-dome { fill: url(#lc-led-on); }
+.lab-circuit .lc-t-led.on .lc-glow, .lab-circuit .lc-t-bulb.on .lc-glow { opacity: calc(.35 + var(--b, 1) * .65); }
+.lab-circuit .lc-t-led.on .lc-glow { animation: lc-bloom 2.4s ease-in-out infinite; }
+@keyframes lc-bloom { 50% { transform: scale(1.06); } }
+.lab-circuit .lc-t-led .lc-glow { transform-origin: 0 -18px; transform-box: view-box; }
+.lab-circuit .lc-crack { display: none; }
+.lab-circuit .lc-t-led.burnt .lc-dome { fill: #3b2b2b; }
+.lab-circuit .lc-t-led.burnt .lc-crack { display: inline; }
+.lab-circuit .lc-t-led.flash .lc-glow { opacity: 1; transform: scale(1.6); }
+.lab-circuit .lc-fil { stroke: #7a6a5a; }
+.lab-circuit .lc-t-bulb.on .lc-fil { stroke: #fff6c8; filter: drop-shadow(0 0 4px #ffd54a); }
+.lab-circuit .lc-t-bulb.on .lc-glass { fill: rgba(255, 240, 170, .85); }
+.lab-circuit .lc-fan { transform-box: view-box; }
+.lab-circuit .lc-t-motor.on .lc-fan { animation: lc-spin var(--spin, .3s) linear infinite; }
+.lab-circuit .lc-t-motor.on.rev .lc-fan { animation-direction: reverse; }
+@keyframes lc-spin { to { rotate: 360deg; } }
+.lab-circuit .lc-waves path { fill: none; stroke: #2F7FD0; stroke-width: 4; stroke-linecap: round; opacity: 0; }
+.lab-circuit .lc-t-buzzer.on .lc-waves path { animation: lc-wave 1s ease-out infinite; }
+.lab-circuit .lc-t-buzzer.on .lc-waves path:nth-child(2n) { animation-delay: .3s; }
+@keyframes lc-wave { 0% { opacity: .9; } 100% { opacity: 0; } }
+.lab-circuit .lc-t-buzzer.on .lc-vib { animation: lc-vib .08s linear infinite; }
+@keyframes lc-vib { 25% { transform: translate(1.5px, -1px); } 75% { transform: translate(-1.5px, 1px); } }
+.lab-circuit .lc-swtag { fill: #6E5442; }
+.lab-circuit .lc-swtxt { fill: #fff; font-size: 11px; }
+.lab-circuit .lc-t-switch.closed .lc-swtag { fill: #3E7B2A; }
+.lab-circuit .lc-t-switch .lc-body { cursor: pointer; }
+.lab-circuit .lc-t-switch.closed .lc-cap { transform: translateY(3px); }
+.lab-circuit .lc-cone { opacity: 0; transition: opacity .2s; }
+.lab-circuit .lc-t-pir.firing .lc-cone { opacity: 1; animation: lc-pulse .6s infinite; }
+.lab-circuit .lc-pirled { fill: #5a2a2a; }
+.lab-circuit .lc-t-pir.powered .lc-pirled { fill: #8a3a3a; }
+.lab-circuit .lc-t-pir.firing .lc-pirled { fill: #ff4040; filter: drop-shadow(0 0 4px #ff4040); }
+.lab-circuit .lc-t-ldr.dark .lc-ldrdisc { filter: brightness(.6); }
+.lab-circuit .lc-ledL { fill: #7a5a2a; }
+.lab-circuit .lc-t-arduino.d13 .lc-ledL { fill: #ffd54a; filter: drop-shadow(0 0 4px #ffd54a); }
+.lab-circuit .lc-t-battery.short .lc-body { filter: drop-shadow(0 0 10px #ff4a2a); }
+
+/* sky (LDR) and cat (PIR) */
+.lab-circuit .lc-skyday { fill: #9fd6f0; }
+.lab-circuit .lc-skynight { fill: #18213d; opacity: var(--night); }
+.lab-circuit .lc-sun { opacity: calc(1 - var(--night)); transform: translateY(calc(var(--night) * 40px)); }
+.lab-circuit .lc-moon { opacity: var(--night); }
+.lab-circuit .lc-nightveil { fill: #0b1230; opacity: calc(var(--night) * .5); pointer-events: none; }
+.lab-circuit .lc-catlayer { pointer-events: none; }
+.lab-circuit .lc-cat .lc-leg { transform-box: fill-box; transform-origin: 50% 0; }
+.lab-circuit .lc-catlayer.walking .lc-l1, .lab-circuit .lc-catlayer.walking .lc-l4 { animation: lc-step .5s ease-in-out infinite; }
+.lab-circuit .lc-catlayer.walking .lc-l2, .lab-circuit .lc-catlayer.walking .lc-l3 { animation: lc-step .5s ease-in-out infinite reverse; }
+.lab-circuit .lc-catlayer.walking .lc-tail { animation: lc-tail 1s ease-in-out infinite; transform-box: fill-box; transform-origin: 100% 100%; }
+@keyframes lc-step { 0% { rotate: 22deg; } 50% { rotate: -22deg; } 100% { rotate: 22deg; } }
+@keyframes lc-tail { 50% { rotate: 14deg; } }
+
+/* tools + side */
+.lab-circuit .lc-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.lab-circuit .lc-btn { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font: 700 .92rem var(--body); cursor: pointer; transition: transform .15s, border-color .15s; }
+.lab-circuit .lc-btn:hover { transform: translateY(-2px); border-color: var(--lf); }
+.lab-circuit .lc-btn:disabled { opacity: .5; transform: none; }
+.lab-circuit .lc-test { background: var(--lf); color: #fff; border-color: transparent; box-shadow: 0 5px 0 color-mix(in srgb, var(--lf) 60%, #000); }
+.lab-circuit .lc-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; }
+.lab-circuit .lc-goalcard { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px; box-shadow: 0 10px 26px -18px rgba(43, 26, 16, .45); }
+.lab-circuit .lc-goaltxt { margin: 0 0 10px; font-weight: 600; color: var(--ink-2); line-height: 1.35; }
+.lab-circuit .lc-needs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lab-circuit .lc-needs li { display: flex; align-items: center; gap: 8px; font-size: .88rem; font-weight: 600; }
+.lab-circuit .lc-tick { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; transition: background .2s, border-color .2s; }
+.lab-circuit .lc-needs li.done .lc-tick { background: var(--ok); border-color: var(--ok); }
+.lab-circuit .lc-needs li.done .lc-tick::after { content: ''; width: 6px; height: 11px; border: solid #fff; border-width: 0 3px 3px 0; rotate: 45deg; margin-top: -3px; }
+.lab-circuit .lc-status { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); font-weight: 700; font-size: .92rem; }
+.lab-circuit .lc-lamp { width: 16px; height: 16px; border-radius: 50%; background: var(--line); flex: none; box-shadow: inset 0 -2px 3px rgba(0, 0, 0, .2); }
+.lab-circuit .lc-status.ready .lc-lamp { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+.lab-circuit .lc-status.good .lc-lamp { background: #5ef06b; box-shadow: 0 0 12px #5ef06b; }
+.lab-circuit .lc-status.bad .lc-lamp { background: var(--bad); box-shadow: 0 0 12px var(--bad); }
+.lab-circuit .lc-code { margin: 0; padding: 12px; border-radius: 16px; background: #10282a; color: #b9e5e1; font: 500 .68rem/1.55 var(--mono); overflow: auto; white-space: pre; }
+.lab-circuit .lc-code .act { color: #fff; background: rgba(0, 151, 156, .45); border-radius: 4px; }
+
+@media (max-width: 900px) {
+  .lab-stage > .lab-circuit { flex: none; }
+  .lab-circuit { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; gap: 10px; }
+  .lab-circuit > * { min-width: 0; }
+  .lab-circuit .lc-boardwrap { width: 100%; display: block; }
+  .lab-circuit .lc-palette { padding: 10px; border-radius: 18px; }
+  .lab-circuit .lc-palette .lc-h, .lab-circuit .lc-tip { display: none; }
+  .lab-circuit .lc-cards { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; padding-bottom: 4px; }
+  .lab-circuit .lc-card { flex: none; width: 128px; grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 6px; font-size: .74rem; scroll-snap-align: start; }
+  .lab-circuit .lc-card svg { width: 64px; height: 48px; }
+  .lab-circuit .lc-boardwrap { flex: none; }
+  .lab-circuit .lc-board { height: auto; max-height: none; }
+  .lab-circuit .lc-side { overflow: visible; }
+  .lab-circuit .lc-goalcard { padding: 12px; }
+}
+@media (min-width: 621px) and (max-width: 900px) { .lab-circuit .lc-side { display: grid; grid-template-columns: 1fr 1fr; } }

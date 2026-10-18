@@ -1,0 +1,84 @@
+/* Lab type: match. Everything is scoped under .lab-match. */
+.lab-match { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 12px; width: 100%; max-width: 1060px; margin: 0 auto; }
+.lab-match .mt-board { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) clamp(56px, 17vw, 230px) minmax(0, 1.25fr); column-gap: 0; row-gap: clamp(8px, 1.6vh, 14px); align-items: stretch;
+  padding: clamp(14px, 2.4vw, 24px) clamp(12px, 2.4vw, 26px); border-radius: 30px; border: 1px solid var(--line);
+  background: radial-gradient(ellipse 30% 70% at 50% 50%, color-mix(in srgb, var(--lf) 9%, transparent), transparent 70%), linear-gradient(180deg, var(--card), color-mix(in srgb, var(--paper-2) 40%, var(--card)));
+  box-shadow: 0 18px 40px -28px rgba(43, 26, 16, .6), inset 0 1px 0 rgba(255, 255, 255, .5); }
+.lab-match .mt-head { grid-row: 1; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; font: 600 1.1rem var(--display); color: var(--ink); }
+.lab-match .mt-head::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--lf); box-shadow: 0 0 0 4px var(--lf-soft); }
+.lab-match .mt-head-a { grid-column: 1; }
+.lab-match .mt-head-b { grid-column: 3; }
+.lab-match .mt-gap { grid-column: 2; margin: 0 12%; border-radius: 999px; background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--ink) 9%, transparent) 0 2px, transparent 2px 12px) center / 2px 100% no-repeat; pointer-events: none; }
+
+.lab-match .mt-card { --c: var(--lf); position: relative; appearance: none; margin: 0; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 18px 8px 10px;
+  border-radius: 18px; border: 2px solid var(--line); background: linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 90%, var(--paper-2))); color: var(--ink);
+  box-shadow: 0 10px 18px -13px rgba(43, 26, 16, .6), inset 0 -3px 0 color-mix(in srgb, var(--ink) 6%, transparent);
+  font: 700 1rem/1.25 var(--body); text-align: left; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; transition: border-color .2s, background-color .25s, box-shadow .25s; }
+.lab-match .mt-a { grid-column: 1; }
+.lab-match .mt-b { grid-column: 3; padding: 8px 12px 8px 22px; font-weight: 600; }
+.lab-match .mt-card:hover { border-color: color-mix(in srgb, var(--lf) 55%, var(--line)); }
+.lab-match .mt-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.lab-match .mt-art { width: 52px; height: 52px; flex: none; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--lf) 13%, transparent), transparent 70%); }
+.lab-match .mt-b .mt-art { width: 42px; height: 42px; }
+.lab-match .mt-art .spr { width: 100%; height: 100%; }
+.lab-match .mt-art .lab-emoji { font-size: 2rem; }
+.lab-match .mt-label { min-width: 0; text-wrap: balance; }
+
+/* brass pegs where the ropes tie on */
+.lab-match .mt-peg { position: absolute; top: 50%; width: 20px; height: 20px; margin-top: -10px; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 50% 50%, #5A3A12 0 3px, transparent 3.5px), radial-gradient(circle at 35% 30%, #FBE3A6, #D9A441 55%, #9A6A1E); box-shadow: 0 0 0 3px var(--card), 0 3px 6px rgba(0, 0, 0, .3); }
+.lab-match .mt-a .mt-peg { right: -11px; }
+.lab-match .mt-b .mt-peg { left: -11px; }
+
+.lab-match .mt-card.is-active, .lab-match .mt-card.is-selected { border-color: var(--amber); background: color-mix(in srgb, var(--amber-soft) 55%, var(--card)); box-shadow: 0 0 0 5px color-mix(in srgb, var(--amber) 26%, transparent), 0 14px 24px -14px rgba(43, 26, 16, .6); }
+.lab-match .mt-card.is-target { border-color: var(--amber); box-shadow: 0 0 0 5px color-mix(in srgb, var(--amber) 34%, transparent); transform: scale(1.03); }
+.lab-match .mt-card.is-wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 11%, var(--card)); }
+.lab-match .mt-card.is-matched { cursor: default; border-color: color-mix(in srgb, var(--c) 75%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--c) 9%, var(--card)), color-mix(in srgb, var(--c) 18%, var(--card))); }
+.lab-match .mt-card.is-matched .mt-peg { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 45%, #fff), var(--c)); }
+
+/* ropes */
+.lab-match .mt-ropes { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 3; }
+.lab-match .mt-rope path { fill: none; stroke-linecap: round; }
+.lab-match .mt-rope-base { stroke: color-mix(in srgb, var(--c) 62%, #1A0F06); stroke-width: 8; }
+.lab-match .mt-rope-main { stroke: var(--c); stroke-width: 5.5; }
+.lab-match .mt-rope-twist { stroke: color-mix(in srgb, var(--c) 45%, #fff); stroke-width: 3; stroke-dasharray: 5 7; opacity: .75; }
+.lab-match .mt-rope-nub { fill: color-mix(in srgb, var(--c) 62%, #1A0F06); }
+.lab-match .mt-rope-end { fill: var(--card); stroke: var(--c); stroke-width: 4; }
+.lab-match .mt-rope { filter: drop-shadow(0 4px 3px rgba(43, 26, 16, .28)); }
+.lab-match .mt-rope.is-tied .mt-rope-end, .lab-match .mt-rope.is-tied .mt-rope-nub { display: none; }
+.lab-match .mt-rope.is-bad { --c: var(--bad); }
+.lab-match .mt-knot-ball { fill: var(--c); stroke: color-mix(in srgb, var(--c) 60%, #1A0F06); stroke-width: 2.5; }
+.lab-match .mt-knot-loop { fill: none; stroke: color-mix(in srgb, var(--c) 45%, #fff); stroke-width: 2.6; stroke-linecap: round; }
+.lab-match .mt-knot-tail { fill: none; stroke: var(--c); stroke-width: 5; stroke-linecap: round; }
+.lab-match .mt-knot-shine { fill: #fff; opacity: .55; }
+
+.lab-match .mt-proxy { position: absolute; left: 0; top: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0; }
+.lab-match .mt-conf { position: absolute; width: 8px; height: 12px; margin: -6px 0 0 -4px; border-radius: 2px; z-index: 4; pointer-events: none; }
+.lab-match .mt-conf.is-dot { width: 8px; height: 8px; border-radius: 50%; }
+.lab-match .mt-tip { margin: 0; text-align: center; font-size: .88rem; color: var(--muted); }
+.lab-match.is-done .mt-tip { color: var(--ok); font-weight: 700; }
+
+@media (prefers-color-scheme: dark) {
+  .lab-match .mt-board { box-shadow: 0 18px 40px -24px rgba(0, 0, 0, .85); }
+  .lab-match .mt-rope { filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .5)); }
+}
+
+/* Phones: keep the two columns side by side but compact; the rope gap narrows */
+@media (max-width: 640px) {
+  .lab-match .mt-board { grid-template-columns: minmax(0, .95fr) 38px minmax(0, 1.2fr); padding: 12px 8px; border-radius: 22px; row-gap: 8px; }
+  .lab-match .mt-head { font-size: .92rem; }
+  .lab-match .mt-head::before { width: 7px; height: 7px; box-shadow: 0 0 0 3px var(--lf-soft); }
+  .lab-match .mt-card { min-height: 56px; gap: 6px; padding: 6px 12px 6px 6px; border-radius: 14px; font-size: .84rem; }
+  .lab-match .mt-a { flex-direction: column; justify-content: center; text-align: center; padding: 6px 10px; }
+  .lab-match .mt-b { padding: 6px 8px 6px 15px; font-size: .8rem; }
+  .lab-match .mt-art { width: 40px; height: 40px; }
+  .lab-match .mt-b .mt-art { width: 30px; height: 30px; }
+  .lab-match .mt-art .lab-emoji { font-size: 1.6rem; }
+  .lab-match .mt-peg { width: 16px; height: 16px; margin-top: -8px; }
+  .lab-match .mt-a .mt-peg { right: -9px; }
+  .lab-match .mt-b .mt-peg { left: -9px; }
+  .lab-match .mt-rope-base { stroke-width: 6.5; }
+  .lab-match .mt-rope-main { stroke-width: 4.5; }
+  .lab-match .mt-rope-twist { stroke-width: 2.4; }
+  .lab-match .mt-tip { font-size: .8rem; }
+}
