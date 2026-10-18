@@ -641,16 +641,19 @@ export const SPRITES = {
   <path d="M98 30L48 18A32 32 0 1 0 48 82L98 70" stroke="#C3CDD5" stroke-width="3.5" fill="none" stroke-dasharray="5 2.5"/>
   ${defs(metal('bicycle-chain-m', 'd'))}`,
 
-  'bicycle-bell': `${sh(36, 50, 93)}
-  <rect x="6" y="80" width="88" height="9" rx="4.5" fill="#4A5058" stroke="#2E3338" stroke-width="1.5"/>
-  <rect x="40" y="72" width="20" height="14" rx="3" fill="#7D8A95"/>
-  <path d="M78 66q10-2 14-10" stroke="${MS}" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="92" cy="55" r="4" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
-  <path d="M20 72q0-38 30-38t30 38z" fill="url(#bicycle-bell-m)" stroke="${MS}" stroke-width="2"/>
-  <ellipse cx="50" cy="72" rx="32" ry="6" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
-  <circle cx="50" cy="32" r="4" fill="#AEB9C2" stroke="${MS}" stroke-width="1.5"/>
-  <path d="M30 64q2-18 14-24" stroke="#fff" stroke-width="4" fill="none" opacity=".8" stroke-linecap="round"/>
-  <path d="M16 30q-6 6-4 14M9 23q-10 10-6 24" stroke="#F2A93B" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-  ${defs(rg('bicycle-bell-m', '#FFFFFF', '#8D9AA5'))}`,
+  'bicycle-bell': `${sh(40, 50, 92)}
+  <path d="M4 80L96 66" stroke="${MS}" stroke-width="11" stroke-linecap="round"/>
+  <path d="M4 80L96 66" stroke="url(#bicycle-bell-t)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M70 70l26-4" stroke="#2E3338" stroke-width="13" stroke-linecap="round"/>
+  <path d="M70 70l26-4" stroke="#4A5058" stroke-width="10" stroke-linecap="round" stroke-dasharray="2 2"/>
+  <rect x="31" y="66" width="16" height="16" rx="3" transform="rotate(-9 39 74)" fill="#7D8A95" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M56 58q8-2 12-10" stroke="${MS}" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="68" cy="47" r="4" fill="#E5484D" stroke="#8E2A22" stroke-width="1.5"/>
+  <path d="M14 66q0-30 26-30t26 30z" fill="url(#bicycle-bell-m)" stroke="${MS}" stroke-width="2"/>
+  <ellipse cx="40" cy="66" rx="27" ry="5" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
+  <circle cx="40" cy="35" r="3.5" fill="#AEB9C2" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M22 58q2-14 12-18" stroke="#fff" stroke-width="4" fill="none" opacity=".85" stroke-linecap="round"/>
+  <path d="M72 22q6 6 4 14M80 14q10 10 6 24M12 24q-6 6-4 14" stroke="#F2A93B" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  ${defs(rg('bicycle-bell-m', '#FFFFFF', '#8D9AA5'), metal('bicycle-bell-t', 'v'))}`,
 
   // ---------- woodworking ----------
   'hammer': `${sh(30, 50, 91)}
@@ -772,4 +775,444 @@ export const SPRITES = {
   <path d="M35 58v24" stroke="#fff" stroke-width="2.5" opacity=".35" stroke-linecap="round"/>
   ${defs(wood('pen-stand-w'))}`,
 
+  // ---------- tie-dye ----------
+  'cloth': `${sh(40, 50, 90)}
+  <path d="M12 66h76q4 0 4 4v12q0 4-4 4H12q-4 0-4-4V70q0-4 4-4z" fill="url(#cloth-a)" stroke="#8C9FB0" stroke-width="2"/>
+  <path d="M16 46h68q4 0 4 4v12q0 4-4 4H16q-4 0-4-4V50q0-4 4-4z" fill="url(#cloth-b)" stroke="#8C9FB0" stroke-width="2"/>
+  <path d="M22 26h56q4 0 4 4v12q0 4-4 4H22q-4 0-4-4V30q0-4 4-4z" fill="url(#cloth-a)" stroke="#8C9FB0" stroke-width="2"/>
+  <path d="M70 46v18q0 10 6 18q4 6 2 10q-6 2-10-4q-4-8-4-22V46z" fill="url(#cloth-b)" stroke="#8C9FB0" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M14 82h50M18 62h44M24 42h50" stroke="#7FA6C4" stroke-width="1.6" stroke-dasharray="3 2.5"/>
+  <path d="M24 31h40M18 51h30" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>
+  ${defs(lg('cloth-a', '#FFFFFF', '#DCE5EC'), lg('cloth-b', '#F4F7FA', '#CBD7E1'))}`,
+
+  'thread': `${sh(30, 54, 92)}
+  <path d="M60 50q22 2 22 18t-14 18l18-5" stroke="#C2392C" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M66 86l26-7" stroke="${MS}" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="89" cy="80" rx="2.6" ry="1.2" transform="rotate(-15 89 80)" fill="none" stroke="${MS}" stroke-width="1.2"/>
+  <path d="M20 78v6a24 6 0 0 0 48 0v-6z" fill="#B47236" stroke="${WS}" stroke-width="2"/>
+  <ellipse cx="44" cy="78" rx="24" ry="6" fill="#E8B273" stroke="${WS}" stroke-width="2"/>
+  <rect x="25" y="26" width="38" height="52" fill="url(#thread-r)"/>
+  <path d="${rep(12, i => `M25 ${30 + i * 4}q19 3 38 0`)}" stroke="#8E2A22" stroke-width="1" fill="none" opacity=".45"/>
+  <path d="M31 30v44" stroke="#fff" stroke-width="3" opacity=".35" stroke-linecap="round"/>
+  <path d="M20 20v6a24 6 0 0 0 48 0v-6z" fill="#B47236" stroke="${WS}" stroke-width="2"/>
+  <ellipse cx="44" cy="20" rx="24" ry="6" fill="#E8B273" stroke="${WS}" stroke-width="2"/>
+  <ellipse cx="44" cy="20" rx="6" ry="2" fill="#5A3418"/>
+  ${defs(lg('thread-r', '#F0705F', '#B82E2E', 'h'))}`,
+
+  'dye-pot': `${sh(38, 50, 93)}
+  <path d="M30 32q-5-6 0-11t0-11M46 30q-5-6 0-11t0-11" stroke="#AAB6C0" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M14 50H5v9h9M86 50h9v9h-9" stroke="${MS}" stroke-width="4" fill="none" stroke-linejoin="round"/>
+  <path d="M14 44h72v34q0 10-10 10H24q-10 0-10-10z" fill="url(#dye-pot-m)" stroke="${MS}" stroke-width="2"/>
+  <path d="M22 54v24" stroke="#fff" stroke-width="3" opacity=".5" stroke-linecap="round"/>
+  <path d="M60 46L82 6" stroke="${WS}" stroke-width="6" stroke-linecap="round"/><path d="M60 46L82 6" stroke="#E8B273" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="50" cy="44" rx="36" ry="8" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
+  <ellipse cx="50" cy="45" rx="31" ry="5.5" fill="url(#dye-pot-d)"/>
+  <path d="M60 46L64 39" stroke="${WS}" stroke-width="6" stroke-linecap="round"/><path d="M60 46l4-7" stroke="#E8B273" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 49v8q0 3 2 3t2-3v-6" fill="#6B3FA8"/>
+  ${defs(metal('dye-pot-m'), rg('dye-pot-d', '#9D7BE0', '#4B2A8C'))}`,
+
+  'rubber-gloves': `${sh(34, 50, 93)}
+  <g transform="translate(12 -2) rotate(12 50 60) scale(-1 1) translate(-100 0)">${glove('rubber-gloves-b', '#E7A91C', '#9A6A0A')}</g>
+  <g transform="translate(-8 0) rotate(-8 50 60)">${glove('rubber-gloves-a', '#FFD54A', '#9A6A0A')}
+  <path d="M27 81h38" stroke="#9A6A0A" stroke-width="1.6" opacity=".6"/>
+  <path d="M35 50q-2 12 2 22" stroke="#fff" stroke-width="3" fill="none" opacity=".7" stroke-linecap="round"/></g>
+  ${defs(lg('rubber-gloves-a', '#FFE27A', '#EFB21E', 'h'), lg('rubber-gloves-b', '#F2C84A', '#D99A12', 'h'))}`,
+
+  'tongs': `${sh(26, 50, 93)}
+  <path d="M46 12Q34 16 34 32L28 82M54 12q12 4 12 20l6 50" stroke="${MS}" stroke-width="7.5" fill="none" stroke-linecap="round"/>
+  <path d="M46 12Q34 16 34 32L28 82M54 12q12 4 12 20l6 50" stroke="url(#tongs-m)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+  <circle cx="50" cy="10" r="6" fill="none" stroke="${MS}" stroke-width="3.5"/>
+  <path d="M34 30l-2.5 22M66 30l2.5 22" stroke="#8E2A22" stroke-width="10" stroke-linecap="round"/>
+  <path d="M34 30l-2.5 22M66 30l2.5 22" stroke="#E5574A" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="28" cy="84" rx="6" ry="8" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
+  <ellipse cx="72" cy="84" rx="6" ry="8" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
+  <path d="M25 81h6M25 85h6M69 81h6M69 85h6" stroke="${MS}" stroke-width="1.2"/>
+  ${defs(metal('tongs-m', 'd'))}`,
+
+  'iron': `${sh(40, 50, 90)}
+  <path d="M44 42q2-16 16-16h22q7 0 5 8l-3 10" stroke="#1D4F80" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M44 42q2-16 16-16h22q7 0 5 8l-3 10" stroke="#5AA6E8" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M6 80Q14 64 40 62h50v18z" fill="url(#iron-m)" stroke="${MS}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M12 64Q22 44 46 42h40q4 0 4 4v18H12z" fill="url(#iron-b)" stroke="#1D4F80" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="62" cy="54" r="5" fill="#fff" stroke="#1D4F80" stroke-width="1.5"/><path d="M62 54l2-3.5" stroke="#D9483B" stroke-width="1.6"/>
+  <path d="M24 54q8-7 20-8" stroke="#fff" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round"/>
+  <path d="M20 72q12-3 24-3" stroke="#fff" stroke-width="2" fill="none" opacity=".7" stroke-linecap="round"/>
+  <path d="M8 60q-4-5 0-9t0-9M16 56q-3-4 0-7" stroke="#AAB6C0" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  ${defs(metal('iron-m', 'v'), lg('iron-b', '#7CC0F0', '#2F7FC1'))}`,
+
+  'turmeric': `${sh(44, 50, 91)}
+  <g fill="url(#turmeric-s)" stroke="#8A5226" stroke-width="2" stroke-linejoin="round">
+  <path d="M13 68q-4-14 0-24q4-5 8 0q3 10 0 24z"/>
+  <path d="M29 68q2-14 12-20q6-1 5 6q-2 9-9 15z"/>
+  <path d="M6 78q-2-12 9-13h27q9 0 9 7.5t-9 7.5H15q-8 0-9-2z"/></g>
+  <path d="M13 52q4 2 8 0M12.5 60q4 2 8 0M35 58q3 3 6 2M18 66v12M30 66v12" stroke="#8A5226" stroke-width="1.3" fill="none" opacity=".6"/>
+  <ellipse cx="49" cy="72.5" rx="3.6" ry="7" fill="#F27C0C" stroke="#B5530A" stroke-width="1.5"/><ellipse cx="49" cy="72.5" rx="1.6" ry="3.6" fill="#FFB347"/>
+  <path d="M10 69h28" stroke="#fff" stroke-width="2" opacity=".35" stroke-linecap="round"/>
+  <path d="M54 64h42q-2 22-21 22t-21-22z" fill="url(#turmeric-b)" stroke="#7A3E1E" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M57 64q18-16 36 0z" fill="url(#turmeric-p)"/>
+  <ellipse cx="75" cy="64" rx="21" ry="3.5" fill="#E07D12" opacity=".5"/>
+  <path d="M59 70q4 9 11 12" stroke="#fff" stroke-width="2.5" fill="none" opacity=".35" stroke-linecap="round"/>
+  ${defs(lg('turmeric-s', '#E3A65C', '#B9763A'), lg('turmeric-b', '#D9824E', '#A8522A', 'h'), rg('turmeric-p', '#FFD84A', '#F29F05'))}`,
+
+  'beetroot': `${sh(24, 50, 94)}
+  <path d="M48 42Q38 30 26 10Q40 10 49 40M52 42Q56 26 52 4Q66 14 54 40M54 42Q66 30 84 22Q80 38 56 42" fill="#4FA862" stroke="#2C6E3F" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M48 42Q40 28 30 14M52 42Q55 26 53 8M55 42Q68 32 80 25" stroke="#B0204A" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M50 38c18 0 26 12 26 24c0 12-12 20-26 24c-14-4-26-12-26-24c0-12 8-24 26-24z" fill="url(#beetroot-r)" stroke="#6E0F36" stroke-width="2"/>
+  <path d="M50 86q2 5-2 9" stroke="#6E0F36" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M33 56q3-8 10-11" stroke="#fff" stroke-width="3" fill="none" opacity=".45" stroke-linecap="round"/>
+  <path d="M40 70q4 2 8 0M54 62q4 2 8 0" stroke="#6E0F36" stroke-width="1.2" fill="none" opacity=".5"/>
+  ${defs(rg('beetroot-r', '#D9508A', '#7E1240'))}`,
+
+  'onion-skins': `${sh(42, 50, 91)}
+  <path d="M64 30c14 6 22 22 22 36c0 12-10 22-22 22s-22-10-22-22c0-14 8-30 22-36z" fill="url(#onion-skins-o)" stroke="#8A4A1A" stroke-width="2"/>
+  <path d="M64 30q-2-12 4-20M64 30q4-10 0-18" stroke="#8A4A1A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M54 44q-6 20 2 40M64 36v52M74 44q6 20-2 40" stroke="#8A4A1A" stroke-width="1.3" fill="none" opacity=".55"/>
+  <path d="M50 52q2-10 8-14" stroke="#fff" stroke-width="3" fill="none" opacity=".45" stroke-linecap="round"/>
+  <path d="M86 70q8 4 10 14q-8 0-12-6z" fill="#F2C48A" stroke="#A8622A" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M6 82q6-26 32-30q-8 4-10 12q14-6 20 2q-16 0-22 18q-10 2-20-2z" fill="url(#onion-skins-s)" stroke="#A8622A" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M22 66q-6 22 18 24q-14-6-8-20q-4-2-10-4z" fill="#F2C48A" stroke="#A8622A" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M14 78q8-16 22-20M24 82q6-10 18-14" stroke="#A8622A" stroke-width="1" fill="none" opacity=".6"/>
+  ${defs(lg('onion-skins-s', '#F6CF94', '#D98A3E', 'd'), rg('onion-skins-o', '#F0B266', '#B8662A'))}`,
+
+  'indigo': `${sh(42, 50, 91)}
+  <path d="M64 30q-6-14 4-22q6 12-4 22zM70 34q8-12 20-10q-8 12-20 10zM62 38q-14-4-16-16q14 2 16 16z" fill="#4FA862" stroke="#2C6E3F" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M64 52V30" stroke="#2C6E3F" stroke-width="2"/>
+  <path d="M44 56h48q-2 26-24 26t-24-26z" fill="url(#indigo-b)" stroke="#8C7A66" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M47 56q21-18 42 0z" fill="url(#indigo-p)"/>
+  <path d="M50 62q4 10 12 14" stroke="#fff" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
+  <path d="M10 68l14-6 14 6v14l-14 6-14-6z" fill="#26348A" stroke="#151E5A" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M10 68l14-6 14 6-14 6z" fill="#5468D4"/><path d="M24 74v14l14-6V68z" fill="#1E2A75"/>
+  <path d="M22 80l8-4 8 4v8l-8 4-8-4z" transform="translate(14 0)" fill="#3445A8" stroke="#151E5A" stroke-width="1.5" stroke-linejoin="round"/>
+  ${defs(lg('indigo-b', '#FFFFFF', '#D9CFC0', 'h'), rg('indigo-p', '#6D7FE0', '#26348A'))}`,
+
+  // ---------- electronics ----------
+  'battery': `${sh(40, 50, 91)}
+  <path d="M22 32q-4-14 8-20t18-6" stroke="#8E2A22" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M22 32q-4-14 8-20t18-6" stroke="#E5484D" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M30 32q2-10 14-12t20-4" stroke="#7A828B" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M30 32q2-10 14-12t20-4" stroke="#2B2F36" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="8" y="30" width="84" height="56" rx="6" fill="url(#battery-h)" stroke="#7A828B" stroke-width="2"/>
+  ${[[35, 0], [59, 1]].map(([y, r]) => `<rect x="16" y="${y}" width="68" height="20" rx="4" fill="url(#battery-c)" stroke="#1E5F33" stroke-width="1.5"/>
+  <rect x="${r ? 16 : 74}" y="${y}" width="10" height="20" rx="${r ? 4 : 3}" fill="url(#battery-m)" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="${r ? 13 : 84}" y="${y + 6}" width="3" height="8" rx="1" fill="#C3CDD5"/>
+  <path d="M${r ? 32 : 64} ${y + 10}h6M${r ? 35 : 67} ${y + 7}v6" stroke="#fff" stroke-width="2"/>
+  <path d="M20 ${y + 5}h60" stroke="#fff" stroke-width="2" opacity=".35" stroke-linecap="round"/>`).join('')}
+  ${defs(lg('battery-h', '#4A5058', '#2E3338'), lg('battery-c', '#5FC27A', '#2A7F45'), metal('battery-m', 'v'))}`,
+
+  'led': `
+  <circle cx="50" cy="32" r="30" fill="url(#led-glow)"/>
+  <path d="M44 58v38M56 58v26" stroke="${MS}" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M44 58v38M56 58v26" stroke="#C3CDD5" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M35 54V30a15 15 0 0 1 30 0v24z" fill="url(#led-d)" stroke="#9E1F1F" stroke-width="2"/>
+  <path d="M45 54V40M55 54V44h-6" stroke="#8E1A1A" stroke-width="2.2" fill="none" opacity=".55"/>
+  <path d="M32 54h36v5q0 2-2 2H34q-2 0-2-2z" fill="#E5484D" stroke="#9E1F1F" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M41 29q1-9 7-11" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
+  ${defs(rg('led-d', '#FFB3A8', '#E02E2E'), `<radialGradient id="led-glow"><stop offset="0" stop-color="#FF5A4A" stop-opacity=".45"/><stop offset="1" stop-color="#FF5A4A" stop-opacity="0"/></radialGradient>`)}`,
+
+  'bulb': `
+  <circle cx="50" cy="36" r="36" fill="url(#bulb-glow)"/>
+  <path d="M50 6c16 0 27 12 27 27c0 10-6 16-10 22c-2 4-3 8-3 12H36c0-4-1-8-3-12c-4-6-10-12-10-22c0-15 11-27 27-27z" fill="url(#bulb-g)" stroke="#C99A1A" stroke-width="2"/>
+  <path d="M44 66V48M56 66V48" stroke="#9A7A4A" stroke-width="1.6"/>
+  <path d="M44 48l2-6 2.5 6 2.5-6 2.5 6 2.5-6" stroke="#FF8A1C" stroke-width="2.4" fill="none" stroke-linejoin="round"/>
+  <path d="M34 24q4-10 13-12" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
+  <rect x="35" y="66" width="30" height="16" rx="3" fill="url(#bulb-m)" stroke="${MS}" stroke-width="2"/>
+  <path d="M35 71.5l30-2M35 77l30-2" stroke="${MS}" stroke-width="1.6"/>
+  <path d="M42 82h16l-3 7h-10z" fill="#3E444B"/>
+  ${defs(rg('bulb-g', '#FFFBE0', '#FFD54A'), metal('bulb-m'), `<radialGradient id="bulb-glow"><stop offset=".5" stop-color="#FFD54A" stop-opacity=".45"/><stop offset="1" stop-color="#FFD54A" stop-opacity="0"/></radialGradient>`)}`,
+
+  'switch': `${sh(34, 50, 92)}
+  <path d="M28 76v10l-3 4M72 76v10l3 4M38 76v8M62 76v8" stroke="${MS}" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="18" y="54" width="64" height="24" rx="4" fill="url(#switch-b)" stroke="#7A828B" stroke-width="2"/>
+  <rect x="16" y="48" width="68" height="10" rx="3" fill="url(#switch-m)" stroke="${MS}" stroke-width="2"/>
+  <g fill="#7D8A95"><circle cx="22" cy="53" r="1.6"/><circle cx="78" cy="53" r="1.6"/></g>
+  <path d="M33 48V30h34v18z" fill="url(#switch-r)" stroke="#8E1A1A" stroke-width="2"/>
+  <ellipse cx="50" cy="30" rx="17" ry="5.5" fill="#FF8A7A" stroke="#8E1A1A" stroke-width="2"/>
+  <path d="M38 34v11" stroke="#fff" stroke-width="2.5" opacity=".5" stroke-linecap="round"/>
+  <path d="M50 4v14M43 11l7 8 7-8" stroke="#F2A93B" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  ${defs(lg('switch-b', '#5A626C', '#363B42'), metal('switch-m', 'v'), lg('switch-r', '#F0605A', '#B82E2E', 'h'))}`,
+
+  'wire': `
+  <path d="M10 76C24 36 50 92 64 46S86 22 92 26" stroke="#8E2A22" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M10 76C24 36 50 92 64 46S86 22 92 26" stroke="#E5484D" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M8 56C24 18 44 70 58 30S78 8 84 10" stroke="#1D4F80" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M8 56C24 18 44 70 58 30S78 8 84 10" stroke="#4D9BE0" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M10 76l-4 9M92 26l6 3M8 56l-3 8M84 10l7 1" stroke="#B5651D" stroke-width="3" stroke-linecap="round"/>
+  <path d="M10 76l-4 9M92 26l6 3M8 56l-3 8M84 10l7 1" stroke="#F0A050" stroke-width="1.4" stroke-linecap="round"/>`,
+
+  'resistor': `
+  <g transform="rotate(-18 50 50)">
+  <path d="M3 50h94" stroke="${MS}" stroke-width="4" stroke-linecap="round"/>
+  <path d="M3 50h94" stroke="#C3CDD5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M25 40q0-7 7-7h6q3 0 5 3h14q2-3 5-3h6q7 0 7 7v20q0 7-7 7h-6q-3 0-5-3H43q-2 3-5 3h-6q-7 0-7-7z" fill="url(#resistor-b)" stroke="#9A7A4A" stroke-width="2"/>
+  <rect x="31" y="33.5" width="5.5" height="33" fill="#7A4A22"/>
+  <rect x="44" y="36" width="5" height="28" fill="#2B2F36"/>
+  <rect x="52" y="36" width="5" height="28" fill="#E5484D"/>
+  <rect x="64" y="33.5" width="5" height="33" fill="#D4A82A"/>
+  <path d="M30 39h40" stroke="#fff" stroke-width="2.5" opacity=".5" stroke-linecap="round"/></g>
+  ${defs(lg('resistor-b', '#F7E3B8', '#D6B272'))}`,
+
+  'buzzer': `${sh(28, 50, 92)}
+  <path d="M42 70v24M58 70v18" stroke="${MS}" stroke-width="4" stroke-linecap="round"/>
+  <path d="M42 70v24M58 70v18" stroke="#C3CDD5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M24 40v26a26 8 0 0 0 52 0V40z" fill="url(#buzzer-b)" stroke="#7A828B" stroke-width="2"/>
+  <ellipse cx="50" cy="40" rx="26" ry="8" fill="#5A626C" stroke="#7A828B" stroke-width="2"/>
+  <ellipse cx="50" cy="40" rx="5" ry="1.8" fill="#1E2227"/>
+  <path d="M34 39h4M36 37v4" stroke="#fff" stroke-width="1.3"/>
+  <path d="M30 48v16" stroke="#fff" stroke-width="2.5" opacity=".3" stroke-linecap="round"/>
+  <path d="M82 30q6 8 0 16M88 24q10 14 0 28M18 30q-6 8 0 16M12 24q-10 14 0 28" stroke="#F2A93B" stroke-width="3" fill="none" stroke-linecap="round"/>
+  ${defs(lg('buzzer-b', '#5A626C', '#2E3338', 'h'))}`,
+
+  'motor': `${sh(40, 48, 88)}
+  <path d="M8 40q-6-4-6-14M8 66q-6 4-4 14" stroke="#E5484D" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M8 66q-6 4-4 14" stroke="#4A5058" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <rect x="6" y="38" width="6" height="5" fill="#E2B24A"/><rect x="6" y="63" width="6" height="5" fill="#E2B24A"/>
+  <path d="M18 32q-8 0-8 8v26q0 8 8 8h4V32z" fill="#3E444B" stroke="#7A828B" stroke-width="2"/>
+  <path d="M22 32h40v42H22z" fill="url(#motor-m)" stroke="${MS}" stroke-width="2"/>
+  <path d="M22 36h40M22 70h40" stroke="${MS}" stroke-width="1.5" opacity=".5"/>
+  <path d="M34 48h4v10h-4zM44 48h4v10h-4z" fill="${MS}" opacity=".5"/>
+  <rect x="62" y="45" width="7" height="16" rx="2" fill="#C3CDD5" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="69" y="51" width="20" height="4" fill="#AEB9C2" stroke="${MS}" stroke-width="1"/>
+  <path d="M84 40a8 13 0 1 1-1 26" stroke="#F28C38" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M79 63l5 4-1 5" stroke="#F28C38" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  ${defs(lg('motor-m', '#F1F4F6', '#7D8A95'))}`,
+
+  'fan': `${sh(26, 50, 93)}
+  <rect x="46" y="58" width="8" height="28" fill="url(#fan-s)"/>
+  <path d="M28 90q0-8 22-8t22 8z" fill="#3E86C6" stroke="#1D4F80" stroke-width="2"/>
+  <circle cx="50" cy="38" r="31" fill="#EAF4FB" fill-opacity=".45" stroke="#2F6EA8" stroke-width="3"/>
+  ${rep(3, i => `<path d="M50 38C40 22 50 10 58 14C64 20 58 32 50 38z" transform="rotate(${i * 120 + 10} 50 38)" fill="url(#fan-b)" stroke="#1D4F80" stroke-width="1.5"/>`)}
+  <circle cx="50" cy="38" r="21" fill="none" stroke="#8DA6BC" stroke-width="1.2"/>
+  <path d="${rep(12, i => `M${pt(50, 38, 8, i * 30)}L${pt(50, 38, 30, i * 30)}`)}" stroke="#8DA6BC" stroke-width="1"/>
+  <circle cx="50" cy="38" r="6" fill="#C3CDD5" stroke="${MS}" stroke-width="2"/>
+  ${defs(lg('fan-b', '#7CC0F0', '#2F7FC1', 'd'), metal('fan-s'))}`,
+
+  'pir-sensor': `${sh(36, 50, 92)}
+  <path d="M42 84v10M50 84v10M58 84v10" stroke="#D4A82A" stroke-width="2.5"/>
+  <rect x="38" y="82" width="24" height="5" fill="#2B2F36"/>
+  <rect x="14" y="52" width="72" height="32" rx="3" fill="url(#pir-sensor-p)" stroke="#145A32" stroke-width="2"/>
+  <circle cx="20" cy="58" r="3" fill="#2B1F16" stroke="#E2B24A" stroke-width="1.5"/><circle cx="80" cy="58" r="3" fill="#2B1F16" stroke="#E2B24A" stroke-width="1.5"/>
+  ${[26, 74].map(x => `<circle cx="${x}" cy="75" r="4.5" fill="#F28C38" stroke="#9A4A12" stroke-width="1.5"/><path d="M${x - 2.5} 75h5M${x} 72.5v5" stroke="#9A4A12" stroke-width="1.2"/>`).join('')}
+  <rect x="20" y="51" width="60" height="6" rx="2" fill="#EEF2F5" stroke="#9AA9B6" stroke-width="1.5"/>
+  <path d="M23 52a27 27 0 0 1 54 0z" fill="url(#pir-sensor-d)" stroke="#9AA9B6" stroke-width="2"/>
+  <path d="M38 52q-1-17 12-26q13 9 12 26M27 42q23-6 46 0M34 32q16-5 32 0M50 26v26" stroke="#B7C3CD" stroke-width="1.4" fill="none"/>
+  <path d="M33 40q4-9 12-12" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  ${defs(lg('pir-sensor-p', '#3BB56A', '#1E7A40'), rg('pir-sensor-d', '#FFFFFF', '#CFD9E1'))}`,
+
+  'ldr': `${sh(20, 50, 93)}
+  <path d="M42 60v34M58 60v34" stroke="${MS}" stroke-width="4" stroke-linecap="round"/>
+  <path d="M42 60v34M58 60v34" stroke="#C3CDD5" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="50" cy="44" r="21" fill="url(#ldr-c)" stroke="#9A7A4A" stroke-width="2"/>
+  <circle cx="50" cy="44" r="17" fill="none" stroke="#C9A866" stroke-width="1.2"/>
+  <path d="M36 33h26a3 3 0 0 1 0 6H38a3 3 0 0 0 0 6h24a3 3 0 0 1 0 6H38a3 3 0 0 0 0 6h22" stroke="#C8452F" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M8 8l12 10M3 22l12 6M22 3l5 11" stroke="#F2A93B" stroke-width="3" stroke-linecap="round"/>
+  <path d="M16 18l5 1-1-5M11 30l5-2-3-4M25 15l3-3-4-1" stroke="#F2A93B" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  ${defs(rg('ldr-c', '#FFF7E4', '#E6CC94'))}`,
+
+  'arduino': `${sh(44, 50, 89)}
+  <path d="M10 20h76l6 5v52l-6 5H10q-4 0-4-4V24q0-4 4-4z" fill="url(#arduino-b)" stroke="#0B5E63" stroke-width="2"/>
+  <rect x="30" y="23" width="56" height="7" rx="1" fill="#2B2F36"/>
+  <rect x="38" y="72" width="46" height="7" rx="1" fill="#2B2F36"/>
+  <path d="M32.5 26.5h52M40.5 75.5h42" stroke="#9AA7B1" stroke-width="2.2" stroke-dasharray="1.6 2.4"/>
+  <rect x="1" y="29" width="22" height="17" rx="1.5" fill="url(#arduino-m)" stroke="${MS}" stroke-width="1.6"/>
+  <rect x="5" y="33" width="10" height="9" rx="1" fill="#5F6C77"/>
+  <rect x="2" y="56" width="18" height="13" rx="2" fill="#2B2F36" stroke="#7A828B" stroke-width="1.5"/><circle cx="8" cy="62.5" r="3" fill="#59616B"/>
+  <rect x="46" y="54" width="36" height="9" rx="1" fill="#2B2F36"/>
+  <path d="M48 53.5h32M48 63.5h32" stroke="#C3CDD5" stroke-width="2" stroke-dasharray="1.4 1.8"/>
+  <rect x="30" y="36" width="8" height="8" rx="1" fill="#C3CDD5"/><circle cx="34" cy="40" r="2.4" fill="#E5484D"/>
+  <rect x="28" y="54" width="10" height="5" rx="2.5" fill="#DDE4E9" stroke="${MS}" stroke-width="1"/>
+  <rect x="54" y="39" width="3" height="3" fill="#F2C230"/><rect x="60" y="39" width="3" height="3" fill="#5FE08A"/><rect x="66" y="39" width="3" height="3" fill="#F28C38"/>
+  <circle cx="88" cy="30" r="2.2" fill="#FFF3D6"/><circle cx="88" cy="72" r="2.2" fill="#FFF3D6"/>
+  <path d="M10 23h18" stroke="#fff" stroke-width="2" opacity=".35" stroke-linecap="round"/>
+  ${defs(lg('arduino-b', '#1FB2B8', '#0E7C82'), metal('arduino-m', 'v'))}`,
+
+  'breadboard': `${sh(44, 50, 88)}
+  <rect x="5" y="16" width="90" height="68" rx="4" fill="url(#breadboard-b)" stroke="#97A5B1" stroke-width="2"/>
+  <path d="M10 20h80M10 75.5h80" stroke="#E5484D" stroke-width="1.5"/>
+  <path d="M10 30h80M10 81h80" stroke="#2F7FC1" stroke-width="1.5"/>
+  <rect x="10" y="22" width="80" height="7" fill="url(#breadboard-h)"/>
+  <rect x="10" y="33" width="80" height="16" fill="url(#breadboard-h)"/>
+  <rect x="5" y="49" width="90" height="3" fill="#C2CCD4"/>
+  <rect x="10" y="53" width="80" height="16" fill="url(#breadboard-h)"/>
+  <rect x="10" y="69.5" width="80" height="5" fill="url(#breadboard-h)" transform="translate(0 7)"/>
+  <path d="M36 46V34a6 6 0 0 1 12 0v12" fill="#E5484D" stroke="#9E1F1F" stroke-width="1.5"/>
+  <path d="M38.5 46v8M45.5 46v4" stroke="${MS}" stroke-width="1.6"/>
+  <path d="M62 36q8-14 22 12" stroke="#2C8A4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M62 66q-12-18-22-12" stroke="#F2A93B" stroke-width="3" fill="none" stroke-linecap="round"/>
+  ${defs(lg('breadboard-b', '#FFFFFF', '#E0E6EB'), `<pattern id="breadboard-h" width="4" height="4" patternUnits="userSpaceOnUse" x="10" y="1"><rect x="1.2" y="1.2" width="1.6" height="1.6" fill="#5F6C77"/></pattern>`)}`,
+
+  'relay': `${sh(42, 50, 90)}
+  <path d="M14 84v8M20 84v8M26 84v8" stroke="#D4A82A" stroke-width="2.5"/>
+  <rect x="6" y="54" width="88" height="31" rx="3" fill="url(#relay-p)" stroke="#145A32" stroke-width="2"/>
+  <rect x="10" y="78" width="20" height="5" fill="#2B2F36"/>
+  <circle cx="16" cy="62" r="2.5" fill="#E5484D"/>
+  <rect x="68" y="58" width="22" height="22" rx="2" fill="#2F7FC1" stroke="#1D4F80" stroke-width="1.6"/>
+  ${rep(3, i => `<circle cx="79" cy="${62.5 + i * 6.5}" r="2.4" fill="#C3CDD5" stroke="${MS}" stroke-width="1"/><path d="M77.5 ${62.5 + i * 6.5}h3" stroke="${MS}" stroke-width="1"/>`)}
+  <path d="M24 30l12-10h30L54 30z" fill="#6BB3EC" stroke="#1D4F80" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M54 30l12-10v38l-12 10z" fill="#1F5E9E" stroke="#1D4F80" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="24" y="30" width="30" height="38" fill="url(#relay-c)" stroke="#1D4F80" stroke-width="2"/>
+  <path d="M29 40h20M29 45h14M29 50h17" stroke="#fff" stroke-width="1.6" opacity=".55" stroke-linecap="round"/>
+  ${defs(lg('relay-p', '#3BB56A', '#1E7A40'), lg('relay-c', '#4D9BE0', '#2668A8', 'h'))}`,
+
+  // ---------- computers and devices ----------
+  'computer': `${sh(44, 50, 92)}
+  <rect x="74" y="34" width="20" height="54" rx="3" fill="url(#computer-t)" stroke="#5F6C77" stroke-width="2"/>
+  <path d="M79 42h10M79 47h10" stroke="#5F6C77" stroke-width="1.8" stroke-linecap="round"/><circle cx="84" cy="78" r="2.5" fill="#5FE08A"/>
+  <path d="M37 62h12l3 15H34z" fill="#AEB9C2" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="26" y="76" width="34" height="6" rx="3" fill="#8D9AA5" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="5" y="10" width="76" height="54" rx="5" fill="#3A4350" stroke="#8C98A6" stroke-width="2"/>
+  <rect x="10" y="15" width="66" height="42" rx="2" fill="url(#computer-s)"/>
+  <rect x="16" y="21" width="30" height="22" rx="2" fill="#F8FBFD"/><rect x="16" y="21" width="30" height="5" rx="2" fill="#F28C38"/>
+  <path d="M20 31h20M20 36h14" stroke="#9AA7B1" stroke-width="2" stroke-linecap="round"/>
+  <path d="M52 24h18M52 30h12M52 36h16M52 42h10" stroke="#BFE3FF" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M10 15l28 0-20 42h-8z" fill="#fff" opacity=".08"/>
+  ${defs(lg('computer-s', '#4D9BE0', '#1F5E9E'), lg('computer-t', '#E3E9EE', '#AEB9C2', 'h'))}`,
+
+  'laptop': `${sh(46, 50, 90)}
+  <path d="M20 12h60q4 0 4 4v48H16V16q0-4 4-4z" fill="#3A4350" stroke="#8C98A6" stroke-width="2"/>
+  <rect x="21" y="17" width="58" height="42" rx="1.5" fill="url(#laptop-s)"/>
+  <rect x="27" y="23" width="22" height="16" rx="2" fill="#FFD54A"/><path d="M27 39l8-8 6 5 4-3 4 6z" fill="#4FA862"/>
+  <path d="M54 25h19M54 31h14M54 37h17M27 46h46M27 52h30" stroke="#BFE3FF" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M8 64h84l7 13q1 4-3 4H4q-4 0-3-4z" fill="url(#laptop-b)" stroke="#8D9AA5" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M17 67h66l3 6H14z" fill="#5F6C77" opacity=".55"/>
+  <rect x="40" y="75" width="20" height="3" rx="1.5" fill="#AEB9C2"/>
+  ${defs(lg('laptop-s', '#4D9BE0', '#1F5E9E'), lg('laptop-b', '#F1F4F6', '#B9C4CC'))}`,
+
+  'tablet': `${sh(40, 50, 90)}
+  <g transform="rotate(-6 50 50)">
+  <rect x="5" y="20" width="90" height="62" rx="8" fill="#3A4350" stroke="#8C98A6" stroke-width="2"/>
+  <rect x="11" y="25" width="78" height="52" rx="3" fill="url(#tablet-s)"/>
+  ${rep(8, i => `<rect x="${17 + (i % 4) * 18}" y="${31 + Math.floor(i / 4) * 21}" width="13" height="13" rx="3.5" fill="${['#F28C38', '#4FA862', '#E5484D', '#F2C230', '#8E5CC7', '#3FA7A0', '#E8587A', '#FFFFFF'][i]}"/>`)}
+  <circle cx="92" cy="51" r="1.4" fill="#8C98A6"/></g>
+  ${defs(lg('tablet-s', '#5AA6E8', '#2A64B0', 'd'))}`,
+
+  'smartphone': `${sh(22, 50, 94)}
+  <rect x="27" y="4" width="46" height="86" rx="9" fill="#3A4350" stroke="#8C98A6" stroke-width="2"/>
+  <rect x="31" y="9" width="38" height="76" rx="6" fill="url(#smartphone-s)"/>
+  <rect x="44" y="11" width="12" height="4" rx="2" fill="#3A4350"/>
+  <rect x="35" y="22" width="22" height="9" rx="4.5" fill="#fff"/>
+  <rect x="43" y="35" width="22" height="9" rx="4.5" fill="#7BE08F"/>
+  <rect x="35" y="48" width="18" height="9" rx="4.5" fill="#fff"/>
+  <g fill="#fff" opacity=".85"><circle cx="40" cy="76" r="3.5"/><circle cx="50" cy="76" r="3.5"/><circle cx="60" cy="76" r="3.5"/></g>
+  ${defs(lg('smartphone-s', '#3FA7D0', '#2A5FB0'))}`,
+
+  'webcam': `${sh(26, 50, 92)}
+  <path d="M58 82q16 4 30-6" stroke="#4A5058" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M44 62h12l5 22H39z" fill="#7D8A95" stroke="${MS}" stroke-width="1.5" stroke-linejoin="round"/>
+  <ellipse cx="50" cy="86" rx="20" ry="5" fill="#4A5058" stroke="#2E3338" stroke-width="1.5"/>
+  <circle cx="50" cy="38" r="27" fill="url(#webcam-h)" stroke="#5F6C77" stroke-width="2"/>
+  <circle cx="50" cy="38" r="15" fill="#2B2F36" stroke="#8D9AA5" stroke-width="3"/>
+  <circle cx="50" cy="38" r="8.5" fill="url(#webcam-l)"/>
+  <circle cx="46.5" cy="34.5" r="2.6" fill="#fff" opacity=".85"/>
+  <circle cx="68" cy="21" r="2.4" fill="#4CE06A"/>
+  <path d="M28 30q4-10 14-14" stroke="#fff" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round"/>
+  ${defs(rg('webcam-h', '#FFFFFF', '#B9C4CC'), rg('webcam-l', '#8C7BFF', '#1E2A75'))}`,
+
+  'robot': `${sh(32, 50, 93)}
+  <path d="M50 18V9" stroke="${MS}" stroke-width="3"/><circle cx="50" cy="7" r="4.5" fill="#E5484D" stroke="#8E2A22" stroke-width="1.5"/>
+  <rect x="21" y="27" width="8" height="12" rx="2" fill="url(#robot-m)" stroke="${MS}" stroke-width="1.5"/>
+  <rect x="71" y="27" width="8" height="12" rx="2" fill="url(#robot-m)" stroke="${MS}" stroke-width="1.5"/>
+  <path d="M27 60q-12 4-12 16M73 60q12 4 12 16" stroke="${MS}" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+  <circle cx="15" cy="78" r="4.5" fill="#F2C230" stroke="#B5851A" stroke-width="1.5"/><circle cx="85" cy="78" r="4.5" fill="#F2C230" stroke="#B5851A" stroke-width="1.5"/>
+  <rect x="44" y="47" width="12" height="6" fill="#8D9AA5"/>
+  <rect x="34" y="78" width="32" height="6" fill="#8D9AA5"/>
+  <circle cx="36" cy="85" r="7" fill="#3E444B" stroke="#6B737C" stroke-width="2"/><circle cx="64" cy="85" r="7" fill="#3E444B" stroke="#6B737C" stroke-width="2"/>
+  <rect x="26" y="51" width="48" height="30" rx="7" fill="url(#robot-b)" stroke="#1D4F80" stroke-width="2"/>
+  <rect x="37" y="57" width="26" height="14" rx="3" fill="#E9F4FB"/>
+  <circle cx="44" cy="64" r="2.6" fill="#E5484D"/><circle cx="50" cy="64" r="2.6" fill="#F2C230"/><circle cx="56" cy="64" r="2.6" fill="#4FA862"/>
+  <rect x="28" y="17" width="44" height="31" rx="8" fill="url(#robot-b)" stroke="#1D4F80" stroke-width="2"/>
+  <rect x="34" y="23" width="32" height="19" rx="6" fill="#203A44"/>
+  <circle cx="43" cy="32" r="4" fill="#6FF2E2"/><circle cx="57" cy="32" r="4" fill="#6FF2E2"/>
+  <path d="M46 38q4 2 8 0" stroke="#6FF2E2" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M32 22h10" stroke="#fff" stroke-width="2" opacity=".5" stroke-linecap="round"/>
+  ${defs(lg('robot-b', '#7CC0F0', '#3478C0'), metal('robot-m'))}`,
+
+  'keyboard': `${sh(46, 50, 82)}
+  <path d="M50 34q0-12 14-16t20-14" stroke="#4A5058" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="4" y="34" width="92" height="42" rx="6" fill="url(#keyboard-b)" stroke="#7D8A95" stroke-width="2"/>
+  <g fill="#7D8A95">${rep(30, i => `<rect x="${9.5 + (i % 10) * 8.3}" y="${40 + Math.floor(i / 10) * 8}" width="6.6" height="6.4" rx="1.5"/>`)}
+  <rect x="9.5" y="64" width="14.9" height="6.4" rx="1.5"/><rect x="26.5" y="64" width="47" height="6.4" rx="1.5"/><rect x="75.6" y="64" width="14.9" height="6.4" rx="1.5"/></g>
+  <g fill="#FFFFFF">${rep(30, i => `<rect x="${9.5 + (i % 10) * 8.3}" y="${39 + Math.floor(i / 10) * 8}" width="6.6" height="6" rx="1.5"/>`)}
+  <rect x="9.5" y="63" width="14.9" height="6" rx="1.5"/><rect x="26.5" y="63" width="47" height="6" rx="1.5"/><rect x="75.6" y="63" width="14.9" height="6" rx="1.5"/></g>
+  <rect x="84.2" y="55" width="6.6" height="6" rx="1.5" fill="#F28C38"/>
+  ${defs(lg('keyboard-b', '#D5DDE3', '#9AA7B1'))}`,
+
+  'code-block': `${sh(40, 50, 90)}
+  <path d="M10 54q0-4 4-4h6l4 4h12l4-4h46q4 0 4 4v20q0 4-4 4H40l-4 4H24l-4-4h-6q-4 0-4-4z" fill="#4C97FF" stroke="#3373CC" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="50" y="57" width="26" height="14" rx="7" fill="#fff" stroke="#3373CC" stroke-width="1.5"/>
+  <path d="M20 68q0-8 8-8h6M30 56l5 4-5 4" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 32q0-18 22-18q16 0 22 12h32q4 0 4 4v16q0 4-4 4H40l-4 4H24l-4-4h-6q-4 0-4-4z" fill="#FFBF1F" stroke="#C99400" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M30 42V22" stroke="#2E7D32" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M30 23q6-3 10 0t10 0v10q-6 3-10 0t-10 0z" fill="#4CBF56" stroke="#2E7D32" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M60 36h20" stroke="#fff" stroke-width="3" opacity=".6" stroke-linecap="round"/>
+  <path d="M16 30q2-8 10-11" stroke="#fff" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round"/>`,
+
+  'scratch-cat': `${sh(28, 50, 94)}
+  <path d="M64 84q24 2 22-22q-1-8 8-12" stroke="${O}" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M64 84q24 2 22-22q-1-8 8-12" stroke="#F99A2C" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+  <path d="M83 70l5 2M86 60l5 0" stroke="#C9620E" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M31 88q-4-24 7-38h24q11 14 7 38z" fill="url(#scratch-cat-o)" stroke="${O}" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M42 88q-2-17 8-24q10 7 8 24z" fill="#FFF4E0"/>
+  <path d="M66 62q12-4 14-16" stroke="${O}" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M66 62q12-4 14-16" stroke="#F99A2C" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="40" cy="89" rx="7" ry="4" fill="#FFF4E0" stroke="${O}" stroke-width="2.5"/><ellipse cx="60" cy="89" rx="7" ry="4" fill="#FFF4E0" stroke="${O}" stroke-width="2.5"/>
+  <path d="M21 30L23 5l19 13zM79 30L77 5 58 18z" fill="#F99A2C" stroke="${O}" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M26 22l1-10 8 6zM74 22l-1-10-8 6z" fill="#FFB3A8"/>
+  <ellipse cx="50" cy="34" rx="30" ry="23" fill="url(#scratch-cat-o)" stroke="${O}" stroke-width="2.5"/>
+  <path d="M44 12l2 6M50 11v7M56 12l-2 6" stroke="#C9620E" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="50" cy="44" rx="14" ry="9" fill="#FFF4E0"/>
+  <ellipse cx="39" cy="31" rx="7" ry="8.5" fill="#fff" stroke="${O}" stroke-width="2"/><ellipse cx="61" cy="31" rx="7" ry="8.5" fill="#fff" stroke="${O}" stroke-width="2"/>
+  <circle cx="41" cy="32" r="4" fill="${O}"/><circle cx="63" cy="32" r="4" fill="${O}"/>
+  <circle cx="42.5" cy="30.5" r="1.4" fill="#fff"/><circle cx="64.5" cy="30.5" r="1.4" fill="#fff"/>
+  <path d="M47 39h6l-3 3z" fill="${O}" stroke="${O}" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M50 42q-2 5-6 3M50 42q2 5 6 3" stroke="${O}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M30 42l-10-1M30 46l-9 3M70 42l10-1M70 46l9 3" stroke="${O}" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="29" cy="40" r="3.5" fill="#FF8A7A" opacity=".5"/><circle cx="71" cy="40" r="3.5" fill="#FF8A7A" opacity=".5"/>
+  ${defs(rg('scratch-cat-o', '#FFC060', '#F28C1C'))}`,
+
+  // ---------- hydroponics ----------
+  'air-pump-aquarium': `${sh(46, 50, 92)}
+  <rect x="46" y="28" width="47" height="60" rx="4" fill="#DDF1FA" fill-opacity=".5" stroke="#5F98B6" stroke-width="2"/>
+  <rect x="48" y="42" width="43" height="44" rx="2" fill="url(#air-pump-aquarium-w)"/>
+  <path d="M48 42h43" stroke="#fff" stroke-width="1.6" opacity=".8"/>
+  <rect x="60" y="79" width="16" height="6" rx="3" fill="#9AA7B1" stroke="${MS}" stroke-width="1"/>
+  <g fill="#fff" fill-opacity=".6" stroke="#fff" stroke-width="1">${[[66, 72, 2.5], [71, 64, 2], [65, 56, 3], [70, 48, 2.2], [74, 70, 1.6]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>
+  <path d="M27 60C27 18 68 12 68 34V79" stroke="#5F98B6" stroke-width="5" fill="none"/>
+  <path d="M27 60C27 18 68 12 68 34V79" stroke="#D9EEF7" stroke-width="2.6" fill="none"/>
+  <rect x="24" y="54" width="6" height="8" fill="#C3CDD5"/>
+  <rect x="5" y="60" width="38" height="28" rx="9" fill="url(#air-pump-aquarium-p)" stroke="#1D4F80" stroke-width="2"/>
+  <path d="M12 72h24M12 77h24" stroke="#1D4F80" stroke-width="1.6" opacity=".5" stroke-linecap="round"/>
+  <path d="M11 65h14" stroke="#fff" stroke-width="2" opacity=".5" stroke-linecap="round"/>
+  ${defs(lg('air-pump-aquarium-w', '#8CCEF0', '#3E8FC0'), lg('air-pump-aquarium-p', '#5AA6E8', '#2668A8'))}`,
+
+  'grow-light': `
+  <path d="M14 26h72l12 66H2z" fill="url(#grow-light-c)"/>
+  <path d="M22 3v14M78 3v14" stroke="#8D9AA5" stroke-width="2"/>
+  <rect x="10" y="15" width="80" height="13" rx="4" fill="#3A4049" stroke="#7A828B" stroke-width="2"/>
+  ${rep(9, i => `<circle cx="${18 + i * 8}" cy="24.5" r="2.4" fill="${i % 3 === 1 ? '#6A86FF' : '#FF4D6D'}"/>`)}
+  <path d="M38 78h24l-3 14H41z" fill="#C96B3C" stroke="#7A3E1E" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M50 78V62" stroke="#3F8F3A" stroke-width="2.4"/>
+  <path d="M50 66q-12 0-14-10q11-1 14 10zM50 64q12-2 13-12q-11 0-13 12z" fill="#6CC04A" stroke="#3F8F3A" stroke-width="1.4"/>
+  ${defs(`<linearGradient id="grow-light-c" x2="0" y2="1"><stop offset="0" stop-color="#E04BC8" stop-opacity=".55"/><stop offset="1" stop-color="#E04BC8" stop-opacity="0"/></linearGradient>`)}`,
+
+  'nutrient-bottle': `${sh(24, 50, 93)}
+  <rect x="38" y="5" width="24" height="15" rx="3" fill="url(#nutrient-bottle-c)" stroke="#1D4F80" stroke-width="2"/>
+  <path d="M42 9v8M47 9v8M52 9v8M57 9v8" stroke="#1D4F80" stroke-width="1.2" opacity=".5"/>
+  <path d="M30 32q0-10 12-12h16q12 2 12 12v52q0 6-6 6H36q-6 0-6-6z" fill="url(#nutrient-bottle-b)" stroke="#2C6E3F" stroke-width="2"/>
+  <rect x="34" y="46" width="32" height="30" rx="3" fill="#FFFDF5" stroke="#2C6E3F" stroke-width="1.5"/>
+  <path d="M50 70V58M50 62q-8 0-9-8q8-1 9 8zM50 60q8-1 9-9q-8 0-9 9z" fill="#4FA862" stroke="#2C6E3F" stroke-width="1.3"/>
+  <path d="M64 30v12M64 30h4M64 36h3M64 42h4" stroke="#2C6E3F" stroke-width="1.2" opacity=".6"/>
+  <path d="M35 30v50" stroke="#fff" stroke-width="3" opacity=".45" stroke-linecap="round"/>
+  ${defs(lg('nutrient-bottle-b', '#A8E09A', '#4FA862', 'h'), lg('nutrient-bottle-c', '#5AA6E8', '#2668A8'))}`,
+
+  'pvc-pipe': `${sh(44, 50, 86)}
+  <g transform="rotate(-8 50 50)">
+  <path d="M30 46q-14 2-12-14q12 0 12 14zM30 46q4-16 18-14q-4 14-18 14zM30 46q-2-18 6-24q8 8-6 24z" fill="#7CCB5A" stroke="#3F8F3A" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M66 46q-6-8-2-14q6 6 2 14zM66 46q6-8 12-6q-4 8-12 6z" fill="#7CCB5A" stroke="#3F8F3A" stroke-width="1.5" stroke-linejoin="round"/>
+  <rect x="6" y="44" width="84" height="28" fill="url(#pvc-pipe-b)" stroke="#8E9EAC" stroke-width="2"/>
+  <ellipse cx="6" cy="58" rx="5" ry="14" fill="#E6ECF1" stroke="#8E9EAC" stroke-width="2"/>
+  <ellipse cx="6" cy="58" rx="3" ry="10.5" fill="#97A6B3"/>
+  <rect x="86" y="41" width="10" height="34" rx="4" fill="url(#pvc-pipe-b)" stroke="#8E9EAC" stroke-width="2"/>
+  <ellipse cx="30" cy="45" rx="10" ry="3" fill="#2B2F36"/><ellipse cx="66" cy="45" rx="10" ry="3" fill="#2B2F36"/>
+  <path d="M22 45l2 5h12l2-5" fill="#3E444B"/><path d="M58 45l2 5h12l2-5" fill="#3E444B"/>
+  <path d="M12 52h70" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></g>
+  ${defs(lg('pvc-pipe-b', '#FFFFFF', '#BCC8D2'))}`,
 };

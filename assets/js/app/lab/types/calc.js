@@ -220,16 +220,16 @@ const SCENES = {
     }
     let tags = '', goods = '';
     list.forEach((it, i) => {
-      const cx = 22 + sw * (i + .5), ty = 92 + (n > 3 ? (i % 2) * 10 : 0), hasArt = it.sprite || it.emoji;
-      const val = withUnit(it.value, it.unit), w = Math.max(70, Math.min(sw - 6, val.length * 11 + 24));
+      const cx = 22 + sw * (i + .5), ty = 78 + (n > 3 ? (i % 2) * 6 : 0), hasArt = it.sprite || it.emoji;
+      const val = withUnit(it.value, it.unit), w = Math.max(70, sw - 8);
       tags += `<g class="c-tag" data-key="${esc(it.key)}" data-ox="${cx}">
         <path d="M${cx} 70V${ty + 6}" stroke="#6E4522" stroke-width="1.6"/>
-        <rect x="${cx - w / 2}" y="${ty}" width="${w}" height="52" rx="9" fill="${it.isInput ? '#FCE7BD' : '#FFF8E8'}" stroke="${it.isInput ? '#D98A1C' : '#C2502A'}" stroke-width="2.5"/>
+        <rect x="${cx - w / 2}" y="${ty}" width="${w}" height="48" rx="9" fill="${it.isInput ? '#FCE7BD' : '#FFF8E8'}" stroke="${it.isInput ? '#D98A1C' : '#C2502A'}" stroke-width="2.5"/>
         <circle cx="${cx}" cy="${ty + 7}" r="3.4" fill="#6E4522"/>
-        <text x="${cx}" y="${ty + 27}" text-anchor="middle" font-size="18" font-weight="800" fill="#2B1A10" class="c-tagv">${esc(val)}</text>
-        <text x="${cx}" y="${ty + 43}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#7A5A44">${esc(trunc(it.label, Math.floor(w / 6.2)))}</text></g>`;
+        <text x="${cx}" y="${ty + 26}" text-anchor="middle" font-size="18" font-weight="800" fill="#2B1A10" class="c-tagv">${esc(val)}</text>
+        <text x="${cx}" y="${ty + 40}" text-anchor="middle" font-size="10" font-weight="700" fill="#7A5A44">${esc(trunc(it.label, Math.floor(w / 5.6)))}</text></g>`;
       if (hasArt) {
-        goods += `<g class="c-good" data-key="${esc(it.key)}">${svgArt(c.api, it, cx - 30, 120, 60)}
+        goods += `<g class="c-good" data-key="${esc(it.key)}">${svgArt(c.api, it, cx - 28, 126, 56)}
           <path d="M${cx - 36} 172h72l-7 22c-1 4-4 6-8 6h-42c-4 0-7-2-8-6Z" fill="#B97A3C"/>
           <path d="M${cx - 33} 180h66M${cx - 31} 188h62" stroke="#8A5526" stroke-width="2" opacity=".7"/>
           <ellipse cx="${cx}" cy="172" rx="37" ry="5" fill="#9A6230"/></g>`;
@@ -420,7 +420,7 @@ const SCENES = {
           <g class="c-eye"><ellipse cx="-134" cy="-36" rx="4" ry="4.6" fill="#2B1A10"/><circle cx="-133" cy="-37.5" r="1.4" fill="#fff"/></g>
           ${sp === 'goat' ? `<path d="M-146 -4C-148 6 -144 12 -140 14C-140 6 -140 0 -142 -4Z" fill="#8C7A64"/>` : ''}
         </g></g>
-      ${G ? `<g class="c-dim c-girth">${pill(...T(tape.x + 6, 74), `${withUnit(G.value, G.unit)}`, { key: G.key, stroke: '#C99A1F' })}</g>` : ''}
+      ${G ? `<g class="c-girth">${pill(...T(tape.x + 6, 74), `${withUnit(G.value, G.unit)}`, { key: G.key, stroke: '#C99A1F' })}</g>` : ''}
       ${L ? dimH(T(-90, 0)[0], T(102, 0)[0], T(0, -84)[1], withUnit(L.value, L.unit), L.key, T(0, -60)[1]) : ''}`;
     return {
       svg,
@@ -533,7 +533,7 @@ const SCENES = {
         <circle cx="181" cy="18" r="8" fill="#C2502A"/><circle cx="179" cy="16" r="2.5" fill="#fff" opacity=".6"/>
       </g>
       ${serves ? `<g class="c-serves" data-key="${esc(serves.key)}" transform="translate(326 52) rotate(10)"><circle r="40" fill="#D98A1C"/><circle r="34" fill="none" stroke="#FFF1DA" stroke-width="2" stroke-dasharray="4 3"/>
-        <text y="-10" text-anchor="middle" font-size="12" font-weight="700" fill="#FFF7EA">${esc(trunc(serves.label, 12))}</text><text class="c-lv" y="13" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${esc(fmt(+serves.value))}</text></g>` : ''}`;
+        <text y="-10" text-anchor="middle" font-size="12" font-weight="700" fill="#FFF7EA">${esc(/serve/i.test(serves.label) ? 'Serves' : trunc(serves.label, 9))}</text><text class="c-lv" y="13" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${esc(fmt(+serves.value))}</text></g>` : ''}`;
     return {
       svg,
       play(el, tl, first) {
@@ -918,7 +918,10 @@ export const demo = {
   questions: [
     { ask: 'How many seeds did NOT sprout?', answer: 'sown - sprouted', unit: 'seeds', key: 'failed', hint: 'Take the sprouted seeds away from the seeds sown.', working: ['50 − 42 = 8 seeds'] },
     { ask: 'What is the germination percentage?', answer: '(sprouted / sown) * 100', unit: '%', tolerance: .5, hint: 'Divide sprouted by sown, then multiply by 100.', working: ['42 ÷ 50 = 0.84', '0.84 × 100 = 84%'], why: 'Above 80% is a healthy batch of seeds.' },
-    { ask: 'A packet has 200 seeds of the same kind. About how many will sprout?', answer: '200 * sprouted / sown', unit: 'seeds', hint: 'Use the same fraction: 42 out of every 50.', working: ['200 ÷ 50 = 4 trays of 50', '4 × 42 = 168 seeds'] },
+    { ask: 'Slide to pick a seed packet. About how many of its seeds will sprout?', answer: 'packet * sprouted / sown', unit: 'seeds', hint: 'Use the same fraction: 42 out of every 50 seeds sprout.', working: ['{packet} ÷ 50 = {=packet / 50} trays of 50', '{=packet / 50} × 42 = {=packet * sprouted / sown} seeds'] },
+  ],
+  inputs: [
+    { key: 'packet', label: 'Seeds in a new packet', min: 50, max: 500, step: 50, value: 200, unit: 'seeds' },
   ],
   win: 'You can now check any batch of seeds before planting!',
 };

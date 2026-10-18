@@ -34,8 +34,8 @@ export function mount(stage, cfg, api) {
     <div class="seq-board">
       <svg class="seq-belt" aria-hidden="true">
         <path class="seq-belt-bed"/><path class="seq-belt-roll"/><path class="seq-belt-lit"/>
-        <g class="seq-runner"><circle r="15" class="seq-runner-halo"/><circle r="8" class="seq-runner-dot"/></g>
       </svg>
+      <svg class="seq-fx" aria-hidden="true"><g class="seq-runner"><circle r="17" class="seq-runner-halo"/><circle r="9" class="seq-runner-dot"/><circle r="3" cx="-3" cy="-3" class="seq-runner-shine"/></g></svg>
       <ol class="seq-slots" aria-label="Steps in order">${order.map((_, p) => `
         <li class="seq-slot" data-pos="${p}"><span class="seq-num" aria-hidden="true">${p + 1}</span><div class="seq-socket"></div></li>`).join('')}
       </ol>
@@ -46,7 +46,7 @@ export function mount(stage, cfg, api) {
     </div>`;
   stage.append(root);
   const $ = s => root.querySelector(s);
-  const board = $('.seq-board'), list = $('.seq-slots'), belt = $('.seq-belt');
+  const board = $('.seq-board'), list = $('.seq-slots'), belt = $('.seq-belt'), fx = $('.seq-fx');
   const bed = $('.seq-belt-bed'), roll = $('.seq-belt-roll'), lit = $('.seq-belt-lit'), runner = $('.seq-runner');
   const slots = [...root.querySelectorAll('.seq-slot')];
   const sockets = slots.map(s => s.querySelector('.seq-socket'));
@@ -86,8 +86,7 @@ export function mount(stage, cfg, api) {
   function drawPath() {
     if (!root.isConnected) return;
     const b = board.getBoundingClientRect();
-    belt.setAttribute('viewBox', `0 0 ${b.width} ${b.height}`);
-    belt.setAttribute('width', b.width); belt.setAttribute('height', b.height);
+    for (const sv of [belt, fx]) { sv.setAttribute('viewBox', `0 0 ${b.width} ${b.height}`); sv.setAttribute('width', b.width); sv.setAttribute('height', b.height); }
     anchors = slots.map(s => {
       const r = s.getBoundingClientRect();
       if (cols === 1) { const nr = s.querySelector('.seq-num').getBoundingClientRect(); return { x: nr.left + nr.width / 2 - b.left, y: r.top + r.height / 2 - b.top, top: r.top - b.top, bottom: r.bottom - b.top }; }
@@ -129,18 +128,17 @@ export function mount(stage, cfg, api) {
   /* ---------- Moving cards ---------- */
   function flip(el, before, opts = {}) {
     const after = el.getBoundingClientRect();
-    gsap.fromTo(el, { x: before.left - after.left, y: before.top - after.top, rotation: opts.rot ?? 0 },
-      { x: 0, y: 0, rotation: 0, scale: 1, duration: R ? .05 : .5, ease: opts.ease || 'power3.out', delay: opts.delay || 0, onComplete: opts.done });
+    gsap.fromTo(el, { x: before.left - after.left, y: before.top - after.top },
+      { x: 0, y: 0, scale: 1, duration: R ? .05 : .5, ease: opts.ease || 'power3.out', delay: opts.delay || 0, onComplete: opts.done });
   }
   function swap(pa, pb, dragged) {
     const a = cards[order[pa]], b = cards[order[pb]];
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-    const rot = gsap.getProperty(a, 'rotation');
-    gsap.killTweensOf([a, b], 'x,y,rotation');
-    gsap.set([a, b], { x: 0, y: 0, rotation: 0 });
+    gsap.killTweensOf([a, b], 'x,y');
+    gsap.set([a, b], { x: 0, y: 0 });
     sockets[pb].append(a); sockets[pa].append(b);
     [order[pa], order[pb]] = [order[pb], order[pa]];
-    flip(a, ra, { rot, ease: dragged ? 'back.out(2)' : 'power3.inOut' });
+    flip(a, ra, { ease: dragged ? 'back.out(2)' : 'power3.inOut' });
     flip(b, rb, { ease: 'back.out(1.4)', delay: dragged ? 0 : .04 });
     if (!R) {
       gsap.fromTo(a, { scale: 1.06 }, { scale: 1, duration: .5, ease: 'elastic.out(1, .5)', delay: .3 });
@@ -181,8 +179,9 @@ export function mount(stage, cfg, api) {
       onDragEnd() {
         el.classList.remove('is-drag');
         const p = target; setTarget(-1);
+        tilt(0);
         if (p >= 0 && !busy && !locked[posOf(el)]) swap(posOf(el), p, true);
-        else { tilt(0); gsap.to(el, { x: 0, y: 0, scale: 1, rotation: 0, duration: .5, ease: 'back.out(1.6)' }); }
+        else { gsap.to(el, { x: 0, y: 0, scale: 1, duration: .5, ease: 'back.out(1.6)' }); }
       },
       onClick() { tap(el); },
     });
@@ -281,16 +280,20 @@ export function mount(stage, cfg, api) {
     api.say(checks === 1 ? 'All in order on the first try! Let’s walk through it.' : 'All in order! Let’s walk through it step by step.', 'good');
     const per = R ? .25 : 1.25;
     const tl = gsap.timeline({ delay: R ? .1 : .7, onComplete: end });
-    tl.to(runner, { opacity: 1, scale: 1, duration: .3, ease: 'back.out(2)' });
+    // a glowing comet rides the belt, bursts into each card (which lights up), then sets off again
     for (let k = 0; k < n; k++) {
       if (k > 0) {
-        tl.to(runner, { motionPath: { path: bed, start: segLen[k - 1] / totalLen, end: segLen[k] / totalLen }, duration: per * .45, ease: 'power1.inOut' })
-          .to(lit, { drawSVG: `0% ${segLen[k] / totalLen * 100}%`, duration: per * .45, ease: 'power1.inOut' }, '<');
+        tl.set(runner, { scale: .4, opacity: 0 })
+          .to(runner, { scale: 1, opacity: 1, duration: per * .12, ease: 'back.out(3)' })
+          .to(runner, { motionPath: { path: bed, start: segLen[k - 1] / totalLen, end: segLen[k] / totalLen }, duration: per * .42, ease: 'power1.inOut' }, '<')
+          .to(lit, { drawSVG: `0% ${segLen[k] / totalLen * 100}%`, duration: per * .42, ease: 'power1.inOut' }, '<');
+      } else {
+        tl.fromTo(runner, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: per * .3, ease: 'back.out(3)' });
       }
-      tl.add(() => lightUp(k));
-      tl.to({}, { duration: per * .55 });
+      tl.to(runner, { scale: 2.6, opacity: 0, duration: per * .2, ease: 'power2.out' });
+      tl.add(() => lightUp(k), '<');
+      tl.to({}, { duration: per * .38 });
     }
-    tl.to(runner, { scale: 2.2, opacity: 0, duration: .4, ease: 'power2.out' });
   }
   function lightUp(k) {
     const el = cards[order[k]];

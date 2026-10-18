@@ -82,7 +82,7 @@ export function mount(stage, cfg, api) {
   }
   function target(r) {
     const dist = Math.hypot(r.ex - r.sx, r.ey - r.sy);
-    const sag = r.taut ? 8 + dist * .07 : Math.min(130, 26 + dist * .3);
+    const sag = r.taut ? 14 + dist * .12 : Math.min(130, 26 + dist * .3);
     return { x: (r.sx + r.ex) / 2, y: (r.sy + r.ey) / 2 + sag };
   }
   function tick() {

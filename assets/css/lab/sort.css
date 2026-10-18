@@ -45,13 +45,14 @@
 .lab-sort .srt-glow { position: absolute; left: 50%; top: 46%; width: 92%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--bin) 40%, transparent), transparent 66%); opacity: 0; transform: scale(.7); transition: opacity .25s, transform .35s cubic-bezier(.34, 1.56, .64, 1); pointer-events: none; }
 .lab-sort .srt-bin.is-over .srt-glow, .lab-sort .srt-bin.is-open .srt-glow { opacity: 1; transform: scale(1.05); }
 .lab-sort .srt-bin.is-wrong .srt-glow { opacity: 1; transform: scale(1); background: radial-gradient(circle, color-mix(in srgb, var(--bad) 40%, transparent), transparent 66%); }
-.lab-sort .srt-bin-art { position: relative; display: block; width: min(100%, 210px, 31vh); aspect-ratio: 1; container-type: inline-size; }
+.lab-sort .srt-bin-art { position: relative; display: block; width: min(100%, 230px, 34vh); aspect-ratio: 1; container-type: inline-size; }
 .lab-sort .srt-bin-body { position: absolute; inset: 0; transform-origin: 50% 95%; }
 .lab-sort .srt-bin-body > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .lab-sort .srt-c { fill: var(--bin); }
 .lab-sort .srt-c-d { fill: color-mix(in srgb, var(--bin) 72%, #000); }
 .lab-sort .srt-c-dd { fill: color-mix(in srgb, var(--bin) 38%, #140B05); }
 .lab-sort .srt-pile { position: absolute; display: block; }
+.lab-sort .srt-bin[data-shape="bin"] .srt-pile { overflow: hidden; top: 26% !important; height: 17% !important; }
 .lab-sort .srt-pile-i { position: absolute; width: 40cqw; height: 40cqw; max-width: 64%; display: grid; place-items: center; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .25)); }
 .lab-sort .srt-pile-i .spr { width: 100%; height: 100%; }
 .lab-sort .srt-pile-i .lab-emoji { font-size: 22cqw; }

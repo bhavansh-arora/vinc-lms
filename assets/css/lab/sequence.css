@@ -13,6 +13,9 @@
 .lab-sequence .seq-belt-bed { stroke: color-mix(in srgb, var(--ink) 16%, var(--paper-2)); stroke-width: 22; }
 .lab-sequence .seq-belt-roll { stroke: color-mix(in srgb, var(--ink) 30%, var(--paper-2)); stroke-width: 12; stroke-dasharray: 4 10; opacity: .7; }
 .lab-sequence .seq-belt-lit { stroke: var(--amber); stroke-width: 10; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--amber) 80%, transparent)); }
+.lab-sequence .seq-fx { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+.lab-sequence .seq-runner { filter: drop-shadow(0 0 8px var(--amber)); }
+.lab-sequence .seq-runner-shine { fill: #fff; }
 .lab-sequence .seq-runner-halo { fill: color-mix(in srgb, var(--amber) 35%, transparent); }
 .lab-sequence .seq-runner-dot { fill: #FFF3D6; stroke: var(--amber); stroke-width: 4; }
 
