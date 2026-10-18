@@ -644,7 +644,11 @@ export function mount(stage, cfg, api) {
       onClick(e) {
         const p = svgPoint(e.clientX ?? this.pointerX, e.clientY ?? this.pointerY);
         const { x, y } = toolPos();
-        if (tool === 'camera') { snap(); return; }
+        if (tool === 'camera') { // tapping something seen in the viewfinder centres on it, then snaps
+          const s2 = spotUnder(x + (p.x - x) / VZ, y + (p.y - y) / VZ, 60);
+          if (s2) placeTool(s2.x, s2.y, false);
+          snap(); return;
+        }
         // map the click through the lens back to the world
         const wx = x + (p.x - x) / LZ, wy = y + (p.y - y) / LZ;
         const s = spotUnder(wx, wy, 40);
@@ -814,7 +818,7 @@ export function mount(stage, cfg, api) {
     busy = true;
     const { x, y } = toolPos();
     const ww = VW / VZ, hh = VH / VZ;
-    const inFrame = unfound().filter(s => Math.abs(s.x - x) < ww / 2 - 6 && Math.abs(s.y - y) < hh / 2 - 6).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
+    const inFrame = unfound().filter(s => Math.abs(s.x - x) < ww / 2 + 4 && Math.abs(s.y - y) < hh / 2 + 4).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
     let s = inFrame[0] || null;
     if (identify && s && target && !inFrame.includes(target)) s = inFrame[0];
     api.sound('tick'); later(() => api.sound('whoosh'), 80);

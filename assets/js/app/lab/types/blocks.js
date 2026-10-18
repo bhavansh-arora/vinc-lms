@@ -7,8 +7,6 @@ import { h, esc, sparkle, shake } from '../kit.js';
 
 export const meta = { title: 'Block coding', needs: ['gsap'] };
 
-const CAT = { motion: '#4C97FF', looks: '#9966FF', sound: '#CF63CF', control: '#FFAB19', events: '#FFBF00', arduino: '#0FBD8C' };
-const DARK = { motion: '#3373CC', looks: '#774DCB', sound: '#BD42BD', control: '#CF8B17', events: '#CC9900', arduino: '#0B8E69' };
 const B = {
   move: { cat: 'motion', label: 'move', arg: { vals: [1, 2, 3, 4, 5], def: 1, after: 'steps' }, icon: '➜' },
   turnLeft: { cat: 'motion', label: 'turn ↺ left', icon: '↺' },
@@ -24,6 +22,7 @@ const B = {
 };
 const DIRS = { right: [1, 0], down: [0, 1], left: [-1, 0], up: [0, -1] }, ORDER = ['up', 'right', 'down', 'left'];
 const T = 64; // stage tile size (viewBox units)
+const flat = list => list.flatMap(n => [n, ...(n.kids ? flat(n.kids) : [])]);
 const shortName = o => ({ move: 'move', turnLeft: 'left', turnRight: 'right', jump: 'jump', say: 'say', playSound: 'sound' }[o] || o);
 
 /* ---------------------------------------------------------------- shapes */
@@ -465,7 +464,6 @@ export function mount(stage, cfg, api) {
     } finally { a.classList.remove('walking'); cat.kill(); }
     if (world.onAt != null) world.maxOn = Math.max(world.maxOn || 0, gsap.ticker.time - world.onAt);
   }
-  const flat = list => list.flatMap(n => [n, ...(n.kids ? flat(n.kids) : [])]);
   function win(msg) {
     if (done) return; done = true;
     api.say(msg, 'good'); api.progress(1);

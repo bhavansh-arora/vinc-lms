@@ -174,9 +174,18 @@ const BALLS = [
   { name: 'rubber', m: 1, r: 10, fa: .004, rest: .5, col: '#E0533D' },
   { name: 'clay', m: 1.6, r: 10, fa: .002, rest: .04, col: '#9A7457' },
 ];
-const SURF_CAR = [{ name: 'tiles', crr: .03 }, { name: 'cardboard', crr: .05 }, { name: 'carpet', crr: .09 }];
 const SURF_RAMP = [{ name: 'glass', mu: .1, crr: .02 }, { name: 'wood', mu: .3, crr: .045 }, { name: 'sandpaper', mu: .6, crr: .1 }];
 const idx3 = v => clamp(Math.round(v) - 1, 0, 2);
+const rough = P => P.friction != null ? clamp((P.friction - 1) / 4, 0, 1) : clamp((P.surface - 1) / 2, 0, 1);
+const surfIdx = P => clamp(Math.round(rough(P) * 2), 0, 2);
+// Defaults for optional keys that a config may add to any preset (names show on the slider).
+const EXTRA = {
+  friction: { label: 'Floor roughness', min: 1, max: 5, step: 1, value: 3, names: ['Very smooth', 'Smooth', 'Medium', 'Rough', 'Very rough'] },
+  release: { label: 'Launch angle', min: 20, max: 70, step: 5, value: 40, unit: '°' },
+  bands: { label: 'Rubber bands', min: 1, max: 4, step: 1, value: 2, unit: '' },
+  blades: { label: 'Number of blades', min: 2, max: 8, step: 1, value: 4, unit: '' },
+  prop: { label: 'Propeller size', min: 1, max: 3, step: 1, value: 2, names: ['Small', 'Medium', 'Large'] },
+};
 
 const PRESETS = {
   /* ---------------------------------------------------------------- catapult */
@@ -825,16 +834,6 @@ const PRESETS = {
   },
 };
 PRESETS.ramp.massKg = P => clamp(P.load, 1, 500);
-const rough = P => P.friction != null ? clamp((P.friction - 1) / 4, 0, 1) : clamp((P.surface - 1) / 2, 0, 1);
-const surfIdx = P => clamp(Math.round(rough(P) * 2), 0, 2);
-// Defaults for optional keys that a config may add to any preset (names show on the slider).
-const EXTRA = {
-  friction: { label: 'Floor roughness', min: 1, max: 5, step: 1, value: 3, names: ['Very smooth', 'Smooth', 'Medium', 'Rough', 'Very rough'] },
-  release: { label: 'Launch angle', min: 20, max: 70, step: 5, value: 40, unit: '°' },
-  bands: { label: 'Rubber bands', min: 1, max: 4, step: 1, value: 2, unit: '' },
-  blades: { label: 'Number of blades', min: 2, max: 8, step: 1, value: 4, unit: '' },
-  prop: { label: 'Propeller size', min: 1, max: 3, step: 1, value: 2, names: ['Small', 'Medium', 'Large'] },
-};
 
 function M_set(L, b, x) { L.M.Body.setPosition(b, { x, y: b.position.y }); L.M.Body.setVelocity(b, { x: 0, y: 0 }); }
 function M_stop(L, b) { L.M.Body.setVelocity(b, { x: 0, y: 0 }); }
@@ -1081,7 +1080,7 @@ export function mount(stage, cfg, api) {
   const onCollide = e => { if (L.state !== 'run' || !PR.collide) return; for (const p of e.pairs) PR.collide(L, p.bodyA.parent, p.bodyB.parent); };
   M.Events.on(engine, 'collisionStart', onCollide);
 
-  let tries = 0, ghost = null, best = 0, done = false, raf = 0, last = 0, acc = 0, cw = 0, ch = 0, dpr = 1, sc = 1, ox = 0, oy = 0, bgKey = '';
+  let timer = 0, tries = 0, ghost = null, best = 0, done = false, raf = 0, last = 0, acc = 0, cw = 0, ch = 0, dpr = 1, sc = 1, ox = 0, oy = 0, bgKey = '';
   const clouds = Array.from({ length: 5 }, (_, i) => ({ x: i * 230 + rnd(i) * 120, y: 50 + rnd(i + 9) * 90, s: .7 + rnd(i + 4) * .6, v: .05 + rnd(i + 2) * .08 }));
 
   function readLabelSet() { readS.textContent = readLabel(name, goal); }
@@ -1249,7 +1248,6 @@ export function mount(stage, cfg, api) {
       if (gsap && !api.reduced) gsap.fromTo(view, { x: 0 }, { x: 0, duration: .4, keyframes: { x: [0, -6, 5, -3, 0] } });
     }
   }
-  let timer = 0;
   function celebrate() {
     const c = ['#F0B44C', '#C2502A', '#1F6F66', '#4C7424', '#8C3557'];
     const fx = goal.target ? goal.target.x * W : 500;

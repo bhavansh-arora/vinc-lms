@@ -81,9 +81,9 @@
 .lab-train .tr-thumb .lab-emoji { font-size: 1.2rem; }
 .lab-train .tr-thumb .tr-hand { display: none; }
 .lab-train .tr-cbtns { display: flex; gap: 8px; }
-.lab-train .tr-recbtn { flex: 1; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 999px; background: var(--cc); color: #fff; font: 700 1rem var(--body); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; box-shadow: 0 8px 16px -10px var(--cc); transition: transform .15s; }
+.lab-train .tr-recbtn { flex: 1; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 999px; background: var(--cc); color: var(--cc-ink, #fff); font: 700 1rem var(--body); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; box-shadow: 0 8px 16px -10px var(--cc); transition: transform .15s; }
 .lab-train .tr-recbtn i { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 5px #E2483B; }
-.lab-train .tr-class.is-rec .tr-recbtn { transform: scale(.96); background: #E2483B; }
+.lab-train .tr-class.is-rec .tr-recbtn { transform: scale(.96); background: #E2483B; color: #fff; }
 .lab-train .tr-class.is-rec .tr-recbtn i { animation: tr-pulse .5s ease-in-out infinite alternate; }
 @keyframes tr-pulse { to { transform: scale(1.3); } }
 .lab-train .tr-clear { width: 48px; min-height: 48px; border-radius: 50%; border: 2px solid var(--line); background: var(--card); color: var(--ink-2); font-size: 1.2rem; cursor: pointer; }
@@ -176,3 +176,4 @@
   .lab-train .tr-netwrap { padding: 4px; border-radius: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { .lab-train .tr-trainbtn.ready { animation: none; } }
+.lab-train .tr-testbtn[hidden], .lab-train .tr-trainbtn[hidden] { display: none; }

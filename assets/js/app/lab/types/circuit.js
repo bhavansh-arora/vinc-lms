@@ -589,7 +589,6 @@ export function mount(stage, cfg, api) {
   }
 
   /* ---- board interaction ---- */
-  let drag = null;
   svg.addEventListener('pointerdown', e => {
     if (testing) return;
     const term = e.target.closest('.lc-term'), x = e.target.closest('.lc-x'), part = e.target.closest('.lc-part'), slot = e.target.closest('.lc-slot'), wire = e.target.closest('.lc-wire');

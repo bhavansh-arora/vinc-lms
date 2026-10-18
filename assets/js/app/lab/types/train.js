@@ -15,6 +15,12 @@ const BGS = [
 ];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const sat = v => clamp(v, 0, 1);
+function inkFor(hex) { // dark text on light class colours, white on dark ones
+  const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(String(hex).trim());
+  if (!m) return '#fff';
+  const [r, g, b] = m.slice(1).map(x => parseInt(x, 16) / 255);
+  return .299 * r + .587 * g + .114 * b > .62 ? '#2B1A10' : '#fff';
+}
 const r1 = n => Math.round(n * 10) / 10;
 let UID = 0;
 
@@ -50,7 +56,7 @@ export function mount(stage, cfg, api) {
         <p class="tr-cam-tip">Tip: the camera shows the object at different angles, sizes and backgrounds. More variety = a smarter model.</p>
       </div>
       <div class="tr-classes">${classes.map(c => `
-        <article class="tr-class" data-c="${c.i}" style="--cc:${esc(c.color)}">
+        <article class="tr-class" data-c="${c.i}" style="--cc:${esc(c.color)};--cc-ink:${inkFor(c.color)}">
           <header><span class="tr-cdot"></span><h3>${esc(c.label)}</h3><span class="tr-ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15"/><circle class="tr-ring-v" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><b>0</b></span></header>
           <div class="tr-bucket" aria-label="${esc(c.label)} samples"><p class="tr-empty">No samples yet</p></div>
           <div class="tr-cbtns"><button type="button" class="tr-recbtn" aria-label="Hold to record ${esc(c.label)}"><i></i><span>Hold to record</span></button><button type="button" class="tr-clear" aria-label="Clear ${esc(c.label)} samples" title="Clear">↺</button></div>
@@ -408,6 +414,7 @@ export function mount(stage, cfg, api) {
     const C = 2 * Math.PI * 26;
     s.innerHTML = `<div class="tr-score"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26"/><circle class="tr-score-v" cx="32" cy="32" r="26" stroke-dasharray="${r1(C)}" stroke-dashoffset="${r1(C)}"/></svg><b>${pct}%</b></div>
       <div><p><b>${right} of ${tests.length} correct.</b> ${pass ? (right === tests.length ? 'A perfect score!' : 'That passes the 75% mark!') : 'It needs 75% to pass.'}</p>${pass ? '' : `<p class="tr-why">${esc(why(R))}</p><div class="tr-sbtns"><button type="button" class="tr-more">📸 Collect more samples</button><button type="button" class="tr-retest ghost">🔁 Test again</button></div>`}</div>`;
+    s.scrollIntoView({ block: 'nearest', behavior: api.reduced ? 'auto' : 'smooth' });
     if (!api.reduced) { gsap.from(s, { y: 20, opacity: 0, duration: .5, ease: 'back.out(2)' }); gsap.to(s.querySelector('.tr-score-v'), { strokeDashoffset: C * (1 - pct / 100), duration: 1, ease: 'power2.out' }); }
     else s.querySelector('.tr-score-v').style.strokeDashoffset = C * (1 - pct / 100);
     if (pass) {
