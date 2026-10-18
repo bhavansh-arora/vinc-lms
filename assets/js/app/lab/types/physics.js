@@ -271,12 +271,13 @@ const PRESETS = {
       g.strokeStyle = '#8B5A2B'; g.lineWidth = 8; g.lineCap = 'round'; g.beginPath(); g.moveTo(geo.HX - 20, GY - 52); g.lineTo(sx - 10, sy + 6); g.stroke();
       g.fillStyle = '#5b3a1e'; g.beginPath(); g.arc(sx - 9, sy + 5, 6, 0, TAU); g.fill();
       // arm
-      g.save(); g.translate(geo.HX, geo.HY); g.rotate(Math.PI - a);
+      g.save(); g.translate(geo.HX, geo.HY); g.rotate(Math.PI + a);
       wood(g, -4, -5, geo.L + 4, 10, 4, ['#F2D59A', '#DDB36E', '#B98A45'], 7);
-      // spoon cup
-      g.fillStyle = lin(g, geo.L - 8, -16, geo.L + 16, 6, [[0, '#F8F8F8'], [1, '#B9C2CC']]);
-      g.beginPath(); g.ellipse(geo.L + 2, -9, 15, 9, 0, 0, Math.PI); g.lineTo(geo.L - 13, -9); g.fill();
-      g.strokeStyle = '#8D97A3'; g.lineWidth = 1.5; g.stroke();
+      // bottle-cap spoon: the open side faces the throw direction (+y here)
+      g.fillStyle = lin(g, geo.L - 14, -6, geo.L + 14, 8, [[0, '#F06A55'], [1, '#A8291C']]);
+      g.beginPath(); g.ellipse(geo.L - 2, 8, 15, 12, 0, Math.PI, TAU); g.closePath(); g.fill();
+      g.strokeStyle = '#7a1d12'; g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(geo.L - 14, 5, 24, 2);
       g.restore();
       // rubber band + hinge
       g.fillStyle = '#C2502A'; g.beginPath(); g.ellipse(geo.HX - 6, geo.HY + 4, 9, 6, -.4, 0, TAU); g.fill();
@@ -284,12 +285,12 @@ const PRESETS = {
       // ball
       if (!s.ball) {
         const tip = tipOf(geo, a), n = [Math.sin(a), -Math.cos(a)];
-        ballDraw(g, tip[0] + n[0] * (b.r + 5) * .7, tip[1] + n[1] * (b.r + 5) * .7, b.r, b.col, 0, b.name);
+        ballDraw(g, tip[0] - Math.cos(a) * -2 + n[0] * (b.r + 1), tip[1] + n[1] * (b.r + 1), b.r, b.col, 0, b.name);
       } else ballDraw(g, s.ball.position.x, s.ball.position.y, b.r, b.col, s.ball.angle, b.name);
       if (!run) {
         // aim hint: dotted arc of pull-back
         g.save(); g.setLineDash([3, 6]); g.strokeStyle = 'rgba(194,80,42,.6)'; g.lineWidth = 2; g.beginPath();
-        g.arc(geo.HX, geo.HY, geo.L + 18, Math.PI + geo.pulled, Math.PI + geo.stop, true); g.stroke(); g.restore();
+        g.arc(geo.HX, geo.HY, geo.L + 22, Math.PI + geo.pulled, Math.PI + geo.stop); g.stroke(); g.restore();
       }
     },
     drawGhost(g, gh) {
@@ -315,7 +316,7 @@ const PRESETS = {
       M.Body.setMass(car, this.m(P)); M.Body.setInertia(car, Infinity);
       L.add(car); s.car = car; s.x0 = car.position.x;
       const b = clamp(P.balloon, .5, 6);
-      s.air = s.air0 = 30 + 16 * b; s.thrust = .052 + .014 * b; s.rest = 0; s.inflate = 30; s.spin = 0;
+      s.air = s.air0 = 30 + 16 * b; s.thrust = (.052 + .014 * b) * 1.7; s.rest = 0; s.inflate = 30; s.spin = 0;
       L.sound('whoosh');
     },
     step(L) {
@@ -351,11 +352,11 @@ const PRESETS = {
   ramp: {
     scene: 'indoor', ground: 'tiles', verb: 'Go!', unit: { px: 200, label: 'm' }, kinds: ['distance', 'hit', 'least-force', 'lift'],
     params: [
-      { key: 'angle', label: 'Ramp angle', min: 10, max: 45, step: 5, value: 20, unit: '°' },
+      { key: 'angle', label: 'Ramp angle', min: 10, max: 45, step: 5, value: 15, unit: '°' },
       { key: 'surface', label: 'Ramp surface', min: 1, max: 3, step: 1, value: 2, names: ['Glass sheet', 'Wooden plank', 'Sandpaper'] },
       { key: 'load', label: 'Load', min: 5, max: 30, step: 5, value: 10, unit: ' kg' },
     ],
-    goal: { kind: 'distance', target: { x: .85, width: .1 }, text: 'Roll the toy truck all the way to the flag' },
+    goal: { kind: 'distance', target: { x: .9, width: .1 }, text: 'Roll the toy truck all the way to the flag' },
     push(L) { return L.goal.kind === 'least-force' || L.goal.kind === 'lift'; },
     geo(P, push) {
       const th = rad(clamp(P.angle, 5, 60));
@@ -394,7 +395,7 @@ const PRESETS = {
         s.moved += 1; L.read(s.need, true);
         return;
       }
-      const crr = surf.crr, fric = Math.sign(sp) * Math.min(Math.abs(sp), crr * G * Math.cos(ang) + .0025 * sp * sp);
+      const crr = onRamp ? surf.crr : .025, fric = Math.sign(sp) * Math.min(Math.abs(sp), crr * G * Math.cos(ang) + .0015 * sp * sp);
       L.push(body, -fric * Math.cos(ang), -fric * Math.sin(ang));
       s.spin += sp / 9;
       L.trail(body.position.x, body.position.y + 12);
@@ -781,8 +782,8 @@ const PRESETS = {
       const s = L.s, b = s.boat, P = L.P, pf = .7 + .3 * clamp(P.prop ?? 2, .5, 4);
       L.M.Body.setPosition(b, { x: b.position.x, y: this.wy - 6 + Math.sin(L.t * .08) * 1.5 }); L.M.Body.setVelocity(b, { x: b.velocity.x, y: 0 });
       let a = 0;
-      if (s.rem > 0) { const w = .09 * Math.sqrt(s.rem) / Math.sqrt(pf); s.rem = Math.max(0, s.rem - w); s.pa += w * TAU; a += .0012 * s.rem * pf / b.mass; if (L.t % 4 === 0) L.puff(b.position.x - 78, this.wy + 4, 1, '#ffffff', -1.5, -.5); }
-      const v = b.velocity.x; a -= (.004 * v + .012 * v * Math.abs(v) * (.8 + .2 * pf)) / b.mass * 1.6;
+      if (s.rem > 0) { const w = .05 * Math.sqrt(s.rem) / Math.sqrt(pf); s.rem = Math.max(0, s.rem - w); s.pa += w * TAU; a += .0027 * s.rem * pf / b.mass; if (L.t % 4 === 0) L.puff(b.position.x - 78, this.wy + 4, 1, '#ffffff', -1.5, -.5); }
+      const v = b.velocity.x; a -= (.004 * v + .006 * v * Math.abs(v) * (.8 + .2 * pf)) / b.mass * 1.6;
       L.push(b, a, 0);
       if (L.t % 6 === 0 && Math.abs(v) > .3) L.ripple(b.position.x - 60, this.wy);
       L.trail(b.position.x + 65, this.wy + 2);
@@ -832,8 +833,8 @@ function travelJudge(L, r, pr, what, tip) {
   const tx = L.goal.target.x * W, bw = (L.goal.target.width || .1) * W, val = `${r1(r.d)} m`;
   const ok = L.goal.kind === 'hit' ? Math.abs(r.x - tx) <= bw / 2 : r.x >= tx;
   if (ok) return { ok, val, text: L.goal.kind === 'hit' ? `Parked right in the zone after ${val}!` : `The ${what} went ${val} and crossed the flag!` };
-  const short = r.x < tx, by = r1(Math.abs(r.x - tx) / pr.unit.px);
-  return { ok, val, close: clamp(1 - Math.abs(r.x - tx) / tx, 0, .95), text: `${short ? 'Stopped' : 'Rolled on'} ${by} m ${short ? 'before' : 'past'} the ${L.goal.kind === 'hit' ? 'zone' : 'flag'}. ${tip}` };
+  const short = r.x < tx, d = Math.abs(r.x - tx) / pr.unit.px, by = d < .1 ? 'just a few cm' : `${r1(d)} m`;
+  return { ok, val, close: clamp(1 - Math.abs(r.x - tx) / tx, 0, .95), text: `${short ? 'Stopped' : 'Rolled on'} ${by} ${short ? 'before' : 'past'} the ${L.goal.kind === 'hit' ? 'zone' : 'flag'}. ${tip}` };
 }
 function dashed(g, pts, col = 'rgba(94,70,52,.45)') {
   if (!pts || pts.length < 2) return;

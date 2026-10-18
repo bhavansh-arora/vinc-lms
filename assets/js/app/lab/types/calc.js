@@ -649,8 +649,6 @@ export function mount(stage, cfg, api) {
         <div class="calc-svgwrap"><svg class="calc-svg" viewBox="0 0 480 280" role="img" aria-label="${esc(`Picture: ${items.map(i => `${i.label} ${withUnit(i.value, i.unit)}`).join(', ')}`)}"></svg></div>
         <figcaption class="calc-chips">${items.filter(i => !i.isInput).map(i => `<div class="calc-chip" data-key="${esc(i.key)}"><span class="calc-chip-art">${htmlArt(api, i)}</span><span class="calc-chip-txt"><small>${esc(i.label)}</small><b>${esc(withUnit(i.value, i.unit))}</b></span></div>`).join('')}</figcaption>
       </figure>
-      ${(cfg.inputs || []).length ? `<div class="calc-inputs">${items.filter(i => i.isInput).map(i => `<label class="calc-slider" data-key="${esc(i.key)}"><span class="calc-sl-top"><span class="calc-sl-name">${esc(i.label)}</span><output>${esc(withUnit(i.value, i.unit))}</output></span>
-        <input type="range" min="${i.min ?? 0}" max="${i.max ?? 100}" step="${i.step ?? 1}" value="${i.value}" aria-label="${esc(i.label)}"></label>`).join('')}</div>` : ''}
       <div class="calc-board" hidden><div class="calc-board-frame"><p class="calc-board-h">Working</p><ol class="calc-lines" style="filter:url(#${id}chalk)"></ol><i class="calc-nib"></i></div></div>
     </div>
     <div class="calc-r">
@@ -658,6 +656,8 @@ export function mount(stage, cfg, api) {
         <div class="calc-steps">${qs.map((_, i) => `<span class="calc-step" data-i="${i}">${i + 1}</span>`).join('')}</div>
         <p class="calc-ask" aria-live="polite"></p>
       </section>
+      ${(cfg.inputs || []).length ? `<div class="calc-inputs">${items.filter(i => i.isInput).map(i => `<label class="calc-slider" data-key="${esc(i.key)}"><span class="calc-sl-top"><span class="calc-sl-name">${esc(i.label)}</span><output>${esc(withUnit(i.value, i.unit))}</output></span>
+        <input type="range" min="${i.min ?? 0}" max="${i.max ?? 100}" step="${i.step ?? 1}" value="${i.value}" aria-label="${esc(i.label)}"></label>`).join('')}</div>` : ''}
       <div class="calc-ans">
         <div class="calc-display" tabindex="0" role="textbox" aria-label="Your answer"><span class="calc-pre"></span><span class="calc-digits"></span><i class="calc-caret"></i><span class="calc-unit"></span><span class="calc-placeholder">?</span></div>
         <div class="calc-stamp" aria-hidden="true"><span class="calc-stamp-in"><b></b><small>Correct</small></span></div>
@@ -760,7 +760,10 @@ export function mount(stage, cfg, api) {
     ask.textContent = q.ask || 'Work it out!';
     hideBoard();
     if (!first && !api.reduced) g.from(ask, { x: 40, opacity: 0, duration: .45, ease: 'power3.out' });
-    if (!first) api.say(q.ask, 'info');
+    if (!first) {
+      api.say(q.ask, 'info');
+      if (matchMedia('(max-width: 760px)').matches) $('.calc-q').scrollIntoView({ block: 'start', behavior: api.reduced ? 'auto' : 'smooth' });
+    }
   }
   function target(q) { return evalExpr(q.answer, vars()); }
   function tolOf(q, t) { return q.tolerance ?? (Math.abs(t - Math.round(t)) < 1e-6 ? 0 : .051); }

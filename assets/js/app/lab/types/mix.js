@@ -234,7 +234,7 @@ export function mount(stage, cfg, api) {
   /* ---------- rule list ---------- */
   const ruleText = r => {
     if (r.meter) { const m = meters.find(x => x.key === r.meter); const lbl = m?.label || r.meter; return r.min != null && r.max != null ? `${lbl}: between ${r.min} and ${r.max}` : r.min != null ? `${lbl}: at least ${r.min}` : `${lbl}: at most ${r.max}`; }
-    if (r.amount) { const i = ings.find(x => x.key === r.amount); const lbl = i?.label || r.amount, u = i ? unitWord(i, 2) : ''; return r.min != null && r.max != null ? (r.min === r.max ? `${lbl}: exactly ${r.min} ${u}` : `${lbl}: ${r.min}–${r.max} ${u}`) : r.min != null ? `${lbl}: at least ${r.min} ${u}` : `${lbl}: at most ${r.max} ${u}`; }
+    if (r.amount) { const i = ings.find(x => x.key === r.amount); const lbl = i?.label || r.amount, u = i ? unitWord(i, 2) : ''; return r.min != null && r.max != null ? (r.min === r.max ? `${lbl}: exactly ${r.min} ${i ? unitWord(i, r.min) : ''}` : `${lbl}: ${r.min}–${r.max} ${u}`) : r.min != null ? `${lbl}: at least ${r.min} ${u}` : `${lbl}: at most ${r.max} ${u}`; }
     if (r.colorNear) return 'Colour like this';
     return '';
   };
@@ -317,7 +317,7 @@ export function mount(stage, cfg, api) {
     p.g.setAttribute('transform', `translate(${n1(x + p.dx)} ${n1(y + p.dy)}) rotate(${n1(p.rot + Math.sin(tAll * 1.5 + p.ph) * 4)}) scale(${n1(p.sc)})`);
   }
   function artSvg(item, size) {
-    if (item.sprite && api.hasSprite(item.sprite)) return api.sprite(item.sprite).replace('<svg ', `<svg x="${-size / 2}" y="${-size / 2}" width="${size}" height="${size}" `);
+    if (item.sprite && api.hasSprite(item.sprite)) return api.sprite(item.sprite).replace('<svg ', `<svg x="${-size / 2}" y="${-size / 2}" width="${size}" height="${size}" style="width:${size}px;height:${size}px" `);
     const em = item.emoji || (/>([^<]+)<\/span>/.exec(api.art(item) || '')?.[1]) || '●';
     return `<text x="0" y="${size * .32}" font-size="${size * .8}" text-anchor="middle">${esc(em)}</text>`;
   }
@@ -340,7 +340,7 @@ export function mount(stage, cfg, api) {
   }
   function settle(ing) {
     const lv = liquidVol(), tot = totalVol();
-    const lvl = lv > 0 ? clamp(.12 + .82 * (tot / capacity) / 0.95, .12, .96) : 0;
+    const lvl = lv > 0 ? clamp(.12 + .84 * tot / (capacity * .72), .12, .97) : 0;
     const hp = lv > 0 ? 0 : clamp(ings.reduce((s, i) => s + (i.form === 'powder' ? amt[i.key] : 0), 0) / 6, 0, 1);
     const c = mixColor() || hex2rgb(ing?.color || '#DDEEF7');
     gsap.to(L, { lvl, heap: hp, duration: api.reduced ? .1 : .8, ease: 'power2.out' });
@@ -450,7 +450,7 @@ export function mount(stage, cfg, api) {
   }
   function addPiece(ing) {
     const g = el('g', { class: 'mx-piece', 'data-key': ing.key }, piecesG);
-    g.innerHTML = artSvg(ing, 30);
+    g.innerHTML = artSvg(ing, 40);
     const n = pieces.filter(p => p.key === ing.key).length;
     const p = { g, key: ing.key, u: Math.random(), v: Math.random(), ph: rand(0, 6), rot: rand(-50, 50), sc: rand(.85, 1.1), dx: 0, dy: 0, stack: (pieces.length % 4) * .5 + n * .1 };
     pieces.push(p); placePiece(p);

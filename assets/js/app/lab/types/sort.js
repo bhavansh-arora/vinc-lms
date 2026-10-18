@@ -280,7 +280,7 @@ export function mount(stage, cfg, api) {
         api.say(`First pick an item from the tray, then tap “${b.label}”.`, 'hint');
         return;
       }
-      const it = picked; unpick(true); tryDrop(it, b, false);
+      const it = picked; unpick(true); bins.forEach(bb => { if (bb !== b) mood(bb, 0); }); tryDrop(it, b, false);
     });
     el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse' && !hoverBin && !finished) mood(b, picked ? 2 : 1); });
     el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && hoverBin !== b && !finished) mood(b, restLevel()); });

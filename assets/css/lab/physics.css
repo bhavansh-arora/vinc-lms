@@ -11,7 +11,7 @@
 .lab-physics .lp-tries { padding: 8px 14px; border-radius: 999px; font: 600 .85rem var(--mono); white-space: nowrap; }
 .lab-physics .lp-tries b { font-size: 1.05rem; color: var(--lf); }
 .lab-physics .lp-tries.over .lp-of { color: var(--bad); }
-.lab-physics .lp-read { position: absolute; left: 12px; bottom: 12px; display: grid; padding: 8px 16px 8px; border-radius: 16px; min-width: 120px; pointer-events: none; }
+.lab-physics .lp-read { position: absolute; left: 12px; top: 62px; display: grid; padding: 8px 16px 8px; border-radius: 16px; min-width: 120px; pointer-events: none; }
 .lab-physics .lp-read small { font: 500 .72rem var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .lab-physics .lp-read b { font: 700 1.6rem/1.1 var(--display); font-variant-numeric: tabular-nums; color: var(--ink); }
 .lab-physics .lp-banner { position: absolute; left: 50%; top: 38%; translate: -50% -50%; padding: 12px 26px; border-radius: 999px; font: 700 clamp(1.1rem, 2.6vw, 1.7rem) var(--display); color: #fff; opacity: 0; pointer-events: none; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 16px 36px -14px rgba(0, 0, 0, .5); }
@@ -57,10 +57,9 @@
   .lab-physics .lp-view { aspect-ratio: 4 / 3; max-height: 62vh; width: 100%; }
   .lab-physics .lp-panel { overflow: visible; padding: 14px; }
   .lab-physics .lp-sliders { gap: 10px; }
-  .lab-physics .lp-go { order: -1; }
   .lab-physics .lp-goal { font-size: .82rem; max-width: 72%; padding: 6px 10px 6px 8px; }
   .lab-physics .lp-tries { padding: 6px 10px; font-size: .75rem; }
-  .lab-physics .lp-read { left: 8px; bottom: 8px; padding: 6px 12px; min-width: 0; border-radius: 12px; }
+  .lab-physics .lp-read { left: 8px; top: 48px; padding: 6px 12px; min-width: 0; border-radius: 12px; }
   .lab-physics .lp-read b { font-size: 1.15rem; }
   .lab-physics .lp-hud { top: 8px; left: 8px; right: 8px; }
 }

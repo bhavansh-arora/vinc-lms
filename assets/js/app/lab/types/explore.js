@@ -51,7 +51,7 @@ function kit(P, seed) {
     <circle cx="${x}" cy="${y}" r="38" fill="#FFCB45"/><circle cx="${x}" cy="${y}" r="38" fill="${u('sunball')}"/></g>
     <g class="xp-moon"><circle cx="${x}" cy="${y}" r="70" fill="${u('moonglow')}"/><path d="M${x + 6} ${y - 30}a30 30 0 1 0 22 46a24 24 0 1 1 -22 -46z" fill="#F6EBC8"/></g>`;
   const stars = (n = 26, maxY = 260) => `<g class="xp-stars">${Array.from({ length: n }, () => `<circle cx="${r1(R() * W)}" cy="${r1(R() * maxY)}" r="${r1(1 + R() * 1.6)}" style="animation-delay:${r1(R() * 3)}s"/>`).join('')}</g>`;
-  const birds = (x, y) => `<g class="xp-birds" style="--bx:${x}px;--by:${y}px">${[0, 1, 2].map(i => `<path class="xp-bird" style="animation-delay:${i * .17}s" transform="translate(${i * 26} ${(i % 2) * 12})" d="M0 0q7-8 13 0q6-8 13 0" fill="none" stroke="#3A3A4A" stroke-width="2.6" stroke-linecap="round"/>`).join('')}</g>`;
+  const birds = (x, y) => `<g transform="translate(0 ${y})"><g class="xp-birds" style="animation-delay:${-r1((x / 1000) * 26)}s">${[0, 1, 2].map(i => `<g transform="translate(${i * 26} ${(i % 2) * 12})"><path class="xp-bird" style="animation-delay:${i * .17}s" d="M0 0q7-8 13 0q6-8 13 0" fill="none" stroke="#3A3A4A" stroke-width="2.6" stroke-linecap="round"/></g>`).join('')}</g></g>`;
   const hill = (y, a, fill, phase = 0) => `<path d="M0 ${y} C ${120 + phase} ${y - a} ${300 + phase} ${y - a} ${450 + phase} ${y - a * .2} S ${760 + phase} ${y + a * .25} ${W} ${y - a * .6} V${H} H0Z" fill="${fill}"/>`;
   function tree(x, y, s = 1, tone = 0, sway = true) {
     const c = [['#3D7A2B', '#58A03A', '#86C55A'], ['#2F6B3A', '#4C9450', '#7DBF6E'], ['#5C7F22', '#7FA632', '#A9CF55']][tone % 3];
@@ -125,7 +125,7 @@ const SCENES = {
     const { u, sh, tree, bush, flower, fence, rock, tufts } = k;
     const bed = (x, y, w, h) => `<g>${sh(x + w / 2, y + h + 6, w / 2 + 16, 12)}<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#B5643D"/><rect x="${x}" y="${y}" width="${w}" height="${h * .35}" rx="8" fill="#CB7A4E"/>
       <rect x="${x + 10}" y="${y + 6}" width="${w - 20}" height="${h - 22}" rx="8" fill="${u('soil')}"/>${Array.from({ length: Math.floor(w / 26) }, (_, i) => `<line x1="${x + 18 + i * 26}" y1="${y + h}" x2="${x + 18 + i * 26}" y2="${y + h * .4}" stroke="#9A4F2C" stroke-width="2" opacity=".5"/>`).join('')}</g>`;
-    const leafy = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})" class="xp-sway" style="--sd:${3 + (x % 3)}s"><path d="M0 0C-18-10-22-30-10-38C-4-26 0-12 0 0Z" fill="#4E9A35"/><path d="M0 0C18-10 22-30 10-38C4-26 0-12 0 0Z" fill="#6DB548"/><path d="M0 0C-6-16-4-34 2-44C8-30 6-14 0 0Z" fill="#8ACB5C"/></g>`;
+    const leafy = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><g class="xp-sway" style="--sd:${3 + (x % 3)}s"><path d="M0 0C-18-10-22-30-10-38C-4-26 0-12 0 0Z" fill="#4E9A35"/><path d="M0 0C18-10 22-30 10-38C4-26 0-12 0 0Z" fill="#6DB548"/><path d="M0 0C-6-16-4-34 2-44C8-30 6-14 0 0Z" fill="#8ACB5C"/></g></g>`;
     const tomato = (x, y) => `<g transform="translate(${x} ${y})"><line x1="0" y1="0" x2="0" y2="-92" stroke="#B88A55" stroke-width="5" stroke-linecap="round"/>
       <g class="xp-sway" style="--sd:5s"><path d="M0 0q-6-30 2-70" stroke="#4E8A2E" stroke-width="4" fill="none"/>${[[-14, -24], [12, -40], [-12, -56], [10, -70]].map(([a, b]) => `<ellipse cx="${a}" cy="${b}" rx="13" ry="7" fill="#58A03A" transform="rotate(${a > 0 ? -20 : 20} ${a} ${b})"/>`).join('')}
       <circle cx="8" cy="-28" r="8" fill="#E2483B"/><circle cx="-8" cy="-46" r="7" fill="#EE6A3A"/><circle cx="6" cy="-58" r="6" fill="#E2483B"/><circle cx="5" cy="-31" r="2.4" fill="#fff" opacity=".6"/></g></g>`;
@@ -211,7 +211,7 @@ const SCENES = {
         <g transform="translate(140 336)">${sh(0, 4, 100, 12)}<rect x="-70" y="-70" width="140" height="74" fill="#E4C38E"/><rect x="-14" y="-40" width="30" height="44" rx="3" fill="#7A4A2A"/><rect x="34" y="-50" width="24" height="20" fill="#5E95B3"/><path d="M-96-62L0-130L96-62Z" fill="#C9A44E"/><path d="M-96-62L0-130L96-62" stroke="#A9842E" stroke-width="6" fill="none"/>${Array.from({ length: 10 }, (_, i) => `<path d="M${-84 + i * 18} -62l${i < 5 ? 10 : 8} ${i < 5 ? -8 : -6}" stroke="#A9842E" stroke-width="2"/>`).join('')}</g>
         <g transform="translate(300 370)">${sh(0, 4, 56, 8)}<path d="M-50 0C-50-50-30-80 0-84C30-80 50-50 50 0Z" fill="#E1B64C"/><path d="M-40-10C-38-46-22-70 0-74" stroke="#C99A2E" stroke-width="3" fill="none"/><path d="M40-10C38-46 22-70 0-74M0-84V0" stroke="#C99A2E" stroke-width="3" fill="none"/><path d="M-6-84q6-12 12 0" stroke="#7A4A2A" stroke-width="4" fill="none"/></g>
         <g transform="translate(380 330)">${sh(0, 4, 70, 8)}<rect x="-60" y="-50" width="6" height="54" fill="#7A4A2A"/><rect x="54" y="-50" width="6" height="54" fill="#7A4A2A"/><path d="M-72-50h144l-10-20h-124z" fill="#B5643D"/><rect x="-54" y="-30" width="108" height="34" fill="#6B4024" opacity=".35"/></g>
-        <g transform="translate(560 340)" class="xp-sway" style="--sd:5s"><line x1="0" y1="10" x2="0" y2="-70" stroke="#7A4A2A" stroke-width="6"/><line x1="-40" y1="-46" x2="40" y2="-46" stroke="#7A4A2A" stroke-width="5"/><path d="M-22-50h44l-6 40h-32z" fill="#C2502A"/><circle cy="-70" r="15" fill="#E8C99A"/><path d="M-24-76h48l-24-20z" fill="#C9A44E"/><circle cx="-5" cy="-70" r="2" fill="#2B1A10"/><circle cx="5" cy="-70" r="2" fill="#2B1A10"/><path d="M-40-46l-8 10M40-46l8 10" stroke="#E1B64C" stroke-width="4"/></g>
+        <g transform="translate(560 340)"><g class="xp-sway" style="--sd:5s"><line x1="0" y1="10" x2="0" y2="-70" stroke="#7A4A2A" stroke-width="6"/><line x1="-40" y1="-46" x2="40" y2="-46" stroke="#7A4A2A" stroke-width="5"/><path d="M-22-50h44l-6 40h-32z" fill="#C2502A"/><circle cy="-70" r="15" fill="#E8C99A"/><path d="M-24-76h48l-24-20z" fill="#C9A44E"/><circle cx="-5" cy="-70" r="2" fill="#2B1A10"/><circle cx="5" cy="-70" r="2" fill="#2B1A10"/><path d="M-40-46l-8 10M40-46l8 10" stroke="#E1B64C" stroke-width="4"/></g></g>
         <g transform="translate(740 400)">${sh(0, 6, 60, 9)}<ellipse cy="-6" rx="46" ry="12" fill="#8A949E"/><path d="M-46-6v-34h92v34" fill="#B0866A"/><path d="M-46-40h92" stroke="#8C6248" stroke-width="3"/>${[-30, -10, 10, 30].map(x => `<rect x="${x - 8}" y="-38" width="16" height="10" fill="#8C6248" opacity=".5"/>`).join('')}<ellipse cy="-40" rx="46" ry="11" fill="#5A4A3E"/><ellipse cy="-40" rx="38" ry="8" fill="#2D7590"/>
           <rect x="-44" y="-110" width="6" height="72" fill="#7A4A2A"/><rect x="38" y="-110" width="6" height="72" fill="#7A4A2A"/><rect x="-50" y="-114" width="100" height="8" rx="3" fill="#7A4A2A"/><circle cy="-100" r="10" fill="#9AA5AF"/><line x1="0" y1="-100" x2="0" y2="-56" stroke="#555" stroke-width="2"/><path d="M-8-58h16l-2 14h-12z" fill="#9AA5AF"/></g>
         ${tree(880, 420, 1.2, 0)}${rock(440, 580, .8)}`,
@@ -275,7 +275,7 @@ const SCENES = {
       far: `${win(90, 110, 200, 170)}<g class="xp-curtain"><path d="M60 90h70q-10 120 6 220h-76z" fill="#C2502A"/><path d="M80 90v220M104 90v220" stroke="#A8401F" stroke-width="3"/></g><g class="xp-curtain xp-curtain-r"><path d="M320 90h-70q10 120-6 220h76z" fill="#C2502A"/><path d="M300 90v220M276 90v220" stroke="#A8401F" stroke-width="3"/></g><rect x="50" y="82" width="280" height="10" rx="4" fill="#7A4A2A"/>
         <g transform="translate(740 140)"><circle r="42" fill="#FFF9EF" stroke="#7A4A2A" stroke-width="7"/>${Array.from({ length: 12 }, (_, i) => `<line x1="0" y1="-34" x2="0" y2="-30" stroke="#2B1A10" stroke-width="3" transform="rotate(${i * 30})"/>`).join('')}<path d="M0 0V-22" stroke="#2B1A10" stroke-width="4" stroke-linecap="round" transform="rotate(-60)"/><path d="M0 0V-28" stroke="#2B1A10" stroke-width="3" stroke-linecap="round" transform="rotate(60)"/><line class="xp-sec" x1="0" y1="6" x2="0" y2="-32" stroke="#C2502A" stroke-width="1.6"/><circle r="4" fill="#C2502A"/></g>
         <g transform="translate(800 250)"><rect x="-18" y="-24" width="36" height="48" rx="4" fill="#FFF9EF" stroke="#C9B48E" stroke-width="2"/><rect x="-10" y="-14" width="8" height="14" rx="2" fill="#555"/><rect x="2" y="-14" width="8" height="14" rx="2" fill="#555"/></g>
-        <g transform="translate(500 0)"><rect x="-4" width="8" height="40" fill="#7A858F"/><ellipse cy="46" rx="20" ry="10" fill="#C9D1D8"/><g class="xp-fan"><path d="M0 46L-170 34q-10 12 0 22z" fill="#9AA5AF"/><path d="M0 46L170 58q10-12 0-22z" fill="#9AA5AF"/><path d="M0 46L-10 70l20 0z" fill="#9AA5AF" opacity=".6"/></g><ellipse cy="50" rx="12" ry="6" fill="#7A858F"/></g>
+        <g transform="translate(500 0)"><rect x="-4" width="8" height="40" fill="#7A858F"/><ellipse cy="46" rx="20" ry="10" fill="#C9D1D8"/><g class="xp-fan" style="transform-origin:0px 46px"><path d="M0 46L-170 34q-10 12 0 22z" fill="#9AA5AF"/><path d="M0 46L170 58q10-12 0-22z" fill="#9AA5AF"/><path d="M0 46L-10 70l20 0z" fill="#9AA5AF" opacity=".6"/></g><ellipse cy="50" rx="12" ry="6" fill="#7A858F"/></g>
         <g transform="translate(880 440)">${sh(0, 2, 80, 8)}<rect x="-80" y="-300" width="160" height="300" rx="4" fill="${u('wooddark')}"/>${[-240, -170, -100].map(y => `<rect x="-70" y="${y}" width="140" height="8" fill="#5E3A1E"/>`).join('')}${[[-64, -292, '#C2502A'], [-48, -292, '#1F6F66'], [-30, -288, '#D98A1C'], [-12, -292, '#8C3557'], [20, -232, '#4C7424'], [36, -228, '#C2502A'], [52, -232, '#2A6FB0'], [-60, -162, '#D98A1C'], [-40, -162, '#1F6F66']].map(([x, y, c]) => `<rect x="${x}" y="${y}" width="14" height="${y === -288 || y === -228 ? 48 : 52}" rx="2" fill="${c}"/>`).join('')}<circle cx="30" cy="-128" r="18" fill="#C89255"/><rect x="-66" y="-90" width="60" height="80" rx="4" fill="#5E3A1E"/><rect x="4" y="-90" width="62" height="80" rx="4" fill="#5E3A1E"/></g>`,
       mid: `<rect y="452" width="${W}" height="${H - 452}" fill="url(#${k.P}-floor)"/>${Array.from({ length: 8 }, (_, i) => `<line x1="0" y1="${470 + i * 22}" x2="${W}" y2="${470 + i * 22}" stroke="#A06B42" stroke-width="1.5" opacity=".5"/>`).join('')}
         <ellipse cx="500" cy="560" rx="320" ry="52" fill="#8C3557"/><ellipse cx="500" cy="560" rx="290" ry="42" fill="none" stroke="#F2B33D" stroke-width="4" stroke-dasharray="14 10"/>
@@ -321,7 +321,7 @@ const SCENES = {
         <path d="M40 330C200 300 800 300 960 330C1010 420 990 540 880 570C700 610 300 610 120 570C10 540-10 420 40 330Z" fill="#8A6A44"/>
         <path d="M60 340C220 312 780 312 940 340C985 420 970 530 870 556C700 596 300 596 130 556C30 530 15 420 60 340Z" fill="url(#${k.P}-pond)"/>
         <path d="M100 350C260 330 740 330 900 350" stroke="#fff" stroke-width="3" opacity=".35" fill="none"/>
-        <g opacity=".35">${[260, 470, 700].map((x, i) => `<path d="M${x} ${300 + i * 6}q20 40 0 70" stroke="#2B5A3A" stroke-width="16" fill="none" transform="scale(1 -1) translate(0 ${-720 - i * 12})"/>`).join('')}</g>
+        
         ${[[300, 470], [560, 420], [760, 500], [430, 520]].map(([x, y], i) => `<ellipse class="xp-ripple" style="animation-delay:${i * .9}s" cx="${x}" cy="${y}" rx="50" ry="12" fill="none" stroke="#fff" stroke-width="2.5"/>`).join('')}
         ${lily(380, 430, 1.2)}${lily(460, 470, .9)}${lily(640, 450, 1.1)}${lily(720, 400, .8)}${lily(260, 400, .9)}${lily(560, 520, 1)}
         <g transform="translate(620 400)"><path d="M0 0q-18-10-16-30q10 8 16 30z" fill="#F3A6C0"/><path d="M0 0q18-10 16-30q-10 8-16 30z" fill="#F3A6C0"/><path d="M0 0q-8-20 0-40q8 20 0 40z" fill="#F7C3D5"/><path d="M0 0q-26 0-30-16q16 0 30 16zM0 0q26 0 30-16q-16 0-30 16z" fill="#E987A8"/></g>
@@ -380,7 +380,7 @@ const SCENES = {
         <rect x="780" y="140" width="190" height="10" rx="3" fill="${u('wooddark')}"/><rect x="780" y="300" width="190" height="10" rx="3" fill="${u('wooddark')}"/>
         <g transform="translate(860 140)"><path d="M-22 0v-46h44v46z" fill="#2E8B3E"/><path d="M-12-46v-14h24v14" fill="#9AA5AF"/><path d="M12-56q22-4 26 14" stroke="#9AA5AF" stroke-width="4" fill="none"/></g><g transform="translate(800 140)"><rect x="-14" y="-40" width="28" height="40" rx="4" fill="#F2F0E8"/><rect x="-14" y="-24" width="28" height="12" fill="#2A6FB0"/><rect x="-6" y="-50" width="12" height="10" fill="#E2483B"/></g>
         <g transform="translate(900 300)">${[[-50, '#C2502A'], [-10, '#1F6F66'], [30, '#F2B33D']].map(([x, c]) => `<g transform="translate(${x} 0)"><rect x="-17" y="-52" width="34" height="52" rx="3" fill="url(#${k.P}-metal)"/><rect x="-17" y="-40" width="34" height="24" fill="${c}"/><ellipse cy="-52" rx="17" ry="4" fill="#9AA5AF"/></g>`).join('')}</g>
-        <g transform="translate(400 0)" class="xp-hanglamp"><line x1="0" y1="0" x2="0" y2="40" stroke="#2B2F35" stroke-width="3"/><path d="M-30 64h60l-12-24h-36z" fill="#2B2F35"/><ellipse cy="64" rx="30" ry="6" fill="#FFF3B8"/><path d="M-28 64L-180 400H180L28 64z" fill="url(#${k.P}-cone)"/></g>`,
+        <g transform="translate(400 0)"><g class="xp-hanglamp"><line x1="0" y1="0" x2="0" y2="40" stroke="#2B2F35" stroke-width="3"/><path d="M-30 64h60l-12-24h-36z" fill="#2B2F35"/><ellipse cy="64" rx="30" ry="6" fill="#FFF3B8"/><path d="M-28 64L-180 400H180L28 64z" fill="url(#${k.P}-cone)"/></g></g>`,
       mid: `<rect y="470" width="${W}" height="${H - 470}" fill="#A8A29A"/>${[[120, 590], [300, 560], [520, 600], [700, 570], [880, 600]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="40" ry="6" fill="#D9B98A" opacity=".6"/>`).join('')}
         ${sh(400, 474, 380, 14)}<rect x="30" y="378" width="740" height="24" rx="4" fill="${u('wood')}"/><rect x="30" y="378" width="740" height="6" rx="3" fill="#fff" opacity=".25"/><rect x="40" y="402" width="720" height="10" fill="#8A5A36"/><rect x="50" y="402" width="24" height="70" fill="#8A5A36"/><rect x="726" y="402" width="24" height="70" fill="#8A5A36"/>
         <rect x="190" y="412" width="220" height="56" rx="4" fill="#9C6A3E"/><rect x="200" y="420" width="200" height="40" rx="3" fill="#B07740"/><rect x="280" y="434" width="40" height="8" rx="4" fill="url(#${k.P}-metal)"/>
@@ -414,7 +414,7 @@ const SCENES = {
         <g transform="translate(420 290)"><rect x="-26" y="-20" width="52" height="36" rx="3" fill="#2B2F35"/><rect x="-26" y="-20" width="52" height="36" rx="3" fill="none" stroke="#A86F3F" stroke-width="4"/><path d="M-14-6h28M-14 4h18" stroke="#F2F0E8" stroke-width="3" stroke-linecap="round"/></g>
         <g transform="translate(80 520)">${sh(0, 4, 50, 8)}<path d="M-40 0q-6-50 10-70h60q16 20 10 70z" fill="#D9C08A"/><path d="M-30-70q30 10 60 0" stroke="#B89E68" stroke-width="3" fill="none"/><path d="M-36-30h72" stroke="#B89E68" stroke-width="2"/></g>
         <g transform="translate(280 540)">${sh(0, 4, 56, 8)}<path d="M-50-30h100l-10 34h-80z" fill="#C89255"/><path d="M-50-30h100" stroke="#A86F3F" stroke-width="5"/><path d="M-44-20h88M-40-8h80" stroke="#A86F3F" stroke-width="2"/>${heap(270, 506, '#F28A1E', 6, 10)}</g>
-        <g transform="translate(720 520)">${sh(0, 50, 130, 10)}<rect x="-120" y="-30" width="240" height="40" rx="6" fill="#4C7424"/><rect x="-120" y="-30" width="240" height="10" rx="5" fill="#6DA544"/>${heap(-40 + 0, -38, '#F2C21E', 10, 11).replace(/cx="/g, 'cx="').replace(/(cx=")(-?\d+(\.\d+)?)/g, (m, a, b) => a + r1(+b))}<circle cx="-80" cy="34" r="30" fill="#2B2F35"/><circle cx="-80" cy="34" r="12" fill="#9AA5AF"/><circle cx="80" cy="34" r="30" fill="#2B2F35"/><circle cx="80" cy="34" r="12" fill="#9AA5AF"/><path d="M120-20l50-20" stroke="#7A4A2A" stroke-width="7" stroke-linecap="round"/>${heap(40, -38, '#E2483B', 10, 10)}</g>`,
+        <g transform="translate(720 520)">${sh(0, 50, 130, 10)}<rect x="-120" y="-30" width="240" height="40" rx="6" fill="#4C7424"/><rect x="-120" y="-30" width="240" height="10" rx="5" fill="#6DA544"/>${heap(-50, -38, '#F2C21E', 10, 11)}<circle cx="-80" cy="34" r="30" fill="#2B2F35"/><circle cx="-80" cy="34" r="12" fill="#9AA5AF"/><circle cx="80" cy="34" r="30" fill="#2B2F35"/><circle cx="80" cy="34" r="12" fill="#9AA5AF"/><path d="M120-20l50-20" stroke="#7A4A2A" stroke-width="7" stroke-linecap="round"/>${heap(40, -38, '#E2483B', 10, 10)}</g>`,
       near: '',
     };
   },
@@ -516,7 +516,9 @@ export function mount(stage, cfg, api) {
       <g class="xp-vf-batt" transform="translate(${VW / 2 - 50} ${-VH / 2 + 15})"><rect width="30" height="14" rx="3"/><rect x="31" y="4" width="3" height="6"/><rect x="3" y="3" width="18" height="8" rx="1.5" class="xp-vf-batt-in"/></g>
       <rect class="xp-grab" x="${-VW / 2}" y="${-VH / 2}" width="${VW}" height="${VH}" fill="transparent"/></g>` : '';
 
-  const toolText = { magnifier: ['🔍', 'Drag the magnifier. Hold it still over something to look closer.'], camera: ['📷', 'Frame something in the viewfinder, then press the shutter.'], tap: ['👆', 'Tap anything you spot in the scene.'] }[tool];
+  const toolText = identify
+    ? { magnifier: ['🔍', 'Some parts hide! Use the magnifier, then tap the numbered dot.'], camera: ['📷', 'Frame the numbered dot of the part, then press the shutter.'], tap: ['👆', 'Tap the numbered dot on the part I name.'] }[tool]
+    : { magnifier: ['🔍', 'Drag the magnifier. Hold it still over something to look closer.'], camera: ['📷', 'Frame something in the viewfinder, then press the shutter.'], tap: ['👆', 'Tap anything you spot in the scene.'] }[tool];
   const root = document.createElement('div');
   root.className = `lab-explore xp-scene-${sceneName} xp-t-${tool}${diagram ? ' xp-diagram' : ''}`;
   root.innerHTML = `
@@ -627,7 +629,11 @@ export function mount(stage, cfg, api) {
 
   let drag = null;
   if (toolEl) {
-    const start = tool === 'magnifier' ? { x: W * .5, y: H * .52 } : { x: W * .5, y: H * .5 };
+    // start somewhere with nothing to find right under the tool
+    const cands = [[.5, .5], [.3, .45], [.7, .45], [.5, .25], [.25, .7], [.75, .7], [.15, .3], [.85, .3], [.5, .8]];
+    const score = ([cx, cy]) => Math.min(...spots.map(s => Math.hypot(s.x - cx * W, s.y - cy * H)));
+    const [sx, sy] = cands.find(c => score(c) > 150) || cands.reduce((a, c) => (score(c) > score(a) ? c : a));
+    const start = { x: sx * W, y: sy * H };
     gsap.set(toolEl, { x: start.x, y: start.y }); syncTool();
     [drag] = Draggable.create(toolEl, {
       type: 'x,y', autoScroll: narrow ? 1 : 0, minimumMovement: 4,
@@ -908,7 +914,7 @@ export function mount(stage, cfg, api) {
   }
 
   /* ---------- intro ---------- */
-  api.say(identify ? `Find each part I name. ${tool === 'tap' ? 'Tap its numbered dot.' : toolText[1]}` : `${toolText[1]} Find ${need} things.`);
+  api.say(identify ? `Find each part I name. ${toolText[1]}` : `${toolText[1]} Find ${need} things.`);
   if (!api.reduced) {
     const tl = gsap.timeline({ delay: .15 });
     tl.from(root.querySelectorAll('.xp-world .xp-far'), { y: 40, opacity: 0, duration: .8, ease: 'power3.out' })
