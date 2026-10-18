@@ -1,6 +1,6 @@
 // School dashboard: overview across Grades 6–8, teachers, year plan, students, marking, reports and branding.
 import { FORMS, GRADES, projectById, projectsOfGrade } from '../../data/courses.js';
-import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addSection, addTeacher, assignSections, teachersOf, initials, user, parentsOf, newJoinCode } from '../store.js';
+import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addSection, addTeacher, assignSections, setSectionTeacher, teachersOf, initials, user, parentsOf, newJoinCode } from '../store.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell, bindCopy } from '../ui.js';
 import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCreds } from './shared.js';
@@ -122,6 +122,11 @@ function teachers(ctx, sch) {
       <div class="big-code"><code>${esc(sch.joinCode)}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${esc(sch.joinCode)}">${icon('copy')} Copy</button><button type="button" class="icon-btn" id="new-join" aria-label="Make a new joining code" title="Make a new code">${icon('refresh')}</button></div></section>
     <div class="toolbar"><p class="muted">Each section has one Kaushal Bodh teacher. Teachers see only their sections in the teacher portal.</p><button class="btn btn-brand btn-sm" id="add-t">${icon('plus')} Add teacher</button></div>
     ${unassigned.length ? `<p class="warn-bar round">${unassigned.length} section${unassigned.length > 1 ? 's have' : ' has'} no teacher: ${unassigned.map(s => esc(secLabel(s))).join(', ')}.</p>` : ''}
+    <section class="card tbl-card"><div class="card-head pad"><h2 class="h-card">${icon('users')} Classes and their teachers</h2><span class="muted small">Changing a teacher keeps every student's work and marks.</span></div>
+      <table class="tbl class-tbl"><thead><tr><th>Class</th><th>Students</th><th>Teacher</th><th aria-label="Actions"></th></tr></thead>
+      <tbody>${sortedSecs(sch).map(s => { const t = user(s.teacherId); return `<tr><td><b>${esc(secLabel(s))}</b></td><td>${studentsOf(sch.id, s.id).length}</td>
+        <td>${t ? esc(t.name) : '<span class="warn-txt">No teacher</span>'}</td>
+        <td><button class="btn btn-sm btn-ghost" data-swap="${s.id}">${icon('refresh')} ${t ? 'Change teacher' : 'Assign a teacher'}</button></td></tr>`; }).join('') || '<tr><td colspan="4" class="muted">No classes yet. Add one on the Year plan page.</td></tr>'}</tbody></table></section>
     <div class="teacher-cards">${ts.map(t => {
       const mine = sortedSecs(sch).filter(s => t.sectionIds.includes(s.id)); const kids = mine.flatMap(s => studentsOf(sch.id, s.id)); const st = stats(kids);
       return `<section class="card teacher-card"><div class="tc-head"><span class="avatar lg">${esc(t.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><div><b>${esc(t.name)}</b><small class="muted">${esc(t.title || 'Kaushal Bodh teacher')} · <span class="mono">@${esc(t.login)}</span></small></div></div>
@@ -159,9 +164,54 @@ function teachers(ctx, sch) {
       $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => passwordModal(ctx, user(b.dataset.reset))));
       $$('[data-del]', el).forEach(b => b.addEventListener('click', () => deleteModal(ctx, user(b.dataset.del), () => ctx.rerender())));
       $('#add-t', el).addEventListener('click', () => open(null));
+      $$('[data-swap]', el).forEach(b => b.addEventListener('click', () => changeTeacherModal(ctx, sch, section(sch, b.dataset.swap))));
       $$('[data-assign]', el).forEach(b => b.addEventListener('click', () => open(user(b.dataset.assign))));
     },
   };
+}
+
+// Give a class a different teacher: someone already at the school, a new teacher, or nobody for now.
+function changeTeacherModal(ctx, sch, sec) {
+  if (!sec) return;
+  const cur = user(sec.teacherId);
+  const kids = studentsOf(sch.id, sec.id).length;
+  const others = teachersOf(sch.id).filter(t => t !== cur).sort((a, b) => a.name.localeCompare(b.name));
+  const classesOf = t => sortedSecs(sch).filter(x => (t.sectionIds || []).includes(x.id)).map(x => x.name).join(', ');
+  const d = modal(`<h2>${cur ? 'Change the teacher' : 'Assign a teacher'} for ${esc(secLabel(sec))}</h2>
+    <p class="muted">${cur ? `Now taught by <b>${esc(cur.name)}</b>.` : 'This class has no teacher.'} ${kids} student${kids === 1 ? '' : 's'}.</p>
+    <p class="callout ok-note">${icon('check')} <span>Students' activities, quiz scores, lab stars, portfolios, marks and teacher feedback stay exactly as they are, and so do the year plan and the lessons already taught. The new teacher sees all of it straight away${cur ? `; ${esc(cur.name.split(' ')[0])} no longer sees this class` : ''}.</span></p>
+    <form id="ct" class="form-grid">
+      <fieldset><legend>New teacher</legend><div class="pick-list">
+        ${others.map((t, i) => `<label class="check"><input type="radio" name="t" value="${t.id}" ${i === 0 ? 'checked' : ''}><span>${esc(t.name)}<small class="muted">${classesOf(t) ? `Teaches ${esc(classesOf(t))}` : 'No classes yet'}</small></span></label>`).join('')}
+        <label class="check"><input type="radio" name="t" value="__new" ${others.length ? '' : 'checked'}><span>A new teacher<small class="muted">Makes a login for them</small></span></label>
+        ${cur ? '<label class="check"><input type="radio" name="t" value=""><span>No teacher for now<small class="muted">The class keeps its work until someone is assigned</small></span></label>' : ''}
+      </div></fieldset>
+      <div id="ct-new" class="row-2" hidden><label>Teacher's full name<input name="name" maxlength="60" autocomplete="off"></label><label>Email <small class="muted">optional</small><input name="email" type="email" maxlength="80"></label></div>
+      <p class="form-err" id="ct-err" role="alert"></p>
+      <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-brand">Save</button></div>
+    </form>`, { wide: true });
+  const f = $('#ct', d), box = $('#ct-new', d);
+  const sync = () => { box.hidden = f.t.value !== '__new'; if (!box.hidden) f.name.focus(); };
+  $$('input[name=t]', f).forEach(r => r.addEventListener('change', sync)); sync();
+  f.addEventListener('submit', e => {
+    e.preventDefault();
+    const pick = f.t.value;
+    let to = null, creds = null;
+    if (pick === '__new') {
+      const nm = f.name.value.trim().replace(/\s+/g, ' ');
+      if (nm.length < 2) { $('#ct-err', d).textContent = 'Enter the new teacher\'s full name.'; f.name.focus(); return; }
+      if (f.email.value && f.email.validity.typeMismatch) { $('#ct-err', d).textContent = 'That email does not look right.'; return; }
+      const { teacher, pw } = addTeacher(sch.id, nm, [], { email: f.email.value.trim() || undefined });
+      log(ctx.me.name, `added teacher ${teacher.name}`, sch.id);
+      to = teacher; creds = [{ name: teacher.name, role: `Teacher · ${secLabel(sec)}`, icon: 'book', login: teacher.login, pw }];
+    } else to = pick ? user(pick) : null;
+    setSectionTeacher(sch, sec.id, to?.id || null);
+    log(ctx.me.name, to ? `made ${to.name} the teacher of ${secLabel(sec)}${cur ? ` (was ${cur.name})` : ''}` : `removed ${cur?.name || 'the teacher'} from ${secLabel(sec)}`, sch.id);
+    save(); d.close();
+    toast(to ? `${to.name} now teaches ${sec.name}. All student work is kept.` : `${sec.name} has no teacher for now. All student work is kept.`);
+    ctx.rerender();
+    if (creds) showCreds(`${to.name} can log in now`, creds);
+  });
 }
 
 /* ---------- Year plan ---------- */
@@ -173,7 +223,7 @@ function plan(ctx, sch) {
     html: `<p class="lead-in">Choose one project from each form of work for every section. CBSE asks for about 110 hours a year: two consecutive periods, twice a week.</p>
     <div class="toolbar">${gradeTabs(sch)}<button class="btn btn-ghost btn-sm" id="add-sec">${icon('plus')} Add section</button></div>
     ${secs.map(s => `<section class="card plan-card" data-sec="${s.id}">
-      <div class="card-head"><h2 class="h-card">${icon('school')} ${esc(secLabel(s))}</h2><span class="muted small">${studentsOf(sch.id, s.id).length} students · ${esc(user(s.teacherId)?.name || 'No teacher')}</span></div>
+      <div class="card-head"><h2 class="h-card">${icon('school')} ${esc(secLabel(s))}</h2><span class="muted small">${studentsOf(sch.id, s.id).length} students · ${esc(user(s.teacherId)?.name || 'No teacher')} · <button type="button" class="linkish" data-swap="${s.id}">${s.teacherId ? 'Change' : 'Assign'} teacher</button></span></div>
       <div class="plan-picks">${Object.values(FORMS).map(f => `<label class="f-${f.key}"><span class="form-tag">${esc(f.name)}</span>
         <select data-form="${f.key}">${projectsOfGrade(s.grade).filter(p => p.form === f.key).map(p => `<option value="${p.id}" ${s.projects[f.key] === p.id ? 'selected' : ''}>${esc(p.title)} (${p.periods} periods)</option>`).join('')}</select></label>`).join('')}</div>
       <div class="plan-tl">${Object.values(s.projects).map(id => seg(projectById(id))).join('')}<div class="seg mela" style="flex-grow:6"><b>Mela</b></div></div>
@@ -184,6 +234,7 @@ function plan(ctx, sch) {
     </section>`,
     mount(el) {
       bindGradeTabs(el, ctx);
+      $$('[data-swap]', el).forEach(b => b.addEventListener('click', () => changeTeacherModal(ctx, sch, section(sch, b.dataset.swap))));
       $('#save-plan', el).addEventListener('click', () => {
         let changed = 0;
         $$('.plan-card', el).forEach(c => {

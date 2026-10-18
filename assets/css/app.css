@@ -937,3 +937,12 @@ code.code { font: 600 1em var(--mono); padding: .05em .4em; border-radius: 6px; 
   .acc-del-l { display: none; }
   .check-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- Change a class's teacher ---------- */
+.tbl-card > .card-head.pad { padding: 16px 18px 0; margin-bottom: 4px; }
+.class-tbl td:last-child { width: 1%; white-space: nowrap; }
+.callout.ok-note { background: var(--olive-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--olive) 30%, transparent); font-size: var(--t-small); }
+.callout.ok-note .ic { color: var(--ok); width: 18px; height: 18px; }
+.pick-list { display: grid; gap: 8px; }
+.pick-list .check input { accent-color: var(--brand); }
+.row-2[hidden] { display: none; }

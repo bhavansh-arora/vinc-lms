@@ -107,7 +107,12 @@ ask their device for reduced motion.
   - Overview across Grades 6–8 with a grade filter, grade cards and a progress
     heatmap per section and project.
   - Teachers: add, delete and reset teachers, and assign sections (one teacher
-    per section).
+    per section). **Classes and their teachers** lists every class with a
+    "Change teacher" button (also on the Year plan): pick another teacher at the
+    school, make a new teacher, or leave the class without one for now. Only the
+    link changes: students' work, scores, lab stars, marks, feedback, the year
+    plan and the lessons already taught all stay with the class, and the new
+    teacher sees them straight away.
   - One-tap marking of the viva, observation and portfolio rubrics, plus feedback.
   - Students list (add, delete and reset students; add parents from a
     student's page).

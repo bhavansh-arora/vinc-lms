@@ -260,6 +260,20 @@ export function assignSections(teacher, sectionIds) {
   save();
 }
 
+// Give one class a different teacher (or none). Only the link moves: students' work, marks,
+// feedback and the year plan belong to the students and the class, so they stay as they are.
+export function setSectionTeacher(sch, sectionId, teacherId) {
+  const sec = section(sch, sectionId);
+  if (!sec) return null;
+  const before = user(sec.teacherId) || null;
+  const after = teacherId ? user(teacherId) : null;
+  if (before) before.sectionIds = (before.sectionIds || []).filter(id => id !== sec.id);
+  sec.teacherId = after ? after.id : null;
+  if (after && !after.sectionIds.includes(sec.id)) after.sectionIds.push(sec.id);
+  save();
+  return { before, after };
+}
+
 // A student added by the school or the admin, and a parent account when a parent's name is
 // given. Each gets a User ID and a temporary password, returned so they can be handed over.
 export function addStudent(schoolId, sectionId, name, parentName, { pw, parentPhone } = {}) {
