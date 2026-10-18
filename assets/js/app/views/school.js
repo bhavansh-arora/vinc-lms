@@ -1,9 +1,10 @@
 // School dashboard: overview across Grades 6–8, teachers, year plan, students, marking, reports and branding.
 import { FORMS, GRADES, projectById, projectsOfGrade } from '../../data/courses.js';
-import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addStudent, addSection, addTeacher, assignSections, teachersOf, initials, user, parentsOf, newJoinCode } from '../store.js';
+import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addSection, addTeacher, assignSections, teachersOf, initials, user, parentsOf, newJoinCode } from '../store.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell, bindCopy } from '../ui.js';
-import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCreds, resetFor } from './shared.js';
+import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCreds } from './shared.js';
+import { accountsPage, addPersonModal, passwordModal, deleteModal } from './accounts.js';
 
 export const nav = () => [
   { path: '', label: 'Overview', icon: 'home' },
@@ -13,6 +14,7 @@ export const nav = () => [
   { path: 'plan', label: 'Year plan', short: 'Plan', icon: 'calendar' },
   { path: 'reports', label: 'Reports', icon: 'chart' },
   { path: 'brand', label: 'Branding', icon: 'brush' },
+  { path: 'accounts', label: 'Accounts', icon: 'key' },
 ];
 
 export function render(ctx) {
@@ -27,6 +29,7 @@ export function render(ctx) {
     case 'grade': return grade(ctx, sch);
     case 'reports': return reports(ctx, sch);
     case 'brand': return brand(ctx, sch);
+    case 'accounts': return accountsPage(ctx);
     default: return overview(ctx, sch);
   }
 }
@@ -125,7 +128,7 @@ function teachers(ctx, sch) {
         <div class="chips">${mine.map(s => `<span class="chip">${esc(secLabel(s))}</span>`).join('') || '<span class="muted small">No sections yet</span>'}</div>
         <div class="gc-row"><span>${kids.length} students</span>${bar(st.completion)}<b>${st.completion}%</b></div>
         <p class="muted small">${st.vivaDue} viva${st.vivaDue === 1 ? '' : 's'} to mark · ${st.inactive} inactive</p>
-        <div class="btn-row"><button class="btn btn-ghost btn-sm" data-assign="${t.id}">Change sections</button><button class="btn btn-sm linkish" data-reset="${t.id}">${icon('key')} Reset password</button></div></section>`;
+        <div class="btn-row"><button class="btn btn-ghost btn-sm" data-assign="${t.id}">Change sections</button><button class="btn btn-sm linkish" data-reset="${t.id}">${icon('key')} Password</button><button class="btn btn-sm btn-ghost danger" data-del="${t.id}" aria-label="Delete ${esc(t.name)}">${icon('trash')}</button></div></section>`;
     }).join('') || '<div class="empty"><p>No teachers yet.</p></div>'}</div>`,
     mount(el) {
       const form = (t) => `<form id="tf" class="form-grid">
@@ -153,7 +156,8 @@ function teachers(ctx, sch) {
         if (!confirm('Make a new joining code? The old one will stop working.')) return;
         sch.joinCode = newJoinCode(sch); log(ctx.me.name, 'made a new teacher joining code', sch.id); save(); toast('New joining code made.'); ctx.rerender();
       });
-      $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => resetFor(ctx, user(b.dataset.reset), 'Teacher')));
+      $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => passwordModal(ctx, user(b.dataset.reset))));
+      $$('[data-del]', el).forEach(b => b.addEventListener('click', () => deleteModal(ctx, user(b.dataset.del), () => ctx.rerender())));
       $('#add-t', el).addEventListener('click', () => open(null));
       $$('[data-assign]', el).forEach(b => b.addEventListener('click', () => open(user(b.dataset.assign))));
     },
@@ -231,12 +235,13 @@ function students(ctx, sch) {
       <button class="btn btn-brand btn-sm" id="add">${icon('plus')} Add student</button>
     </div>
     <section class="card tbl-card"><table class="tbl" id="stu-tbl">
-      <thead><tr><th>Name</th><th>Grade</th><th>Section</th><th>Activities</th><th>Score so far</th><th>Last active</th><th>Parent</th></tr></thead>
+      <thead><tr><th>Name</th><th>Grade</th><th>Section</th><th>Activities</th><th>Score so far</th><th>Last active</th><th>Parent</th><th aria-label="Actions"></th></tr></thead>
       <tbody>${rows.map(r => `<tr data-name="${esc(r.s.name.toLowerCase())}" data-sec="${r.s.sectionId}">
         <td><a href="#/school/student/${r.s.id}">${esc(r.s.name)}</a><small class="muted mono block">@${esc(r.s.login)}</small></td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>
         <td><div class="cell-bar">${bar(r.y.activityPct)}<span>${r.y.actsDone}/${r.y.actsTotal}</span></div></td>
         <td>${r.y.score == null ? '—' : `${r.y.score}% <small class="muted">${band(r.y.score)}</small>`}</td>
-        <td class="${!r.la || Date.now() - r.la > 14 * 86400000 ? 'warn-txt' : ''}">${timeAgo(r.la)}</td><td>${r.parents.length ? r.parents.map(p => esc(p.name)).join(', ') : '—'}</td></tr>`).join('')}</tbody>
+        <td class="${!r.la || Date.now() - r.la > 14 * 86400000 ? 'warn-txt' : ''}">${timeAgo(r.la)}</td><td>${r.parents.length ? r.parents.map(p => esc(p.name)).join(', ') : '—'}</td>
+        <td><div class="btn-row nowrap acc-acts"><button class="btn btn-sm btn-ghost" data-pw="${r.s.id}" aria-label="Password for ${esc(r.s.name)}" title="Password">${icon('key')}</button><button class="btn btn-sm btn-ghost danger" data-del="${r.s.id}" aria-label="Delete ${esc(r.s.name)}" title="Delete">${icon('trash')}</button></div></td></tr>`).join('')}</tbody>
     </table><p class="muted small" id="count"></p></section>`,
     mount(el) {
       const filter = () => {
@@ -247,26 +252,9 @@ function students(ctx, sch) {
         $('#count', el).textContent = `${n} student${n === 1 ? '' : 's'}`;
       };
       $('#q', el).addEventListener('input', filter); $('#sec-f', el).addEventListener('change', filter); filter();
-      $('#add', el).addEventListener('click', () => {
-        const d = modal(`<h2>Add a student</h2>
-          <form id="add-f" class="form-grid">
-            <label>Student's full name<input name="name" required maxlength="60"></label>
-            <label>Section<select name="sec">${sortedSecs(sch).map(s => `<option value="${s.id}">${esc(secLabel(s))}</option>`).join('')}</select></label>
-            <label>Parent's name<input name="parent" maxlength="60"></label>
-            <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-brand">Add student</button></div>
-          </form>`);
-        $('#add-f', d).addEventListener('submit', e => {
-          e.preventDefault(); const f = e.target;
-          if (!f.name.value.trim()) return;
-          const { student, parent, stPw, parPw } = addStudent(sch.id, f.sec.value, f.name.value.trim(), f.parent.value.trim());
-          log(ctx.me.name, `added ${student.name}`, sch.id); save();
-          d.close(); ctx.rerender();
-          showCreds(`${student.name} is added`, [
-            { name: student.name, role: `Student · ${secLabel(section(sch, student.sectionId))}`, icon: 'star', login: student.login, pw: stPw, code: student.familyCode },
-            { name: parent.name, role: 'Parent', icon: 'home', login: parent.login, pw: parPw },
-          ]);
-        });
-      });
+      $('#add', el).addEventListener('click', () => addPersonModal(ctx, { role: 'student', onDone: () => ctx.rerender() }));
+      $$('[data-pw]', el).forEach(b => b.addEventListener('click', () => passwordModal(ctx, user(b.dataset.pw))));
+      $$('[data-del]', el).forEach(b => b.addEventListener('click', () => deleteModal(ctx, user(b.dataset.del), () => ctx.rerender())));
     },
   };
 }

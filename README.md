@@ -50,14 +50,25 @@ Light and dark mode follow the device setting automatically.
 - **Profile** page for every role: edit name, User ID, email and mobile, change
   the password, see or renew the family code or joining code, and (for
   parents) link another child.
-- **Accounts made by others**: when a coordinator adds a student or teacher,
-  or the admin adds a school, the app shows the new User IDs and **temporary
-  passwords** once. A temporary password takes the person to their profile to
-  choose a new one.
-- **Resets**: coordinators and teachers reset student and parent passwords
-  from the student's page; coordinators reset teachers; the admin resets school
-  staff from Schools → Logins. "Forgot password?" on the login screen explains
-  who to ask.
+- **Managing accounts** (the **Accounts** page):
+  - The **admin** can add, reset and delete anyone: coordinators, teachers,
+    students and parents in every school. The admin can also delete a whole
+    school (typing its name to confirm), which removes all its accounts and work.
+  - A **school coordinator** can do the same for their own school's teachers,
+    students and parents.
+  - **Adding**: one form for every role. A student can get a parent login at the
+    same time; a parent is linked to one or more students; a teacher can be
+    given sections. The new User IDs and **temporary passwords** are shown once.
+  - **Passwords**: make a temporary password (the person chooses a new one at
+    their next login) or set a specific one, with or without asking them to
+    change it.
+  - **Deleting**: a student's work goes with them, and parent logins linked only
+    to that student are deleted too (this can be unticked). A deleted teacher's
+    sections are left without a teacher. Deleted accounts cannot log in.
+  - The same actions are on the Teachers and Students pages and on each
+    student's page. Teachers can reset student and parent passwords but cannot
+    add or delete anyone. "Forgot password?" on the login screen explains who to
+    ask.
 - A paused school's users cannot log in.
 
 ### Motion
@@ -95,17 +106,20 @@ ask their device for reduced motion.
 - **School**:
   - Overview across Grades 6–8 with a grade filter, grade cards and a progress
     heatmap per section and project.
-  - Teachers: add teachers and assign sections (one teacher per section).
+  - Teachers: add, delete and reset teachers, and assign sections (one teacher
+    per section).
   - One-tap marking of the viva, observation and portfolio rubrics, plus feedback.
-  - Students list (with adding students).
+  - Students list (add, delete and reset students; add parents from a
+    student's page).
+  - Accounts: every teacher, student and parent in the school.
   - Year plan per section (projects from that section's grade), new sections,
     and the Mela date.
   - Reports with CSV export.
   - Branding: name, studio name, badge letters and colour, applied to every
     student and parent screen.
 - **Admin (VINC)**: network KPIs, weekly activity and per-grade figures, schools
-  (add, pause, open a school's dashboard; new schools get 6 A, 7 A, 8 A and a
-  teacher), the Grade 6–8 content and question banks, and data export or
+  (add, pause, delete, open a school's dashboard; new schools get 6 A, 7 A, 8 A
+  and a teacher), Accounts for everyone on VINC Lab, the Grade 6–8 content and question banks, and data export or
   delete.
 
 ### Lessons and virtual labs
@@ -197,7 +211,8 @@ assets/js/app/        main.js (router, shell, page transitions), auth.js (log in
                       store.js (data, logins), sha256.js, scoring.js, ui.js
 assets/js/app/views/  student, parent, teacher, school, admin, profile; shared.js holds marking,
                       heatmaps, class analytics and password resets used by teachers and schools;
-                      activity.js is the student activity page (lesson + lab)
+                      activity.js is the student activity page (lesson + lab);
+                      accounts.js is the Accounts page with add, password and delete dialogs
 assets/js/data/lessons/   One file per project (g6p1.js ... g8p6.js): the lesson and lab for each activity
 assets/js/app/lab/    runtime.js (the lab player), kit.js (shared helpers), sprites*.js (SVG art),
                       types/ (one file per lab type), SPEC.md (how to write a lesson or a lab type)

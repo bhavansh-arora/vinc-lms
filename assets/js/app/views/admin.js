@@ -1,13 +1,15 @@
 // VINC Lab admin: network overview, schools, course content and settings.
 import { COURSES, GRADES, FORMS, WEIGHTS, projectById } from '../../data/courses.js';
-import { db, save, reset, session, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf, user } from '../store.js';
-import { showCreds, resetFor } from './shared.js';
+import { db, save, reset, session, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf } from '../store.js';
+import { showCreds } from './shared.js';
+import { accountsPage, deleteSchoolModal, filterAccounts } from './accounts.js';
 import { yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, fmtDate, toast, modal, download } from '../ui.js';
 
 export const nav = () => [
   { path: '', label: 'Overview', icon: 'home' },
   { path: 'schools', label: 'Schools', icon: 'school' },
+  { path: 'accounts', label: 'Accounts', icon: 'key' },
   { path: 'content', label: 'Course content', short: 'Content', icon: 'book' },
   { path: 'settings', label: 'Settings', icon: 'settings' },
 ];
@@ -15,6 +17,7 @@ export const nav = () => [
 export function render(ctx) {
   const [page, a] = ctx.params;
   if (page === 'schools') return schools(ctx);
+  if (page === 'accounts') return accountsPage(ctx);
   if (page === 'content') return a ? projectContent(ctx, a) : content(ctx);
   if (page === 'settings') return settings(ctx);
   return overview(ctx);
@@ -99,7 +102,7 @@ function schools(ctx) {
         <td><div class="cell-bar">${bar(st.completion, s.color)}<span>${st.completion}%</span></div></td>
         <td>${st.score == null ? '—' : `${st.score}% <small class="muted">${band(st.score)}</small>`}</td>
         <td><button class="tag ${s.active ? 'ok' : 'todo'} tag-btn" data-toggle="${s.id}" aria-label="${s.active ? 'Pause' : 'Activate'} ${esc(s.name)}">${s.active ? 'Active' : 'Paused'}</button></td>
-        <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Logins</button></div></td></tr>`; }).join('') || '<tr><td colspan="9" class="muted">No schools yet. Use Add school, or ask a coordinator to register on the sign-up page.</td></tr>'}</tbody>
+        <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Accounts</button><button class="btn btn-sm btn-ghost danger" data-delsch="${s.id}" aria-label="Delete ${esc(s.name)}">${icon('trash')}</button></div></td></tr>`; }).join('') || '<tr><td colspan="9" class="muted">No schools yet. Use Add school, or ask a coordinator to register on the sign-up page.</td></tr>'}</tbody>
     </table></section>`,
     mount(el) {
       $$('[data-open]', el).forEach(b => b.addEventListener('click', () => {
@@ -108,15 +111,8 @@ function schools(ctx) {
         session.set({ userId: coord.id, at: Date.now(), by: ctx.me.id });
         ctx.go('/school');
       }));
-      $$('[data-logins]', el).forEach(b => b.addEventListener('click', () => {
-        const s = D.schools.find(x => x.id === b.dataset.logins);
-        const staff = D.users.filter(u => u.schoolId === s.id && (u.role === 'school' || u.role === 'teacher')).sort((a, c) => (a.role === 'school' ? 0 : 1) - (c.role === 'school' ? 0 : 1));
-        const m = modal(`<h2>Logins at ${esc(s.name)}</h2><p class="muted">Coordinators reset passwords for their teachers, students and parents. You can reset staff passwords here.</p>
-          <ul class="login-list">${staff.map(u => `<li><span class="avatar">${icon(u.role === 'school' ? 'school' : 'book')}</span><span><b>${esc(u.name)}</b><small class="muted">${u.role === 'school' ? 'Coordinator' : 'Teacher'} · <span class="mono">@${esc(u.login)}</span>${u.email ? ` · ${esc(u.email)}` : ''}</small></span><button class="btn btn-sm btn-ghost" data-reset="${u.id}">Reset password</button></li>`).join('')}</ul>
-          <p class="muted small">Teacher joining code: <span class="mono">${esc(s.joinCode)}</span></p>
-          <div class="modal-actions"><button class="btn btn-ghost" data-close>Close</button></div>`, { wide: true });
-        $$('[data-reset]', m).forEach(r => r.addEventListener('click', () => { const u = user(r.dataset.reset); m.close(); resetFor(ctx, u, u.role === 'school' ? 'School coordinator' : 'Teacher'); }));
-      }));
+      $$('[data-logins]', el).forEach(b => b.addEventListener('click', () => { filterAccounts({ school: b.dataset.logins, role: 'all', q: '' }); ctx.go('/admin/accounts'); }));
+      $$('[data-delsch]', el).forEach(b => b.addEventListener('click', () => deleteSchoolModal(ctx, D.schools.find(x => x.id === b.dataset.delsch), () => ctx.rerender())));
       $$('[data-toggle]', el).forEach(b => b.addEventListener('click', () => {
         const s = D.schools.find(x => x.id === b.dataset.toggle); s.active = !s.active;
         log(ctx.me.name, `${s.active ? 'activated' : 'paused'} ${s.name}`, s.id); save(); ctx.rerender();

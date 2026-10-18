@@ -8,7 +8,6 @@ const KEY = 'vinclab:db:v4';
 const VERSION = 4;
 const OLD_KEYS = ['vinclab:db:v3', 'vinclab:db:v2'];
 const SESSION = 'vinclab:session:v1';
-const DAY = 86400000;
 
 let DB = null;
 let persistOk = true;
@@ -261,22 +260,86 @@ export function assignSections(teacher, sectionIds) {
   save();
 }
 
-// A student added by the school, with a parent account. Both get a User ID and a temporary
-// password (or the given one), returned so the school can hand them to the family.
-export function addStudent(schoolId, sectionId, name, parentName, { pw } = {}) {
+// A student added by the school or the admin, and a parent account when a parent's name is
+// given. Each gets a User ID and a temporary password, returned so they can be handed over.
+export function addStudent(schoolId, sectionId, name, parentName, { pw, parentPhone } = {}) {
   const d = db();
   const st = { id: uid('stu'), role: 'student', name, schoolId, sectionId, roll: studentsOf(schoolId, sectionId).length + 1, createdAt: Date.now() };
   st.familyCode = newFamilyCode(d);
   const stPw = issueLogin(st, pw);
   d.users.push(st);
-  const par = { id: uid('par'), role: 'parent', name: parentName || `Parent of ${name.split(' ')[0]}`, schoolId, childIds: [st.id], createdAt: Date.now() };
-  const parPw = issueLogin(par, pw);
-  st.parentId = par.id;
-  d.users.push(par);
   d.progress[st.id] = {};
+  let parent = null, parPw = null;
+  if (parentName) ({ parent, pw: parPw } = addParent(schoolId, parentName, [st.id], { phone: parentPhone, pw }));
   save();
-  return { student: st, parent: par, stPw, parPw };
+  return { student: st, parent, stPw, parPw };
 }
+
+// A parent login linked to one or more students of a school.
+export function addParent(schoolId, name, childIds, { phone, email, relation, pw: given } = {}) {
+  const par = { id: uid('par'), role: 'parent', name, relation: relation || 'Parent', schoolId, childIds: [...childIds], createdAt: Date.now() };
+  if (phone) par.phone = phone;
+  if (email) par.email = email;
+  const pw = issueLogin(par, given);
+  db().users.push(par);
+  for (const id of childIds) { const k = user(id); if (k && (!k.parentId || !user(k.parentId))) k.parentId = par.id; }
+  save();
+  return { parent: par, pw };
+}
+
+// Another coordinator login for a school (added by the VINC Lab admin).
+export function addCoordinator(schoolId, name, { email, phone } = {}) {
+  const c = { id: uid('crd'), role: 'school', name, title: 'Kaushal Bodh coordinator', schoolId, createdAt: Date.now() };
+  if (email) c.email = email;
+  if (phone) c.phone = phone;
+  const pw = issueLogin(c);
+  db().users.push(c);
+  save();
+  return { coord: c, pw };
+}
+
+/* ---------------- Deleting accounts ---------------- */
+// Parents whose only linked child is this student; they are removed with the student by default.
+export const soleParents = student => parentsOf(student).filter(p => (p.childIds || []).every(id => id === student.id));
+
+// Delete one account and tidy up what pointed at it. Returns the accounts removed.
+// A student's work goes with them; a teacher's sections are left without a teacher.
+export function deleteUser(id, { withParents = true } = {}) {
+  const d = db();
+  const u = user(id);
+  if (!u || u.role === 'admin') return [];
+  const gone = [u];
+  if (u.role === 'student') {
+    if (withParents) gone.push(...soleParents(u));
+    for (const p of parentsOf(u)) p.childIds = p.childIds.filter(c => c !== u.id);
+    delete d.progress[u.id];
+  }
+  if (u.role === 'parent') {
+    for (const k of childrenOf(u)) if (k.parentId === u.id) { const other = parentsOf(k).find(p => p !== u); if (other) k.parentId = other.id; else delete k.parentId; }
+  }
+  if (u.role === 'teacher') {
+    for (const s of school(u.schoolId)?.sections || []) if (s.teacherId === u.id) s.teacherId = null;
+  }
+  const ids = new Set(gone.map(x => x.id));
+  d.users = d.users.filter(x => !ids.has(x.id));
+  save();
+  return gone;
+}
+
+// Delete a school with every account, piece of work and log entry that belongs to it.
+export function deleteSchool(id) {
+  const d = db();
+  const users = d.users.filter(u => u.schoolId === id && u.role !== 'admin');
+  for (const u of users) delete d.progress[u.id];
+  d.users = d.users.filter(u => !users.includes(u));
+  d.log = d.log.filter(l => l.schoolId !== id);
+  d.schools = d.schools.filter(s => s.id !== id);
+  save();
+  return users.length;
+}
+
+// Set a password chosen by an admin or coordinator. With temp, the person must change it at next login.
+export function setPasswordFor(u, pw, { temp = true } = {}) { setPassword(u, pw, { temp }); save(); }
 
 /* ---------------- Sign-up ----------------
    Each returns the new user, or throws an Error whose .field names the form field at fault. */
