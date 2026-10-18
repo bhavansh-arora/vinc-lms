@@ -532,7 +532,7 @@ const SCENES = {
         ${rows}
         <circle cx="181" cy="18" r="8" fill="#C2502A"/><circle cx="179" cy="16" r="2.5" fill="#fff" opacity=".6"/>
       </g>
-      ${serves ? `<g class="c-serves" data-key="${esc(serves.key)}" transform="translate(326 52) rotate(10)"><circle r="40" fill="#D98A1C"/><circle r="34" fill="none" stroke="#FFF1DA" stroke-width="2" stroke-dasharray="4 3"/>
+      ${serves ? `<g class="c-serves" data-key="${esc(serves.key)}" transform="translate(360 48) rotate(10)"><circle r="40" fill="#D98A1C"/><circle r="34" fill="none" stroke="#FFF1DA" stroke-width="2" stroke-dasharray="4 3"/>
         <text y="-10" text-anchor="middle" font-size="12" font-weight="700" fill="#FFF7EA">${esc(/serve/i.test(serves.label) ? 'Serves' : trunc(serves.label, 9))}</text><text class="c-lv" y="13" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${esc(fmt(+serves.value))}</text></g>` : ''}`;
     return {
       svg,

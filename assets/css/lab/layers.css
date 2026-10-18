@@ -21,7 +21,7 @@
 .lab-layers .lyr-sw > svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .25)); }
 .lab-layers .lyr-sw-art { position: absolute; right: -6px; bottom: -6px; width: 24px; height: 24px; display: grid; place-items: center; }
 .lab-layers .lyr-sw-art .lab-emoji { font-size: 1.1rem; }
-.lab-layers .lyr-card-l { flex: 1; min-width: 0; line-height: 1.2; }
+.lab-layers .lyr-card-l { flex: 1; min-width: 0; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
 .lab-layers .lyr-tick { display: none; width: 24px; height: 24px; border-radius: 50%; background: var(--ok); color: #fff; place-items: center; font-size: .8rem; flex: none; }
 .lab-layers .lyr-card.used .lyr-tick { display: grid; }
 .lab-layers.busy .lyr-card:not(.used) { cursor: progress; }

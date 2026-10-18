@@ -355,7 +355,7 @@ export function mount(stage, cfg, api) {
   let day = 0, dayFrac = 0, health = 100, running = false, started = false, speed = 1, ended = false;
   let paused = null; // current event
   let tAll = 0, lastHint = -10, shadeNet = 0, rainOn = 0, heatOn = 0, puddle = 0, weeds = [];
-  let healthSum = 0, healthN = 0;
+  let healthSum = 0, healthN = 0, deaths = 0;
 
   const has = k => controls.some(c => c.key === k);
   const env = { moist: .5, shade: 0, temp: .5, sun: .7, spacing: .5, nutrients: .5 };
@@ -765,7 +765,7 @@ export function mount(stage, cfg, api) {
 
   /* ---------- death and the end ---------- */
   function die() {
-    running = false; S.dead = 0; api.mistake();
+    running = false; S.dead = 0; api.mistake(); deaths++;
     gsap.to(S, { dead: 1, duration: api.reduced ? .2 : 1.6 });
     playBtn.textContent = '↺ Try again';
     api.say(`Oh no, the ${K.name} has died. Look at the slider labels: fix what is wrong, then try again.`, 'bad');
@@ -805,7 +805,7 @@ export function mount(stage, cfg, api) {
   }
   function complete() {
     const hv = Math.round(health);
-    api.complete({ stars: hv >= 80 ? 3 : hv >= 55 ? 2 : 1, score: hv / 100, message: cfg.win || `Final health: ${hv}/100. ${hv >= 80 ? 'A healthy, happy plant!' : hv >= 55 ? 'Good, but some conditions were off for a while.' : 'The plant struggled. Try to keep every slider in the green.'}` });
+    api.complete({ stars: Math.max(1, (hv >= 80 ? 3 : hv >= 55 ? 2 : 1) - (deaths ? 1 : 0)), score: hv / 100, message: cfg.win || `Final health: ${hv}/100. ${hv >= 80 ? 'A healthy, happy plant!' : hv >= 55 ? 'Good, but some conditions were off for a while.' : 'The plant struggled. Try to keep every slider in the green.'}` });
   }
   function harvest() {
     const hb = $('.gr-harvest');

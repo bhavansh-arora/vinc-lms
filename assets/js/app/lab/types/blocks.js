@@ -18,12 +18,13 @@ const B = {
   playSound: { cat: 'sound', label: 'play sound', arg: { vals: ['meow', 'beep', 'drum'], def: 'meow' }, icon: '♪' },
   wait: { cat: 'control', label: 'wait', arg: { vals: [1, 2, 3], def: 1, after: 'sec' }, icon: '⏱' },
   repeat: { cat: 'control', label: 'repeat', arg: { vals: [2, 3, 4, 5, 6, 8, 10], def: 3 }, c: true, icon: '🔁' },
-  ifSensor: { cat: 'control', label: 'if motion detected then', c: true, icon: '❓' },
+  ifSensor: { cat: 'control', label: 'if motion seen then', c: true, icon: '❓' },
   ledOn: { cat: 'arduino', label: 'turn LED on', icon: '💡' },
   ledOff: { cat: 'arduino', label: 'turn LED off', icon: '⚫' },
 };
 const DIRS = { right: [1, 0], down: [0, 1], left: [-1, 0], up: [0, -1] }, ORDER = ['up', 'right', 'down', 'left'];
 const T = 64; // stage tile size (viewBox units)
+const shortName = o => ({ move: 'move', turnLeft: 'left', turnRight: 'right', jump: 'jump', say: 'say', playSound: 'sound' }[o] || o);
 
 /* ---------------------------------------------------------------- shapes */
 const NOTCH = 'l6 6 h20 l6 -6';
@@ -102,7 +103,6 @@ export function mount(stage, cfg, api) {
       <div class="lb-row"><span class="lb-lbl">${label}</span>${arg}${inPal ? '' : `<button type="button" class="lb-del" data-id="${n.id}" aria-label="Remove ${esc(d.label)}">×</button>`}</div>
       ${d.c ? `<div class="lb-inner" data-id="${n.id}">${(n.kids || []).map(k => blockHTML(k)).join('')}</div><div class="lb-foot"></div>` : ''}</div>`;
   }
-  const shortName = o => ({ move: 'move', turnLeft: 'left', turnRight: 'right', jump: 'jump', say: 'say', playSound: 'sound' }[o] || o);
   function shapeAll(scope) {
     // innermost first so C-blocks know their inner height
     const els = [...scope.querySelectorAll('.lb-b')].reverse();
@@ -224,7 +224,7 @@ export function mount(stage, cfg, api) {
         s += `<path d="M${x * T + 14 + (x * 7 + y * 3) % 30} ${y * T + 44} l3 -8 l3 8 M${x * T + 38 + (x * 5) % 14} ${y * T + 22} l2.5 -7 l2.5 7" stroke="#6FAE45" stroke-width="2" fill="none" stroke-linecap="round"/>`;
       }
       s += `<rect x="${start.x * T + 6}" y="${start.y * T + 6}" width="${T - 12}" height="${T - 12}" rx="10" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-dasharray="6 6"/>`;
-      s += flagArt(goalC.x * T + T / 2 - 6, goalC.y * T + T / 2);
+      s += flagArt(goalC.x * T + T / 2 - 18, goalC.y * T + T / 2);
       walls.forEach(w => { s += bush(w[0] * T + T / 2, w[1] * T + T / 2 - 4); });
       coins.forEach((c, i) => { s += coin(c[0] * T + T / 2, c[1] * T + T / 2, i); });
     } else if (mode === 'dance') {
@@ -273,16 +273,19 @@ export function mount(stage, cfg, api) {
     else { arrow.setAttribute('transform', `rotate(${ang})`); flip.setAttribute('transform', `scale(${dir === 'left' ? -1 : 1} 1)`); if (gsap) { gsap.set(arrow, { rotation: ang, svgOrigin: '0 0' }); gsap.set(flip, { scaleX: dir === 'left' ? -1 : 1, svgOrigin: '0 0' }); } }
   }
   const pos = () => { const a = actor(); return { x: +a.dataset.x, y: +a.dataset.y }; };
-  function moveActor(p, dur = .38, hop = 8) {
+  function moveActor(p, dur = .34, hop = 8) {
     const a = actor(), sq = a.querySelector('.lb-sq'), from = pos(), st = { t: 0 };
     a.dataset.x = p.x; a.dataset.y = p.y;
+    gsap.killTweensOf(sq);
     const tl = gsap.timeline();
-    tl.to(sq, { scaleY: .82, scaleX: 1.12, svgOrigin: '0 0', duration: .08 })
+    tl.to(sq, { scaleY: .82, scaleX: 1.12, svgOrigin: '0 0', duration: .07 })
       .to(st, { t: 1, duration: dur, ease: 'power1.inOut', onUpdate: () => { const x = from.x + (p.x - from.x) * st.t, y = from.y + (p.y - from.y) * st.t - Math.sin(st.t * Math.PI) * hop; a.setAttribute('transform', `translate(${x} ${y})`); } }, '<.04')
       .to(sq, { scaleY: 1.12, scaleX: .9, duration: dur * .45, ease: 'power1.out' }, '<')
       .to(sq, { scaleY: .86, scaleX: 1.1, duration: .07 })
+      .addLabel('land')
       .to(sq, { scaleY: 1, scaleX: 1, duration: .3, ease: 'elastic.out(1, .45)' });
-    return tl;
+    // resolve on landing; the wobble keeps playing while the next block starts
+    return new Promise(res => tl.call(res, null, 'land'));
   }
   function bump(dir) {
     const a = actor(), p = pos(), [dx, dy] = DIRS[dir], st = { t: 0 };
@@ -430,8 +433,8 @@ export function mount(stage, cfg, api) {
       api.mistake(); api.say(`Good start! The dance has ${target.length} moves and your cat did ${world.actions.length}. Keep going.`, 'hint'); return;
     }
     const w = world;
-    if (w.badEarly) { api.mistake(); return api.say('The LED switched on before anyone came in. Put "turn LED on" inside the "if motion detected" block.', 'bad'); }
-    if (!w.onWithMotion) { api.mistake(); return api.say(script.some(n => n.op === 'ifSensor') ? 'The cat came, but the LED did not switch on. Put "turn LED on" inside the "if motion detected" block.' : 'Use an "if motion detected" block, so the code checks the sensor.', 'bad'); }
+    if (w.badEarly) { api.mistake(); return api.say('The LED switched on before anyone came in. Put "turn LED on" inside the "if motion seen" block.', 'bad'); }
+    if (!w.onWithMotion) { api.mistake(); return api.say(script.some(n => n.op === 'ifSensor') ? 'The cat came, but the LED did not switch on. Put "turn LED on" inside the "if motion seen" block.' : 'Use an "if motion seen" block, so the code checks the sensor.', 'bad'); }
     if (w.led) { api.mistake(); return api.say('The LED stayed on after the cat left. Add "wait" and then "turn LED off".', 'bad'); }
     if ((w.maxOn || 0) < .6) { api.mistake(); return api.say('The LED only flickered! Add a "wait" block between "LED on" and "LED off".', 'hint'); }
     win('Light on when the cat came, off after it left. Your room is smart!');

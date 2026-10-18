@@ -95,8 +95,7 @@ export function evalExpr(expr, vars = {}) {
   const num = () => { ws(); const m = /^(\d+\.?\d*|\.\d+)/.exec(src.slice(i)); if (m) { i += m[0].length; return +m[0]; } return null; };
   function atom() {
     ws();
-    if (src[i] === '(') { i++; const v = sum(); ws(); i++; return v; }
-    if (src[i] === '-') { i++; return -atom(); }
+    if (src[i] === '(') { i++; const v = sum(); ws(); if (src[i] !== ')') throw new Error(`Missing ) in ${expr}`); i++; return v; }
     const n = num(); if (n != null) return n;
     const m = /^[A-Za-z_]\w*/.exec(src.slice(i));
     if (!m) throw new Error(`Bad expression: ${expr}`);
@@ -105,10 +104,12 @@ export function evalExpr(expr, vars = {}) {
     if (!(m[0] in vars)) throw new Error(`Unknown value "${m[0]}" in ${expr}`);
     return +vars[m[0]];
   }
-  function pow() { let v = atom(); ws(); while (src[i] === '^') { i++; v = v ** atom(); ws(); } return v; }
+  function pow() { ws(); if (src[i] === '-') { i++; return -pow(); } const v = atom(); ws(); if (src[i] === '^') { i++; return v ** pow(); } return v; }
   function prod() { let v = pow(); ws(); while ('*/%'.includes(src[i]) && src[i]) { const op = src[i++]; const r = pow(); v = op === '*' ? v * r : op === '/' ? v / r : v % r; ws(); } return v; }
   function sum() { let v = prod(); ws(); while ((src[i] === '+' || src[i] === '-')) { const op = src[i++]; const r = prod(); v = op === '+' ? v + r : v - r; ws(); } return v; }
   const v = sum();
+  ws();
+  if (i < src.length) throw new Error(`Unexpected "${src.slice(i)}" in ${expr}`);
   return v;
 }
 

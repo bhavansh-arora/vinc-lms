@@ -62,13 +62,14 @@
 
 /* Shared building blocks for lab types */
 .lab-emoji { display: inline-grid; place-items: center; font-size: 2.2em; line-height: 1; }
-.spr { display: block; width: 100%; height: 100%; overflow: visible; }
+.spr { display: block; overflow: visible; }
+.spr:not([width]) { width: 100%; height: 100%; }
 .lab-token { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); box-shadow: 0 6px 14px -8px rgba(43, 26, 16, .35); font-weight: 700; user-select: none; touch-action: none; }
 .lab-token-art { width: 48px; height: 48px; flex: none; display: grid; place-items: center; }
 .lab-token-art .lab-emoji { font-size: 2rem; }
 .lab-token.dragging { box-shadow: 0 18px 30px -10px rgba(43, 26, 16, .45); border-color: var(--lf); cursor: grabbing; }
 .lab-act { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--lf); color: #fff; font: 700 1rem var(--body); cursor: pointer; transition: transform .2s, opacity .2s; }
-.lab-act:hover { transform: translateY(-2px); } .lab-act:disabled { opacity: .5; cursor: default; transform: none; }
+.lab-act:hover { filter: brightness(1.08); box-shadow: 0 6px 16px -8px var(--lf); } .lab-act:disabled { opacity: .5; cursor: default; filter: none; box-shadow: none; }
 .lab-act.ghost { background: var(--card); color: var(--ink); border: 2px solid var(--line); }
 .lab-panel { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px; box-shadow: 0 10px 26px -18px rgba(43, 26, 16, .45); }
 .lab-h { font: 600 1.15rem var(--display); margin: 0 0 8px; }

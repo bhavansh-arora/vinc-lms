@@ -663,7 +663,11 @@ export function mount(stage, cfg, api) {
       .to(o, { d: days, duration: dur, ease: 'none', onUpdate: () => { hudT.textContent = `${word} ${Math.round(o.d)}`; } }, at)
       .to(hudSun, { rotation: 360 * Math.ceil(days / 6), svgOrigin: '32 30', duration: dur, ease: 'none' }, at);
   }
-  const stackBounds = () => ({ x0: xRange(C.poly, C.bottom - 6)[0] + 16, x1: xRange(C.poly, C.bottom - 6)[1] - 16, y0: topSurface + 8, y1: C.bottom - 8 });
+  const stackBounds = () => {
+    const comp = layers.map((l, i) => COMPOSTABLE.has(l.texture) ? bands[i].y1 : 0);
+    const y1 = Math.max(...comp) || C.bottom - 8, [a, b] = xRange(C.poly, y1 - 6);
+    return { x0: a + 16, x1: b - 16, y0: topSurface + 10, y1: Math.max(topSurface + 30, y1 - 8) };
+  };
 
   function tlCompost(tl) {
     dayCounter(tl, 45, 5);
@@ -679,7 +683,8 @@ export function mount(stage, cfg, api) {
     });
     tl.add(() => addWorms(null, 6, stackBounds()), .2);
     const S = xf(stackG, C.cx, C.bottom);
-    tl.to(S, { sy: .84, duration: 4.6, ease: 'power1.inOut', onUpdate: S.apply }, .3);
+    tl.to(S, { sy: .84, duration: 4.6, ease: 'power1.inOut', onUpdate: S.apply }, .3)
+      .to(tagsG, { opacity: .35, duration: 1 }, .3).to(tagsG, { opacity: 1, duration: .6 }, 5.2);
     for (let i = 0; i < 4; i++) {
       const x = C.cx - 50 + i * 33;
       const p = el('path', { d: `M${x} ${topSurface}q-8 -14 0 -26q8 -12 0 -26`, stroke: '#fff', 'stroke-width': 4, fill: 'none', 'stroke-linecap': 'round', opacity: 0 }, fxTop);
