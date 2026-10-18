@@ -820,7 +820,7 @@ export function mount(stage, cfg, api) {
     const ww = VW / VZ, hh = VH / VZ;
     const inFrame = unfound().filter(s => Math.abs(s.x - x) < ww / 2 + 4 && Math.abs(s.y - y) < hh / 2 + 4).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
     let s = inFrame[0] || null;
-    if (identify && s && target && !inFrame.includes(target)) s = inFrame[0];
+    if (identify && target && inFrame.includes(target)) s = target;
     api.sound('tick'); later(() => api.sound('whoosh'), 80);
     const flash = $('.xp-flash');
     gsap.fromTo(flash, { opacity: .95 }, { opacity: 0, duration: api.reduced ? .05 : .45, ease: 'power2.out' });

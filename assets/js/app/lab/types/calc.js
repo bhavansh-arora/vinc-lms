@@ -509,9 +509,14 @@ const SCENES = {
     const title = trunc(c.api.cfg.title || 'Recipe', 22);
     const rows = lines.map((it, i) => {
       const y = 82 + i * lh;
+      // Fit label and value on one ruled line: shrink a long value, then shorten the label to the space left.
+      const val = withUnit(it.value, it.unit), lfs = Math.min(15, lh * .5), x0 = 56 + lh;
+      let vfs = Math.min(17, lh * .56);
+      if (val.length * vfs * .56 > 128) vfs = Math.max(10, 128 / (val.length * .56));
+      const room = 304 - x0 - val.length * vfs * .56 - 10;
       return `<g class="c-line" data-key="${esc(it.key)}">${svgArt(c.api, it, 52, y - lh * .42, lh * .8)}
-        <text x="${56 + lh}" y="${y + 1}" font-size="${Math.min(15, lh * .5).toFixed(1)}" font-weight="600" fill="#5E4634" dominant-baseline="central">${esc(trunc(it.label, 20))}</text>
-        <text class="c-lv" x="304" y="${y + 1}" font-size="${Math.min(17, lh * .56).toFixed(1)}" font-weight="800" fill="#2B1A10" text-anchor="end" dominant-baseline="central">${esc(withUnit(it.value, it.unit))}</text></g>`;
+        <text x="${x0}" y="${y + 1}" font-size="${lfs.toFixed(1)}" font-weight="600" fill="#5E4634" dominant-baseline="central">${esc(trunc(it.label, Math.max(6, Math.floor(room / (lfs * .52)))))}</text>
+        <text class="c-lv" x="304" y="${y + 1}" font-size="${vfs.toFixed(1)}" font-weight="800" fill="#2B1A10" text-anchor="end" dominant-baseline="central">${esc(withUnit(it.value, it.unit))}</text></g>`;
     }).join('');
     let ruled = '';
     for (let y = 82 + lh / 2; y < 254; y += lh) ruled += `<path d="M44 ${y.toFixed(1)}H314" stroke="#B8D4EA" stroke-width="1.2"/>`;
@@ -552,8 +557,12 @@ const SCENES = {
     const list = c.items.slice(0, 6), lh = Math.min(36, 170 / Math.max(1, list.length));
     const rows = list.map((it, i) => {
       const y = 62 + i * lh + lh / 2;
+      // Fit "label = value" inside the board: shrink the chalk a little, then shorten the label.
+      const val = withUnit(it.value, it.unit), room = 436 - (68 + lh), need = it.label.length + 3 + val.length;
+      const fs = Math.max(13, Math.min(18, lh * .55, room / (need * .5)));
+      const max = Math.max(8, Math.floor(room / (fs * .5)) - 3 - val.length);
       return `<g class="c-line" data-key="${esc(it.key)}">${svgArt(c.api, it, 60, y - lh * .4, lh * .8)}
-        <text class="c-chalk" x="${68 + lh}" y="${y}" font-size="${Math.min(18, lh * .55).toFixed(1)}" dominant-baseline="central">${esc(trunc(it.label, 24))} = <tspan class="c-lv" font-weight="800" fill="#FFE59A">${esc(withUnit(it.value, it.unit))}</tspan></text></g>`;
+        <text class="c-chalk" x="${68 + lh}" y="${y}" font-size="${fs.toFixed(1)}" dominant-baseline="central">${esc(trunc(it.label, max))} = <tspan class="c-lv" font-weight="800" fill="#FFE59A">${esc(withUnit(it.value, it.unit))}</tspan></text></g>`;
     }).join('');
     const svg = `<defs><linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#36584A"/><stop offset="1" stop-color="#244236"/></linearGradient>
       <filter id="${id}chalk"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="1" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></defs>
