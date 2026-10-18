@@ -199,9 +199,11 @@ export function mount(stage, cfg, api) {
     chartApi.start(() => later(startQuiz, 700));
   }
 
+  const isNarrow = () => root.getBoundingClientRect().width < 520;
+
   /* bar chart */
   function barChart() {
-    const W = 600, x0 = 58, x1 = 588, base = 262, topY = 26, n = cats.length;
+    const narrow = isNarrow(), W = narrow ? 400 : 600, x0 = narrow ? 50 : 58, x1 = W - 10, base = 262, topY = 26, n = cats.length;
     const maxV = Math.max(1, ...vals());
     const step = maxV <= 6 ? 1 : maxV <= 12 ? 2 : maxV <= 30 ? 5 : maxV <= 60 ? 10 : Math.ceil(maxV / 60) * 10;
     const top = Math.ceil((maxV + (build ? step : 0) + .001) / step) * step;
@@ -217,7 +219,7 @@ export function mount(stage, cfg, api) {
         <rect class="ct-hit" x="${cx - slot / 2}" y="${topY - 14}" width="${slot}" height="${base - topY + 70}" fill="transparent"/>
         <path class="ct-bar" d="${barPath(cx - bw / 2, bw, 0)}"/><path class="ct-sheen" d="${barPath(cx - bw / 2, bw, 0)}" fill="url(#${uid}sh)"/>
         <text class="ct-val" x="${cx}" y="${base - 10}" text-anchor="middle">${build ? '' : 0}</text>
-        ${build ? `<g class="ct-grip" transform="translate(${cx} ${base})"><circle r="14"/><path d="M-5 -3h10M-5 2h10"/></g><g class="ct-ok" transform="translate(${cx + bw / 2 - 2} ${base})" opacity="0"><circle r="11"/><path d="M-5 0l3.5 3.5L5 -4"/></g>` : ''}
+        ${build ? `<g class="ct-grip" transform="translate(${cx} ${base})"><g class="ct-grip-in"><circle r="14"/><path d="M-5 -3h10M-5 2h10"/></g></g><g class="ct-ok" transform="translate(${cx + bw / 2 - 2} ${base})"><g class="ct-ok-in" opacity="0"><circle r="11"/><path d="M-5 0l3.5 3.5L5 -4"/></g></g>` : ''}
         ${svgArt(api, c, cx - 21, base + 8, 42)}<text class="ct-xlab" x="${cx}" y="${base + 68}" text-anchor="middle">${esc(trunc(c.label, Math.floor(slot / 7.6)))}</text></g>`; }).join('')}
       <path d="M${x0} ${base}H${x1}" class="ct-axis"/>`;
     const cols = [...svg.querySelectorAll('.ct-col')], cur = cats.map(() => 0), done = cats.map(() => false);
@@ -235,7 +237,7 @@ export function mount(stage, cfg, api) {
       if (cur[i] === want && !done[i]) {
         done[i] = true; cols[i].classList.add('done'); cols[i].setAttribute('aria-valuetext', `${cur[i]}, correct`);
         api.sound('good');
-        g.fromTo(cols[i].querySelector('.ct-ok'), { opacity: 0, scale: 0, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: .4, ease: 'back.out(3)' });
+        g.fromTo(cols[i].querySelector('.ct-ok-in'), { opacity: 0, scale: 0, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: .4, ease: 'back.out(3)' });
         sparkle(api, cols[i].querySelector('.ct-bar'));
         const left = done.filter(d => !d).length;
         api.progress(.6 + .15 * (1 - left / cats.length));
@@ -272,8 +274,9 @@ export function mount(stage, cfg, api) {
       start(next) {
         if (build) {
           api.say('Build the bar chart: drag each bar up until it matches the tally. (Or tap a bar and use the arrow keys.)', 'info');
-          onAllDone = () => { g.to(svg.querySelectorAll('.ct-grip'), { opacity: 0, duration: .3 }); next(); };
-          if (!api.reduced) g.fromTo(svg.querySelectorAll('.ct-grip'), { y: 0 }, { y: -10, duration: .35, yoyo: true, repeat: 3, stagger: .1, ease: 'power1.inOut' });
+          svg.classList.add('building');
+          onAllDone = () => { svg.classList.remove('building'); g.to(svg.querySelectorAll('.ct-grip'), { opacity: 0, duration: .3 }); next(); };
+          if (!api.reduced) g.fromTo(svg.querySelectorAll('.ct-grip-in'), { y: 0 }, { y: -10, duration: .35, yoyo: true, repeat: 3, stagger: .1, ease: 'power1.inOut' });
           return;
         }
         api.say('Watch the bars grow from the data!', 'info');
@@ -290,15 +293,15 @@ export function mount(stage, cfg, api) {
 
   /* pie chart */
   function pieChart() {
-    const cx = 170, cy = 180, R = 146, tot = Math.max(1, total());
+    const narrow = isNarrow(), cx = narrow ? 200 : 170, cy = 170, R = narrow ? 150 : 146, tot = Math.max(1, total());
     const vs = vals();
-    svg.setAttribute('viewBox', '0 0 600 360');
-    const rowH = Math.min(52, 320 / cats.length), ly = 180 - rowH * cats.length / 2;
+    const rowH = narrow ? 46 : Math.min(52, 320 / cats.length), ly = narrow ? 340 : 170 - rowH * cats.length / 2;
+    svg.setAttribute('viewBox', narrow ? `0 0 400 ${350 + rowH * cats.length}` : '0 0 600 350');
     svg.innerHTML = `<circle cx="${cx}" cy="${cy + 6}" r="${R}" class="ct-pieshadow"/><circle cx="${cx}" cy="${cy}" r="${R}" class="ct-piebg"/>
       ${cats.map((c, i) => `<g class="ct-slice" data-key="${esc(c.key)}" style="--c:${c.col}"><path class="ct-sl" d=""/><text class="ct-pct" text-anchor="middle" dominant-baseline="central" opacity="0"></text></g>`).join('')}
       <circle cx="${cx}" cy="${cy}" r="${R * .28}" class="ct-hole"/><text x="${cx}" y="${cy - 8}" class="ct-tot" text-anchor="middle" dominant-baseline="central">${tot}</text><text x="${cx}" y="${cy + 16}" class="ct-totl" text-anchor="middle">${esc(unitWord || 'in all')}</text>
-      ${cats.map((c, i) => `<g class="ct-leg" data-key="${esc(c.key)}" style="--c:${c.col}" transform="translate(352 ${ly + i * rowH})"><rect x="0" y="${rowH / 2 - 9}" width="18" height="18" rx="5" class="ct-sw"/>${svgArt(api, c, 26, rowH / 2 - 17, 34)}
-        <text x="68" y="${rowH / 2 - 7}" class="ct-legl" dominant-baseline="central">${esc(trunc(c.label, 17))}</text><text x="68" y="${rowH / 2 + 12}" class="ct-legv" dominant-baseline="central">${vs[i]} · ${fmtN(vs[i] / tot * 100)}%</text></g>`).join('')}`;
+      ${cats.map((c, i) => `<g class="ct-leg" data-key="${esc(c.key)}" style="--c:${c.col}" transform="translate(${narrow ? 40 : 352} ${ly + i * rowH})"><g class="ct-leg-in"><rect x="0" y="${rowH / 2 - 9}" width="18" height="18" rx="5" class="ct-sw"/>${svgArt(api, c, 26, rowH / 2 - 17, 34)}
+        <text x="68" y="${rowH / 2 - 7}" class="ct-legl" dominant-baseline="central">${esc(trunc(c.label, 17))}</text><text x="68" y="${rowH / 2 + 12}" class="ct-legv" dominant-baseline="central">${vs[i]} · ${fmtN(vs[i] / tot * 100)}%</text></g></g>`).join('')}`;
     const sl = [...svg.querySelectorAll('.ct-slice')];
     const P = (a, r = R) => [cx + r * Math.sin(a), cy - r * Math.cos(a)];
     function draw(p) {
@@ -325,7 +328,7 @@ export function mount(stage, cfg, api) {
         g.timeline({ onComplete: next })
           .to(o, { p: 1, duration: 1.8, ease: 'power2.inOut', onUpdate: () => draw(o.p) })
           .fromTo(svg.querySelectorAll('.ct-pct'), { opacity: 0, scale: .4, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: .4, stagger: .1, ease: 'back.out(3)' })
-          .from(svg.querySelectorAll('.ct-leg'), { x: 30, opacity: 0, duration: .4, stagger: .08, ease: 'power2.out' }, .4);
+          .fromTo(svg.querySelectorAll('.ct-leg-in'), { x: 30, opacity: 0 }, { x: 0, opacity: 1, duration: .4, stagger: .08, ease: 'power2.out' }, .4);
       },
       highlight(keys) {
         svg.classList.toggle('dim', keys.length > 0);
@@ -341,25 +344,25 @@ export function mount(stage, cfg, api) {
 
   /* pictograph */
   function pictograph() {
-    const vs = vals(), maxV = Math.max(1, ...vs), fit = 9;
+    const narrow = isNarrow(), PW = narrow ? 420 : 600, vs = vals(), maxV = Math.max(1, ...vs), fit = narrow ? 6 : 9;
     const per = Math.max(1, Math.round(+cfg.per || Math.ceil(maxV / fit)));
-    const rowH = 58, H = cats.length * rowH + 62, x0 = 168, gap = 46, sz = 40;
-    svg.setAttribute('viewBox', `0 0 600 ${H}`);
+    const rowH = 58, H = cats.length * rowH + 62, x0 = narrow ? 142 : 168, gap = narrow ? 44 : 46, sz = 40;
+    svg.setAttribute('viewBox', `0 0 ${PW} ${H}`);
     let body = '';
     cats.forEach((c, i) => {
       const y = 10 + i * rowH, full = Math.floor(vs[i] / per), rem = vs[i] % per;
-      body += `<g class="ct-prow" data-key="${esc(c.key)}" style="--c:${c.col}"><rect x="4" y="${y}" width="592" height="${rowH - 6}" rx="14" class="ct-prbg"/>
-        ${svgArt(api, c, 12, y + 6, 40)}<text x="60" y="${y + rowH / 2 - 3}" class="ct-plab" dominant-baseline="central">${esc(trunc(c.label, 13))}</text>`;
+      body += `<g class="ct-prow" data-key="${esc(c.key)}" style="--c:${c.col}"><rect x="4" y="${y}" width="${PW - 8}" height="${rowH - 6}" rx="14" class="ct-prbg"/>
+        ${svgArt(api, c, 12, y + 6, 40)}<text x="60" y="${y + rowH / 2 - 3}" class="ct-plab" dominant-baseline="central">${esc(trunc(c.label, narrow ? 8 : 13))}</text>`;
       for (let k = 0; k < full + (rem ? 1 : 0); k++) {
         const partial = k === full;
         const clip = partial ? `clip-path="url(#${uid}c${i})"` : '';
         if (partial) body += `<clipPath id="${uid}c${i}"><rect x="${x0 + k * gap}" y="${y}" width="${sz * rem / per}" height="${rowH}"/></clipPath>`;
         body += `<g class="ct-icon" ${clip}>${svgArt(api, c, x0 + k * gap, y + 6, sz)}</g>`;
       }
-      body += `<text x="586" y="${y + rowH / 2 - 3}" class="ct-pval" text-anchor="end" dominant-baseline="central">${vs[i]}</text></g>`;
+      body += `<text x="${PW - 14}" y="${y + rowH / 2 - 3}" class="ct-pval" text-anchor="end" dominant-baseline="central">${vs[i]}</text></g>`;
     });
     const ky = cats.length * rowH + 22;
-    body += `<g class="ct-key"><rect x="150" y="${ky - 4}" width="300" height="40" rx="20" class="ct-keybg"/>${svgArt(api, cats[0], 176, ky, 32)}<text x="216" y="${ky + 16}" dominant-baseline="central" class="ct-keyt">= ${per} ${esc(unitWord || (per > 1 ? 'items' : 'item'))}${per > 1 ? ' (½ icon = less)' : ''}</text></g>`;
+    body += `<g class="ct-key" transform="translate(${PW / 2 - 300} 0)"><rect x="150" y="${ky - 4}" width="300" height="40" rx="20" class="ct-keybg"/>${svgArt(api, cats[0], 176, ky, 32)}<text x="216" y="${ky + 16}" dominant-baseline="central" class="ct-keyt">= ${per} ${esc(unitWord || (per > 1 ? 'items' : 'item'))}${per > 1 ? ' (½ icon = less)' : ''}</text></g>`;
     svg.innerHTML = body;
     return {
       start(next) {

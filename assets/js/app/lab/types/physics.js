@@ -131,11 +131,11 @@ function tag(g, x, y, text, bg = '#FFF9EF', fg = '#2B1A10', size = 14) {
   g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y - size / 2 + 5); g.restore();
 }
 function weightBlock(g, x, yb, kg, w = 40) {
-  const hh = 16 + Math.min(40, kg * 1.6);
+  const hh = 22 + Math.min(34, kg * 1.4);
   shadow(g, x, yb + 1, w / 2, 3, .2);
   g.fillStyle = lin(g, x - w / 2, 0, x + w / 2, 0, [[0, '#4d5562'], [.35, '#9aa3b0'], [1, '#3a404a']]);
   g.beginPath(); g.moveTo(x - w / 2 + 5, yb - hh); g.lineTo(x + w / 2 - 5, yb - hh); g.lineTo(x + w / 2, yb); g.lineTo(x - w / 2, yb); g.closePath(); g.fill();
-  g.strokeStyle = '#3a404a'; g.lineWidth = 3; g.beginPath(); g.arc(x, yb - hh, 7, Math.PI, 0); g.stroke();
+  g.strokeStyle = '#3a404a'; g.lineWidth = 3; g.beginPath(); g.arc(x, yb - hh + 1, 6, Math.PI, 0); g.stroke(); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x - w / 2 + 6, yb - hh + 3, w - 12, 2);
   g.fillStyle = '#fff'; g.font = '700 12px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, x, yb - hh / 2 + 4);
   return hh;
 }
@@ -357,6 +357,7 @@ const PRESETS = {
       { key: 'load', label: 'Load', min: 5, max: 30, step: 5, value: 10, unit: ' kg' },
     ],
     goal: { kind: 'distance', target: { x: .9, width: .1 }, text: 'Roll the toy truck all the way to the flag' },
+    texts: { 'least-force': 'Push the crate up onto the truck with as little force as you can', lift: 'Push the crate up onto the truck', hit: 'Make the truck stop inside the parking box' },
     push(L) { if (L.canPush == null) L.canPush = L.goal.value ?? Math.round(this.massKg(L.P) * 10 * .45); return L.goal.kind === 'least-force' || L.goal.kind === 'lift'; },
     geo(P, push) {
       const th = rad(clamp(P.angle, 5, 60));
@@ -390,7 +391,7 @@ const PRESETS = {
           return;
         }
         // a steady push: the push exactly balances gravity along the slope plus sliding friction
-        if (onRamp) M_slide(L, body, ang, 1.3);
+        if (onRamp) M_slide(L, body, ang, 2.2);
         else { M_slide(L, body, 0, s.rest < 12 ? .9 : 0); s.rest++; if (s.rest > 30) return L.finish({ ok: true, need: s.need }); }
         s.moved += 1; L.read(s.need, true);
         return;
@@ -486,7 +487,7 @@ const PRESETS = {
       L.read(lift / 2, false, 'cm lifted');
       if (Math.abs(b.angularVelocity) > .004 && ++s.creak % 14 === 0) L.sound('tick');
       s.rest = Math.abs(b.angularVelocity) < .0008 ? s.rest + 1 : 0;
-      if ((s.rest > 30 && L.t > 30) || L.t > 360) L.finish({ angle: a, lift });
+      if ((s.rest > 30 && L.t > 100) || L.t > 360) L.finish({ angle: a, lift });
     },
     collide(L, a, b) { const s = L.s; if (Math.abs(s.body.angularVelocity) > .01) { const geo = this.geo(L.P); const right = s.body.angle - s.a0 > 0; L.puff(right ? geo.xr - 10 : geo.xl + 10, GY, 8, '#C9A877'); L.sound('drop'); } },
     torque(P) { const geo = this.geo(P); return { tl: clamp(P.load, 0, 500) * (geo.xf - geo.lx), te: clamp(P.effort, 0, 500) * (geo.ex - geo.xf) + 4 * (500 - geo.xf) }; },
@@ -496,7 +497,9 @@ const PRESETS = {
       const why = `Load ${P.load} kg × ${dl} m = ${r1(P.load * dl)}, effort ${P.effort} kg × ${de} m = ${r1(P.effort * de)}.`;
       if (lifted && L.goal.kind === 'least-force' && P.effort > (L.goal.value ?? 10)) return { ok: false, val, close: .8, text: `Lifted, but with ${P.effort} kg. Can you do it with ${L.goal.value ?? 10} kg or less? Move the fulcrum closer to the load.` };
       if (lifted) return { ok: true, val, text: `Up goes the sack! ${why} The effort side turns harder.` };
-      return { ok: false, val, close: clamp(this.torque(P).te / this.torque(P).tl, 0, .95), text: `The sack stays down. ${why} Move the fulcrum nearer the load or add more effort.` };
+      const ratio = this.torque(P).te / this.torque(P).tl;
+      if (ratio > .85) return { ok: false, val, close: .9, text: `So close, it is nearly balanced! ${why} A tiny change will tip it.` };
+      return { ok: false, val, close: clamp(ratio, 0, .95), text: `The sack stays down. ${why} Move the fulcrum nearer the load or add more effort.` };
     },
     ghostOf(L) { return { angle: L.s.body.angle - L.s.a0, xf: this.geo(L.P).xf, py: this.geo(L.P).py }; },
     draw(g, L, t) {
@@ -516,13 +519,13 @@ const PRESETS = {
       sack(g, geo.lx + 4, yt, Math.round(P.load), 60);
       let hy = yt; const n = Math.max(1, Math.round(P.effort / 5));
       const per = Math.round(P.effort / n * 10) / 10;
-      for (let i = 0; i < Math.min(n, 4); i++) hy -= weightBlock(g, geo.ex, hy, i === Math.min(n, 4) - 1 ? r1(P.effort - per * (Math.min(n, 4) - 1)) : per, 40 - i * 3) - 1;
+      for (let i = 0; i < Math.min(n, 4); i++) hy -= weightBlock(g, geo.ex, hy, i === Math.min(n, 4) - 1 ? r1(P.effort - per * (Math.min(n, 4) - 1)) : per, 50 - i * 4) + 1;
       g.restore();
       g.fillStyle = '#5b3a1e'; g.beginPath(); g.arc(geo.xf, geo.py, 5, 0, TAU); g.fill();
       // turning-effect meter
       const tq = this.torque(P), mx = Math.max(tq.tl, tq.te);
-      const bx = 330, by = 74, bw2 = 150;
-      g.save(); g.font = '700 12px "DM Sans", sans-serif'; g.textAlign = 'right'; g.fillStyle = 'rgba(255,249,239,.85)'; rr(g, bx - 120, by - 22, 460, 62, 12); g.fill();
+      const bx = 380, by = 92, bw2 = 150;
+      g.save(); g.font = '700 14px "DM Sans", sans-serif'; g.textAlign = 'right'; g.fillStyle = 'rgba(255,249,239,.88)'; rr(g, bx - 170, by - 26, 500, 70, 14); g.fill();
       g.fillStyle = '#5E4634'; g.fillText('Load turning effect', bx - 8, by + 2); g.fillText('Effort turning effect', bx - 8, by + 26);
       g.fillStyle = '#B98A4E'; rr(g, bx, by - 9, bw2 * 2 * tq.tl / mx, 14, 6); g.fill();
       g.fillStyle = '#4d5562'; rr(g, bx, by + 15, bw2 * 2 * tq.te / mx, 14, 6); g.fill();
@@ -679,8 +682,10 @@ const PRESETS = {
       g.fillStyle = '#5E4634'; g.font = '700 11px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText('Blade seen from above', 12, -24);
       arrow(g, -38, 12, -8, 12, '#2f6fb0', 3);
       g.rotate(-pitch); g.fillStyle = '#C2502A'; rr(g, 2, -3, 40, 6, 3); g.fill(); g.restore();
-      // wind fan at the left
-      fanBox(g, 70, GY, s.rotor ? s.wind * clamp(P.wind, 0, 8) : 0, t);
+      // wind fan at the left, with streaks of moving air
+      const pw = s.rotor ? s.wind * clamp(P.wind, 0, 8) : 0;
+      fanBox(g, 70, GY, pw, t);
+      if (pw > 0) { g.save(); g.lineCap = 'round'; for (let i = 0; i < 14; i++) { const sp = 2 + pw * 1.6, x = 110 + ((t * .06 * sp + i * 97) % 520), y = hb.y - 110 + (i * 37 % 230) + Math.sin(t * .004 + i) * 6; const a = Math.min(1, (x - 110) / 60) * Math.max(0, 1 - (x - 110) / 520); g.strokeStyle = `rgba(255,255,255,${.75 * a})`; g.lineWidth = 2.2; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 18, y - 4, x + 34 + pw * 6, y); g.stroke(); } g.restore(); }
     },
     drawGhost(g, gh) { if (gh?.rpm) tag(g, 640, 40, `Last try: ${Math.round(gh.rpm)} rpm`, 'rgba(255,249,239,.8)', '#6E5442', 12); },
   },
@@ -689,12 +694,12 @@ const PRESETS = {
   'wheel-axle': {
     scene: 'outdoor', ground: 'grass', verb: 'Turn!', kinds: ['lift', 'least-force'],
     params: [
-      { key: 'wheel', label: 'Wheel size', min: 1, max: 5, step: 1, value: 2, names: ['Tiny', 'Small', 'Medium', 'Big', 'Huge'] },
+      { key: 'wheel', label: 'Wheel size', min: 1, max: 5, step: 1, value: 1, names: ['Tiny', 'Small', 'Medium', 'Big', 'Huge'] },
       { key: 'axle', label: 'Axle size', min: 1, max: 3, step: 1, value: 3, names: ['Thin', 'Medium', 'Thick'] },
       { key: 'load', label: 'Bucket of water', min: 5, max: 30, step: 5, value: 20, unit: ' kg' },
     ],
     goal: { kind: 'lift', value: 80, text: 'Wind the bucket up out of the well' },
-    hub: { x: 560, y: GY - 150 },
+    hub: { x: 600, y: GY - 170 },
     radii(P) { return { rw: 30 + 16 * clamp(P.wheel, .5, 6), ra: 6 + 5 * clamp(P.axle, .5, 4) }; },
     need(P) { const { rw, ra } = this.radii(P); return clamp(P.load, 0, 999) * 10 * ra / rw * 1.08; },
     launch(L) {
@@ -713,10 +718,10 @@ const PRESETS = {
       if (r.angularVelocity > wmax) tq = Math.min(tq, 0);
       if (s.depth <= 0 && tq < 0) { tq = 0; L.M.Body.setAngularVelocity(r, 0); }
       L.spin(r, tq);
-      s.depth = Math.max(0, s.depth + r.angularVelocity * ra);
+      s.depth = Math.max(0, s.depth + r.angularVelocity * ra); s.pulled = (s.pulled || 0) + Math.max(0, r.angularVelocity) * rw;
       if (s.need > s.can) { s.strain = 1; }
-      L.read(s.depth / 100, false, 'm up');
-      if (s.depth >= 230) { if (++s.rest > 20) L.finish({ ok: true }); }
+      L.read(s.depth / 50, false, 'm up');
+      if (s.depth >= 118) { if (++s.rest > 20) L.finish({ ok: true }); }
       else if (L.t > 360 && s.need > s.can) L.finish({ ok: false });
       else if (L.t > 900) L.finish({ ok: false });
     },
@@ -729,36 +734,40 @@ const PRESETS = {
     draw(g, L, t) {
       const P = L.P, s = L.s, hb = this.hub, { rw, ra } = this.radii(P), ang = s.rotor ? s.rotor.angle : 0, need = this.need(P), can = L.goal.value ?? 80;
       // well: cut-away shaft
-      const wx0 = hb.x - 70, wx1 = hb.x + 70, depth = 250;
+      const wx0 = hb.x - 70, wx1 = hb.x + 70, depth = 120;
       g.fillStyle = lin(g, 0, GY, 0, GY + depth, [[0, '#3b2a1c'], [1, '#1d140c']]); g.fillRect(wx0 + 14, GY - 2, wx1 - wx0 - 28, depth);
-      g.fillStyle = 'rgba(80,150,200,.75)'; g.fillRect(wx0 + 14, GY + 240 - 20, wx1 - wx0 - 28, 30);
+      g.fillStyle = lin(g, 0, GY + 64, 0, GY + 100, [[0, 'rgba(110,180,225,.9)'], [1, 'rgba(40,90,140,.9)']]); g.fillRect(wx0 + 14, GY + 64 + Math.sin(t * .003) * 1.5, wx1 - wx0 - 28, 40);
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(wx0 + 14, GY - 2, 8, depth); g.fillRect(wx1 - 22, GY - 2, 8, depth);
       stoneWall(g, wx0, GY - 44, wx1 - wx0, 44);
       // posts
       g.save(); g.translate(hb.x - 92, hb.y - 14); wood(g, -9, 0, 18, GY - 44 - hb.y + 14, 4, undefined, 4); g.restore();
       g.save(); g.translate(hb.x + 92, hb.y - 14); wood(g, -9, 0, 18, GY - 44 - hb.y + 14, 4, undefined, 6); g.restore();
       // rope and bucket
-      const by = GY + 200 - (s.depth || 0);
+      const by = GY + 56 - (s.depth || 0);
       g.strokeStyle = '#C9A36A'; g.lineWidth = 3; g.beginPath(); g.moveTo(hb.x + ra, hb.y); g.lineTo(hb.x + ra, by - 16); g.stroke();
       bucket(g, hb.x + ra, by - 16, 46, 38, `${Math.round(P.load)} kg`);
       // axle drum
       g.fillStyle = lin(g, 0, hb.y - ra, 0, hb.y + ra, [[0, '#d9b277'], [1, '#8f6430']]); g.beginPath(); g.arc(hb.x, hb.y, ra, 0, TAU); g.fill();
-      g.strokeStyle = '#C9A36A'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(hb.x, hb.y, ra - 2 - i * 2, ang + i, ang + i + 4); g.stroke(); }
+      g.strokeStyle = '#C9A36A'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(hb.x, hb.y, ra - 2 - i * 2, -ang + i, -ang + i + 4); g.stroke(); }
       // wheel
-      g.save(); g.translate(hb.x, hb.y); g.rotate(ang);
+      g.save(); g.translate(hb.x, hb.y); g.rotate(-ang);
       g.strokeStyle = '#8B5A2B'; g.lineWidth = 9; g.beginPath(); g.arc(0, 0, rw, 0, TAU); g.stroke();
       g.strokeStyle = '#C98B4A'; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, rw, 0, TAU); g.stroke();
       g.strokeStyle = '#A86B33'; g.lineWidth = 5; for (let i = 0; i < 6; i++) { g.beginPath(); g.moveTo(Math.cos(i * TAU / 6) * ra, Math.sin(i * TAU / 6) * ra); g.lineTo(Math.cos(i * TAU / 6) * rw, Math.sin(i * TAU / 6) * rw); g.stroke(); }
       g.fillStyle = '#5b3a1e'; g.beginPath(); g.arc(rw, 0, 8, 0, TAU); g.fill();
       g.restore();
       g.fillStyle = '#3a2a18'; g.beginPath(); g.arc(hb.x, hb.y, 5, 0, TAU); g.fill();
-      // force arrow at the rim (handle)
-      const hx = hb.x + Math.cos(ang) * rw, hy = hb.y + Math.sin(ang) * rw;
-      kid(g, { x: hb.x - rw - 70, y: GY - 44 + 44, face: 1, lean: 10, armA: [hx - (hb.x - rw - 70), hy - GY], armB: [hx - (hb.x - rw - 70) - 4, hy - GY + 8], strain: s.strain || 0, shirt: '#4C7424' });
+      // effort rope wound on the wheel rim, pulled down by the child
+      const ex = hb.x - rw - 2, hy = GY - 104 + Math.sin((s.pulled || 0) * .08) * 6;
+      g.strokeStyle = '#C9A36A'; g.lineWidth = 3; g.beginPath(); g.moveTo(ex, hb.y); g.lineTo(ex, hy + 30); g.stroke();
+      kid(g, { x: ex - 22, y: GY, face: 1, lean: s.strain ? 4 + Math.sin(L.t * .5) * 2 : 2, armA: [22, hy - GY], armB: [22, hy - GY + 18], strain: s.strain || 0, shirt: '#4C7424' });
+      arrow(g, ex + 14, hy - 10, ex + 14, hy + 40, '#C2502A', 4);
       tag(g, hb.x, hb.y - rw - 30, `Turning force ${Math.round(need)} N`, need > can ? '#B23A2A' : '#1F6F66', '#fff', 13);
       tag(g, hb.x, hb.y - rw - 58, `You can push ${can} N`, '#FFF9EF', '#5E4634', 12);
       // dimension labels
       g.save(); g.strokeStyle = 'rgba(31,111,102,.9)'; g.lineWidth = 2; g.setLineDash([4, 4]);
       g.beginPath(); g.moveTo(hb.x, hb.y); g.lineTo(hb.x - rw, hb.y); g.stroke(); g.restore();
+      tag(g, hb.x - rw / 2, hb.y - 8, 'wheel', 'rgba(255,249,239,.9)', '#1F6F66', 11);
     },
   },
 
@@ -782,7 +791,7 @@ const PRESETS = {
       const s = L.s, b = s.boat, P = L.P, pf = .7 + .3 * clamp(P.prop ?? 2, .5, 4);
       L.M.Body.setPosition(b, { x: b.position.x, y: this.wy - 6 + Math.sin(L.t * .08) * 1.5 }); L.M.Body.setVelocity(b, { x: b.velocity.x, y: 0 });
       let a = 0;
-      if (s.rem > 0) { const w = .05 * Math.sqrt(s.rem) / Math.sqrt(pf); s.rem = Math.max(0, s.rem - w); s.pa += w * TAU; a += .0046 * s.rem * pf / b.mass; if (L.t % 4 === 0) L.puff(b.position.x - 78, this.wy + 4, 1, '#ffffff', -1.5, -.5); }
+      if (s.rem > 0) { const w = .05 * Math.sqrt(s.rem) / Math.sqrt(pf); s.rem = Math.max(0, s.rem - w); s.pa += w * TAU; a += .008 * s.rem * pf / b.mass; if (L.t % 4 === 0) L.puff(b.position.x - 78, this.wy + 4, 1, '#ffffff', -1.5, -.5); }
       const v = b.velocity.x; a -= (.014 * v + .006 * v * Math.abs(v) * (.8 + .2 * pf)) / b.mass * 1.6;
       L.push(b, a, 0);
       if (L.t % 6 === 0 && Math.abs(v) > .3) L.ripple(b.position.x - 60, this.wy);
@@ -804,6 +813,9 @@ const PRESETS = {
       g.fillStyle = lin(g, 0, GY - 40, 0, GY + 20, [[0, '#7FB04F'], [1, '#4f7d2a']]);
       g.beginPath(); g.moveTo(-400, GY - 40); g.lineTo(40, GY - 40); g.quadraticCurveTo(70, GY - 34, 60, GY + 40); g.lineTo(-400, GY + 40); g.closePath(); g.fill();
       water(g, L, t, this.wy);
+      reeds(g, 30, this.wy, t); reeds(g, tx - 30, this.wy, t + 500);
+      for (const [lx, lr] of [[330, 16], [520, 12], [690, 18]]) { g.fillStyle = '#4f8f3a'; g.beginPath(); g.ellipse(lx, this.wy + 18 + Math.sin(t * .002 + lx) * 1.5, lr, lr * .35, 0, .3, TAU - .1); g.lineTo(lx, this.wy + 18); g.fill(); }
+      g.fillStyle = '#E8879B'; g.beginPath(); g.arc(520, this.wy + 14, 5, 0, TAU); g.fill();
       const x = s.boat ? s.boat.position.x : 120, y = s.boat ? s.boat.position.y : this.wy - 6 + Math.sin(t * .003) * 1.5;
       boat(g, x, y, s.pa || 0, clamp(P.prop ?? 2, .5, 4), s.boat ? s.rem / s.tw : clamp(P.twists, 0, 200) / 40, clamp(P.load ?? 0, 0, 10));
       waterFront(g, L, t, this.wy);
@@ -965,6 +977,11 @@ function fanBox(g, x, yb, power, t) {
   g.restore(); g.strokeStyle = '#8f969f'; g.lineWidth = 2; g.beginPath(); g.arc(x, yb - 100, 38, 0, TAU); g.stroke();
   for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(x + 8, yb - 100 + i * 14); g.lineTo(x + 8, yb - 100 + i * 14); g.stroke(); }
 }
+function reeds(g, x, wy, t) {
+  for (let i = 0; i < 7; i++) { const rx = x + i * 7 - 20, hh = 40 + (i * 13 % 25), sw = Math.sin(t * .002 + i) * 3;
+    g.strokeStyle = i % 2 ? '#4f8f3a' : '#6aa94a'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(rx, wy + 6); g.quadraticCurveTo(rx + sw, wy - hh / 2, rx + sw * 2, wy - hh); g.stroke();
+    if (i % 3 === 0) { g.fillStyle = '#7a4e22'; g.beginPath(); g.ellipse(rx + sw * 1.6, wy - hh + 6, 3, 9, 0, 0, TAU); g.fill(); } }
+}
 function water(g, L, t, wy) {
   g.fillStyle = lin(g, 0, wy - 6, 0, GY + 60, [[0, L.dark ? '#2b5f7f' : '#5bb4d8'], [1, L.dark ? '#163449' : '#2a7aa6']]);
   g.beginPath(); g.moveTo(-500, GY + 60); g.lineTo(-500, wy);
@@ -1009,6 +1026,7 @@ export function mount(stage, cfg, api) {
   const g0 = PR.goal, cg = cfg.goal || {};
   const goal = { ...g0, ...cg, target: { ...(g0.target || { x: .8, width: .1 }), ...(cg.target || {}) } };
   if (!PR.kinds.includes(goal.kind)) goal.kind = g0.kind;
+  if (!cg.text) goal.text = PR.texts?.[goal.kind] || g0.text;
   const triesMax = Math.max(1, cfg.tries || 5);
   const defs = (cfg.params?.length ? cfg.params : PR.params).map(p => {
     const d = PR.params.find(x => x.key === p.key) || EXTRA[p.key] || {};
@@ -1045,7 +1063,7 @@ export function mount(stage, cfg, api) {
 
   const engine = M.Engine.create({ gravity: { x: 0, y: PR.gravity ?? 1, scale: .001 } });
   const L = {
-    M, engine, P, goal, state: 'idle', s: {}, t: 0, trailPts: [], particles: [], ripples: [], fx: {}, dark: darkMQ.matches,
+    M, engine, P, goal, canPush: goal.value, state: 'idle', s: {}, t: 0, trailPts: [], particles: [], ripples: [], fx: {}, dark: darkMQ.matches,
     add(b) { M.Composite.add(engine.world, b); }, addStatic(b) { M.Composite.add(engine.world, b); },
     push(b, ax, ay) { M.Body.applyForce(b, b.position, { x: ax * b.mass / DT2, y: ay * b.mass / DT2 }); },
     spin(b, alpha) { b.torque += alpha * b.inertia / DT2; }, // alpha: angular acceleration in rad/step²
@@ -1091,11 +1109,16 @@ export function mount(stage, cfg, api) {
     if (PR.scene === 'indoor') {
       b.fillStyle = lin(b, 0, y0, 0, GY, dark ? [[0, '#2c2420'], [1, '#3a2e27']] : [[0, '#F4E6CF'], [1, '#EBD6B4']]); b.fillRect(x0, y0, x1 - x0, GY - y0);
       // window
+      for (let x = Math.floor(x0 / 46) * 46; x < x1; x += 46) { b.fillStyle = dark ? 'rgba(255,255,255,.025)' : 'rgba(150,100,40,.05)'; b.fillRect(x, y0, 23, GY - 140 - y0); }
+      b.fillStyle = dark ? '#33281f' : '#E3C9A0'; b.fillRect(x0, GY - 140, x1 - x0, 118); b.fillStyle = dark ? '#4a382c' : '#C9A06A'; b.fillRect(x0, GY - 146, x1 - x0, 8);
       const wx = 560, wy = 70; b.fillStyle = '#8B5A2B'; rr(b, wx - 8, wy - 8, 236, 186, 10); b.fill();
+      b.save(); b.beginPath(); b.rect(wx, wy, 220, 170); b.clip();
       b.fillStyle = lin(b, 0, wy, 0, wy + 170, dark ? [[0, '#14203a'], [1, '#3b3352']] : [[0, '#8fd0ef'], [1, '#d8f0fa']]); b.fillRect(wx, wy, 220, 170);
       if (dark) { b.fillStyle = '#f4ead0'; b.beginPath(); b.arc(wx + 170, wy + 40, 16, 0, TAU); b.fill(); for (let i = 0; i < 14; i++) { b.fillStyle = 'rgba(255,255,255,.8)'; b.fillRect(wx + rnd(i) * 220, wy + rnd(i + 3) * 120, 1.6, 1.6); } }
-      else { cloud(b, wx + 30, wy + 50, .7); b.fillStyle = '#7fb04f'; b.beginPath(); b.ellipse(wx + 110, wy + 190, 160, 50, 0, 0, TAU); b.fill(); }
-      b.fillStyle = '#8B5A2B'; b.fillRect(wx + 106, wy, 8, 170); b.fillRect(wx, wy + 82, 220, 8);
+      else { cloud(b, wx + 30, wy + 50, .7); b.fillStyle = '#7fb04f'; b.beginPath(); b.ellipse(wx + 110, wy + 190, 160, 50, 0, 0, TAU); b.fill(); b.fillStyle = '#4f8f3a'; b.beginPath(); b.arc(wx + 180, wy + 140, 26, 0, TAU); b.fill(); }
+      if (dark) { b.fillStyle = '#2f4a3a'; b.beginPath(); b.ellipse(wx + 110, wy + 190, 160, 50, 0, 0, TAU); b.fill(); }
+      b.restore();
+      b.fillStyle = '#8B5A2B'; b.fillRect(wx + 106, wy, 8, 170); b.fillRect(wx, wy + 82, 220, 8); b.fillStyle = dark ? '#5a4030' : '#A87A4A'; rr(b, wx - 16, wy + 168, 252, 12, 4); b.fill();
       // chart on the wall
       b.save(); b.translate(170, 90); b.rotate(-.03); b.fillStyle = dark ? '#d9cdb4' : '#FFF9EF'; rr(b, 0, 0, 150, 110, 4); b.fill();
       b.fillStyle = '#C2502A'; b.fillRect(14, 70, 22, 26); b.fillStyle = '#1F6F66'; b.fillRect(46, 46, 22, 50); b.fillStyle = '#D98A1C'; b.fillRect(78, 26, 22, 70); b.fillStyle = '#8C3557'; b.fillRect(110, 56, 22, 40);
@@ -1192,6 +1215,7 @@ export function mount(stage, cfg, api) {
     root.classList.add('running'); setDisabled(true);
     if (gsap && !api.reduced) gsap.fromTo(goBtn, { scale: .92 }, { scale: 1, duration: .4, ease: 'elastic.out(1,.4)' });
     banner.classList.remove('show');
+    if (view.getBoundingClientRect().top < stage.getBoundingClientRect().top) view.scrollIntoView({ block: 'start', behavior: api.reduced ? 'auto' : 'smooth' });
     PR.launch(L);
   });
   function setDisabled(on) { root.querySelectorAll('.lp-sl input').forEach(i => { i.disabled = on; }); goBtn.disabled = on; }

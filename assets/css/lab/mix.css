@@ -1,5 +1,5 @@
 /* VINC Lab · mix: pour ingredients into a vessel and read the meters. Scoped under .lab-mix */
-.lab-mix { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(250px, 300px); gap: clamp(12px, 1.8vw, 22px); align-items: start; }
+.lab-mix { flex: 1 0 auto; min-height: 0; display: grid; grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(250px, 300px); gap: clamp(12px, 1.8vw, 22px); align-items: start; }
 .lab-mix .mx-shelf, .lab-mix .mx-target, .lab-mix .mx-meter { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 10px 26px -18px rgba(43, 26, 16, .45); }
 .lab-mix .mx-shelf { padding: 14px; display: grid; gap: 8px; position: relative; z-index: 2; }
 .lab-mix .mx-shelf .lab-h { margin: 0; }
@@ -88,12 +88,13 @@
 @media (max-width: 680px) {
   .lab-mix { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; gap: 10px; }
   .lab-mix .mx-side, .lab-mix .mx-mid { display: contents; }
+  .lab-mix .mx-shelf, .lab-mix .mx-mid, .lab-mix .mx-side { grid-area: auto; }
   .lab-mix .mx-target { order: 1; padding: 10px 12px; }
   .lab-mix .mx-rules { grid-template-columns: 1fr 1fr; font-size: .78rem; gap: 4px; }
   .lab-mix .mx-rules li { padding: 3px 6px; gap: 5px; }
   .lab-mix .mx-r-ic { width: 15px; height: 15px; }
   .lab-mix .mx-goal { font-size: .92rem; margin-bottom: 6px; }
-  .lab-mix .mx-drop { order: 2; max-width: min(100%, 36dvh); justify-self: center; border-radius: 20px; }
+  .lab-mix .mx-drop { order: 2; max-width: min(100%, 30dvh); justify-self: center; border-radius: 20px; }
   .lab-mix .mx-meters { order: 3; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; }
   .lab-mix .mx-meter { padding: 6px 8px; border-radius: 14px; grid-template-columns: 1fr; }
   .lab-mix .mx-meter:not(.mx-ph) .mx-m-h { align-items: center; }
@@ -110,5 +111,6 @@
   .lab-mix .mx-ing-t b { font-size: .84rem; } .lab-mix .mx-ing-t small { display: none; }
   .lab-mix .mx-pips i { width: 7px; height: 7px; }
   .lab-mix .mx-n { min-width: 26px; height: 26px; font-size: .85rem; }
-  .lab-mix .mx-acts { order: 5; position: sticky; bottom: 0; z-index: 3; padding: 6px; border-radius: 999px; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(6px); }
+  .lab-mix .mx-acts .lab-act { padding: 0 14px; min-height: 46px; } .lab-mix .mx-check { min-width: 0; flex: 1; }
+  .lab-mix .mx-acts { order: 5; flex-wrap: nowrap; position: sticky; bottom: 0; z-index: 3; padding: 6px; border-radius: 999px; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(6px); }
 }

@@ -1,5 +1,5 @@
 /* VINC Lab · layers: build something layer by layer in a cut-away container. Scoped under .lab-layers */
-.lab-layers { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(230px, 320px) minmax(0, 1fr); gap: clamp(12px, 2vw, 24px); align-items: stretch; }
+.lab-layers { flex: 1 0 auto; min-height: 0; display: grid; grid-template-columns: minmax(230px, 320px) minmax(0, 1fr); gap: clamp(12px, 2vw, 24px); align-items: stretch; }
 .lab-layers .lyr-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
 
 /* tray of layer cards */

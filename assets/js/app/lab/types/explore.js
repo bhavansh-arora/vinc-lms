@@ -636,7 +636,7 @@ export function mount(stage, cfg, api) {
     const start = { x: sx * W, y: sy * H };
     gsap.set(toolEl, { x: start.x, y: start.y }); syncTool();
     [drag] = Draggable.create(toolEl, {
-      type: 'x,y', autoScroll: narrow ? 1 : 0, minimumMovement: 4,
+      type: 'x,y', autoScroll: 1, minimumMovement: 4,
       liveSnap: { x: v => clamp(v, 0, W), y: v => clamp(v, 0, H) },
       onPress() { toolEl.classList.add('is-drag'); hideCard(); },
       onDrag() { syncTool(); parallax(this.x / W - .5); },
@@ -660,10 +660,11 @@ export function mount(stage, cfg, api) {
     const p = svgPoint(e.clientX, e.clientY);
     hideCard();
     if (tool === 'tap') {
+      // nearest unfound thing to the tap wins (markers can sit close together)
+      const s = spotUnder(p.x, p.y, 44);
+      if (s) { attempt(s); return; }
       const g = e.target.closest('.xp-world .xp-hs');
       if (g) { attempt(spots[+g.dataset.i]); return; }
-      const s = spotUnder(p.x, p.y, 34);
-      if (s) { attempt(s); return; }
       ripple(p.x, p.y); api.sound('tick');
       return;
     }
@@ -778,17 +779,27 @@ export function mount(stage, cfg, api) {
     g.innerHTML = `<path class="xp-lbl-line" d="M${r1(s.x)} ${r1(s.y)}L${r1(elbow)} ${r1(y)}L${r1(ax)} ${r1(y)}"/><circle class="xp-lbl-dot" cx="${r1(s.x)}" cy="${r1(s.y)}" r="5"/>
       <g class="xp-lbl-tag" transform="translate(${r1(lx)} ${r1(y - 17)})"><rect width="${r1(tw)}" height="34" rx="17"/><circle cx="17" cy="17" r="11" class="xp-lbl-n"/><text x="17" y="18" text-anchor="middle" dominant-baseline="central" class="xp-lbl-nt">${s.i + 1}</text><text x="34" y="18" dominant-baseline="central">${esc(label)}</text></g>`;
     labelsG.append(g);
+    try { // size the tag to the real text width
+      const tl = g.querySelector('.xp-lbl-tag text:last-child').getComputedTextLength();
+      const w2 = tl + 50, nx = side === 'L' ? 12 : W - 12 - w2, nax = side === 'L' ? nx + w2 : nx;
+      g.querySelector('.xp-lbl-tag rect').setAttribute('width', r1(w2));
+      g.querySelector('.xp-lbl-tag').setAttribute('transform', `translate(${r1(nx)} ${r1(y - 17)})`);
+      const el2 = side === 'L' ? Math.min(s.x - 30, nax + 40) : Math.max(s.x + 30, nax - 40);
+      g.querySelector('.xp-lbl-line').setAttribute('d', `M${r1(s.x)} ${r1(s.y)}L${r1(el2)} ${r1(y)}L${r1(nax)} ${r1(y)}`);
+    } catch { /* keep the estimate */ }
     if (!api.reduced) {
       gsap.timeline().from(g.querySelector('.xp-lbl-line'), { drawSVG: '0%', duration: .55, ease: 'power2.inOut' })
         .from(g.querySelector('.xp-lbl-tag'), { scale: 0, transformOrigin: side === 'L' ? '100% 50%' : '0% 50%', duration: .45, ease: 'back.out(2.2)' }, '-=.15');
     }
   }
 
-  /* ---------- fact card ---------- */
+  /* ---------- fact card (tap it, or wait, to close) ---------- */
+  let cardT = 0;
   function showCard(s) {
     card.innerHTML = `<button type="button" class="xp-card-x" aria-label="Close">×</button><div class="xp-card-art">${api.art(s)}</div><div class="xp-card-t"><b>${esc(s.label)}</b>${s.fact ? `<p>${esc(s.fact)}</p>` : ''}</div>`;
     card.hidden = false;
-    card.querySelector('.xp-card-x').onclick = hideCard;
+    card.onclick = hideCard;
+    clearTimeout(cardT); cardT = later(hideCard, Math.max(5000, (s.fact || '').length * 70));
     if (!api.reduced) gsap.fromTo(card, { y: 30, opacity: 0, scale: .9 }, { y: 0, opacity: 1, scale: 1, duration: .5, ease: 'back.out(1.8)' });
   }
   function hideCard() {

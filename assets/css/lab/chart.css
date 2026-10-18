@@ -1,0 +1,138 @@
+/* VINC Lab · chart — tally, chart, questions. Everything scoped under .lab-chart */
+.lab-stage > .lab-chart { flex: 1 0 auto; }
+.lab-chart {
+  --graphite: #3A3A44;
+  width: 100%; max-width: 1180px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr); gap: clamp(14px, 2.4vw, 26px); align-items: stretch;
+}
+.lab-chart .ct-main, .lab-chart .ct-side { min-width: 0; display: flex; flex-direction: column; }
+.lab-chart [hidden] { display: none !important; }
+
+/* desk: deck + current card */
+.lab-chart .ct-desk { flex: 1; min-height: 300px; display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 12px; padding: 18px; border-radius: 26px;
+  background: radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--lf) 12%, transparent), transparent 60%), repeating-linear-gradient(90deg, transparent 0 46px, color-mix(in srgb, var(--ink) 4%, transparent) 46px 48px), var(--card-2, var(--card));
+  border: 1px solid var(--line); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .4), 0 14px 30px -22px rgba(43, 26, 16, .6); }
+.lab-chart .ct-deck { position: relative; width: 92px; height: 120px; justify-self: center; }
+.lab-chart .ct-deck i { position: absolute; inset: 0; border-radius: 14px; background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--lf) 85%, #000) 0 6px, var(--lf) 6px 12px); border: 3px solid var(--card); box-shadow: 0 6px 12px -6px rgba(0, 0, 0, .5); }
+.lab-chart .ct-deck i:nth-child(1) { transform: rotate(-6deg) translate(-4px, 4px); }
+.lab-chart .ct-deck i:nth-child(2) { transform: rotate(3deg) translate(2px, 2px); }
+.lab-chart .ct-deck b { position: absolute; left: 50%; bottom: -30px; translate: -50% 0; white-space: nowrap; font: 600 .82rem var(--mono); color: var(--muted); }
+.lab-chart .ct-cardslot { display: grid; place-items: center; min-height: 250px; }
+.lab-chart .ct-card { position: relative; width: min(320px, 100%); padding: 18px 18px 16px; border-radius: 22px; background: var(--card); border: 3px solid var(--c); text-align: center;
+  box-shadow: 0 22px 40px -22px rgba(43, 26, 16, .7), inset 0 0 0 6px color-mix(in srgb, var(--c) 10%, transparent); will-change: transform; }
+.lab-chart .ct-card-no { position: absolute; top: 10px; left: 14px; font: 600 .8rem var(--mono); color: var(--muted); }
+.lab-chart .ct-card-art { width: 180px; height: 180px; margin: 4px auto 6px; display: grid; place-items: center; filter: drop-shadow(0 8px 10px rgba(43, 26, 16, .2)); }
+.lab-chart .ct-card-art .lab-emoji { font-size: 6rem; }
+.lab-chart .ct-card-note { margin: 0; font: 600 1.08rem/1.35 var(--display); }
+
+/* tally sheet (clipboard) */
+.lab-chart .ct-sheet { position: relative; flex: 1; padding: 34px 16px 16px; border-radius: 18px; background: #FFFDF6; color: #2B1A10; border: 10px solid #A9773F; box-shadow: 0 16px 30px -20px rgba(43, 26, 16, .7), inset 0 0 0 1px #E8DCC4; }
+.lab-chart .ct-clip { position: absolute; top: -22px; left: 50%; translate: -50% 0; width: 120px; height: 36px; border-radius: 10px 10px 6px 6px; background: linear-gradient(#C7CDD3, #8C969F); box-shadow: 0 4px 6px rgba(0, 0, 0, .25); }
+.lab-chart .ct-clip i { position: absolute; left: 50%; top: 6px; translate: -50% 0; width: 40px; height: 12px; border-radius: 6px; background: #5D666E; }
+.lab-chart .ct-sheet-h { margin: 0 0 8px; display: flex; justify-content: space-between; align-items: baseline; font: 700 1.2rem var(--display); color: #2B1A10; }
+.lab-chart .ct-sheet-h small { font: 500 .78rem var(--mono); color: #6E5442; }
+.lab-chart .ct-rows { display: grid; gap: 8px; }
+.lab-chart .ct-row { position: relative; display: grid; grid-template-columns: 50px minmax(70px, .8fr) minmax(110px, 1.6fr) 40px; align-items: center; gap: 10px; min-height: 66px; padding: 4px 10px 4px 6px; border: 2px solid #E8DCC4; border-left: 6px solid var(--c); border-radius: 14px; background: #fff; color: #2B1A10; text-align: left; cursor: pointer; font: inherit; transition: background-color .2s, border-color .2s, transform .15s; -webkit-tap-highlight-color: transparent; }
+.lab-chart .ct-row:hover { background: color-mix(in srgb, var(--c) 8%, #fff); }
+.lab-chart .ct-row:active { transform: scale(.98); }
+.lab-chart .ct-row.hit { background: color-mix(in srgb, var(--c) 18%, #fff); border-color: var(--c); }
+.lab-chart .ct-row.no { background: #FBE3DE; border-color: #B23A2A; }
+.lab-chart .ct-row.locked { cursor: default; }
+.lab-chart .ct-row.locked:active { transform: none; }
+.lab-chart .ct-row-art { width: 48px; height: 48px; display: grid; place-items: center; }
+.lab-chart .ct-row-art .lab-emoji { font-size: 1.9rem; }
+.lab-chart .ct-row-lbl { font-weight: 700; font-size: 1.04rem; line-height: 1.15; }
+.lab-chart .ct-tally { width: 100%; height: 44px; overflow: visible; }
+.lab-chart .ct-mark { fill: none; stroke: var(--graphite); stroke-width: 3.4; stroke-linecap: round; }
+.lab-chart .ct-mark.gate { stroke: #C2502A; stroke-width: 3.6; }
+.lab-chart .ct-count { justify-self: end; min-width: 36px; height: 36px; padding: 0 6px; display: grid; place-items: center; border-radius: 12px; background: var(--c); color: #fff; font: 800 1.15rem var(--body); }
+.lab-chart .ct-row kbd { position: absolute; top: 4px; right: 52px; font: 500 .65rem var(--mono); color: #B5A48A; background: none; border: 0; }
+.lab-chart.is-chart .ct-row kbd { display: none; }
+
+/* chart */
+.lab-chart .ct-chartbox { flex: 1; display: grid; place-items: center; padding: 14px 10px 8px; border-radius: 26px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 14px 30px -22px rgba(43, 26, 16, .6); }
+.lab-chart .ct-svg { width: 100%; max-height: min(62dvh, 520px); overflow: visible; user-select: none; }
+.lab-chart .ct-svg.building { touch-action: none; }
+.lab-chart .ct-svg text { font-family: var(--body); fill: var(--ink); }
+.lab-chart .ct-grid { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 5; }
+.lab-chart .ct-grid.minor { stroke-dasharray: 1 6; opacity: .7; }
+.lab-chart .ct-axis { stroke: var(--ink-2); stroke-width: 3; stroke-linecap: round; }
+.lab-chart .ct-ytick { font-size: 15px; font-weight: 600; fill: var(--muted) !important; font-family: var(--mono) !important; }
+.lab-chart .ct-ylab { font-size: 13px; font-weight: 600; fill: var(--muted) !important; letter-spacing: .04em; }
+.lab-chart .ct-xlab { font-size: 14px; font-weight: 700; }
+.lab-chart .ct-bar { fill: var(--c); }
+.lab-chart .ct-val { font-size: 20px; font-weight: 800; }
+.lab-chart .ct-col { cursor: default; outline: none; transition: opacity .3s; }
+.lab-chart .ct-col[role=slider] { cursor: ns-resize; }
+.lab-chart .ct-col[role=slider]:focus-visible .ct-bar { stroke: var(--focus); stroke-width: 3; }
+.lab-chart .ct-col.done { cursor: default; }
+.lab-chart .ct-grip circle { fill: #fff; stroke: var(--c); stroke-width: 4; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .3)); }
+.lab-chart .ct-grip path { stroke: var(--c); stroke-width: 2.5; stroke-linecap: round; }
+.lab-chart .ct-col.done .ct-grip { display: none; }
+.lab-chart .ct-col.drag .ct-grip circle { stroke-width: 6; }
+.lab-chart .ct-ok circle { fill: var(--ok); }
+.lab-chart .ct-ok path { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.lab-chart .ct-svg.dim .ct-col:not(.hl), .lab-chart .ct-svg.dim .ct-slice:not(.hl), .lab-chart .ct-svg.dim .ct-leg:not(.hl), .lab-chart .ct-svg.dim .ct-prow:not(.hl) { opacity: .32; }
+.lab-chart .ct-slice, .lab-chart .ct-leg, .lab-chart .ct-prow { transition: opacity .3s; }
+.lab-chart .ct-sl { fill: var(--c); stroke: var(--card); stroke-width: 3; stroke-linejoin: round; }
+.lab-chart .ct-pct { font-size: 19px; font-weight: 800; fill: #fff !important; paint-order: stroke; stroke: rgba(0, 0, 0, .25); stroke-width: 3px; }
+.lab-chart .ct-piebg { fill: var(--paper-2); }
+.lab-chart .ct-pieshadow { fill: #000; opacity: .12; }
+.lab-chart .ct-hole { fill: var(--card); }
+.lab-chart .ct-tot { font-size: 30px; font-weight: 800; }
+.lab-chart .ct-totl { font-size: 12px; fill: var(--muted) !important; font-weight: 600; }
+.lab-chart .ct-sw { fill: var(--c); }
+.lab-chart .ct-legl { font-size: 16px; font-weight: 700; }
+.lab-chart .ct-legv { font-size: 14px; font-weight: 600; fill: var(--muted) !important; font-family: var(--mono) !important; }
+.lab-chart .ct-prbg { fill: color-mix(in srgb, var(--c) 10%, var(--card)); stroke: color-mix(in srgb, var(--c) 35%, transparent); stroke-width: 1.5; }
+.lab-chart .ct-plab { font-size: 15px; font-weight: 700; }
+.lab-chart .ct-pval { font-size: 20px; font-weight: 800; fill: var(--c) !important; }
+.lab-chart .ct-keybg { fill: var(--paper-2); }
+.lab-chart .ct-keyt { font-size: 15px; font-weight: 700; }
+
+/* questions */
+.lab-chart .ct-quiz { flex: 1; padding: 20px; border-radius: 24px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 14px 30px -22px rgba(43, 26, 16, .6); display: flex; flex-direction: column; gap: 12px; }
+.lab-chart .ct-qn { margin: 0; font: 500 var(--t-label) var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--lf); }
+.lab-chart .ct-ask { margin: 0; font: 600 clamp(1.2rem, 2.4vw, 1.45rem)/1.3 var(--display); }
+.lab-chart .ct-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lab-chart .ct-opt { --c: var(--lf); display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 14px 8px 8px; border-radius: 18px; border: 3px solid var(--line); background: var(--paper); color: var(--ink); font: 700 1.02rem/1.2 var(--body); text-align: left; cursor: pointer; box-shadow: 0 5px 0 var(--line); transition: transform .12s, box-shadow .12s, border-color .2s, background-color .2s; }
+.lab-chart .ct-opt:hover:not(:disabled) { border-color: var(--c); transform: translateY(-2px); }
+.lab-chart .ct-opt:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--line); }
+.lab-chart .ct-opt.num { justify-content: center; padding: 8px; }
+.lab-chart .ct-opt-n { font: 800 1.9rem var(--body); }
+.lab-chart .ct-opt-art { width: 46px; height: 46px; flex: none; display: grid; place-items: center; }
+.lab-chart .ct-opt-art .lab-emoji { font-size: 2rem; }
+.lab-chart .ct-opt.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, var(--card)); box-shadow: 0 5px 0 color-mix(in srgb, var(--ok) 60%, #000); }
+.lab-chart .ct-opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--card)); opacity: .6; text-decoration: line-through; box-shadow: none; }
+.lab-chart .ct-opt:disabled { cursor: default; }
+.lab-chart .ct-why { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--olive-soft); color: var(--ink); font-weight: 600; }
+
+@media (prefers-color-scheme: dark) {
+  .lab-chart .ct-sheet { background: #F4EBDA; border-color: #7A5530; }
+  .lab-chart .ct-row { background: #FFFBF2; }
+  .lab-chart .ct-desk { box-shadow: 0 14px 30px -22px #000; }
+}
+
+@media (max-width: 760px) {
+  .lab-chart { display: flex; flex-direction: column; gap: 14px; }
+  .lab-chart .ct-desk { min-height: 0; grid-template-columns: 70px 1fr; padding: 12px; border-radius: 20px; }
+  .lab-chart .ct-deck { width: 58px; height: 78px; }
+  .lab-chart .ct-deck b { bottom: -24px; font-size: .72rem; }
+  .lab-chart .ct-cardslot { min-height: 0; }
+  .lab-chart .ct-card { padding: 12px; border-radius: 18px; display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 10px; text-align: left; }
+  .lab-chart .ct-card-no { top: 6px; left: auto; right: 10px; }
+  .lab-chart .ct-card-art { width: 84px; height: 84px; margin: 0; }
+  .lab-chart .ct-card-art .lab-emoji { font-size: 3.6rem; }
+  .lab-chart .ct-card-note { font-size: 1rem; }
+  .lab-chart .ct-sheet { padding: 28px 10px 10px; border-width: 7px; }
+  .lab-chart .ct-row { grid-template-columns: 38px minmax(60px, .9fr) minmax(80px, 1.3fr) 34px; gap: 6px; min-height: 54px; padding: 3px 6px 3px 4px; }
+  .lab-chart .ct-row-art { width: 38px; height: 38px; }
+  .lab-chart .ct-row-lbl { font-size: .88rem; }
+  .lab-chart .ct-row kbd { display: none; }
+  .lab-chart .ct-chartbox { padding: 10px 4px 4px; border-radius: 20px; }
+  .lab-chart .ct-opts { gap: 8px; }
+  .lab-chart .ct-opt { min-height: 58px; font-size: .95rem; }
+  .lab-chart .ct-opt { flex-direction: column; justify-content: center; text-align: center; padding: 8px 6px; gap: 4px; }
+  .lab-chart .ct-opt.num { min-height: 64px; }
+  .lab-chart .ct-quiz { padding: 16px; }
+}

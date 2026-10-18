@@ -28,7 +28,7 @@ function vesselArt(kind) {
   const V = { kind };
   switch (kind) {
     case 'bowl':
-      Object.assign(V, { mode: 'top', open: { cx: 200, cy: 222, rx: 138, ry: 36 }, depth: 62, taper: .42, bottomY: 352 });
+      Object.assign(V, { mode: 'top', open: { cx: 200, cy: 222, rx: 138, ry: 36 }, depth: 34, taper: .38, bottomY: 352 });
       V.back = `<ellipse cx="200" cy="372" rx="120" ry="12" fill="#000" opacity=".18"/>
         <path d="M62 222C64 318 132 362 200 362C268 362 336 318 338 222Z" fill="url(#mx-bowl)"/>
         <path d="M150 360L156 374H244L250 360Z" fill="#C9D3DC"/><ellipse cx="200" cy="374" rx="44" ry="6" fill="#AEB9C4"/>`;
@@ -38,7 +38,7 @@ function vesselArt(kind) {
         <path d="M86 244C96 290 130 330 170 344" stroke="#fff" stroke-width="7" opacity=".45" fill="none" stroke-linecap="round"/>`;
       break;
     case 'pot':
-      Object.assign(V, { mode: 'top', open: { cx: 200, cy: 172, rx: 114, ry: 30 }, depth: 118, taper: .04, bottomY: 352 });
+      Object.assign(V, { mode: 'top', open: { cx: 200, cy: 172, rx: 114, ry: 30 }, depth: 34, taper: .12, bottomY: 352 });
       V.back = `<ellipse cx="200" cy="372" rx="128" ry="12" fill="#000" opacity=".18"/>
         <path d="M86 172V338Q86 362 120 364H280Q314 362 314 338V172Z" fill="url(#mx-steel)"/>
         <path d="M86 200C60 200 52 214 62 226L86 224M314 200C340 200 348 214 338 226L314 224" stroke="#7D8791" stroke-width="7" fill="none" stroke-linecap="round"/>`;
@@ -48,7 +48,7 @@ function vesselArt(kind) {
         <ellipse cx="200" cy="172" rx="114" ry="30" fill="none" stroke="#E9EEF2" stroke-width="7"/><ellipse cx="200" cy="172" rx="118" ry="32" fill="none" stroke="#8D98A3" stroke-width="1.5"/>`;
       break;
     case 'bucket':
-      Object.assign(V, { mode: 'top', open: { cx: 200, cy: 150, rx: 112, ry: 28 }, depth: 128, taper: .2, bottomY: 356 });
+      Object.assign(V, { mode: 'top', open: { cx: 200, cy: 150, rx: 112, ry: 28 }, depth: 32, taper: .2, bottomY: 356 });
       V.back = `<ellipse cx="200" cy="372" rx="110" ry="11" fill="#000" opacity=".18"/>
         <path d="M88 150C88 52 312 52 312 150" stroke="#8F969E" stroke-width="5" fill="none"/><rect x="180" y="74" width="40" height="10" rx="5" fill="#3B3F45"/>
         <path d="M88 150L116 352Q118 366 140 366H260Q282 366 284 352L312 150Z" fill="url(#mx-bucket)"/>`;
