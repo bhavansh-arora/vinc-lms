@@ -75,11 +75,16 @@
 .lab-h { font: 600 1.15rem var(--display); margin: 0 0 8px; }
 
 @media (max-width: 640px) {
-  .lab-top { gap: 8px; padding: 8px 10px; flex-wrap: wrap; }
-  .lab-ttl { flex: 1 1 calc(100% - 150px); order: 0; }
-  .lab-prog { order: 5; flex-basis: 100%; }
-  .lab-stars svg { width: 18px; height: 18px; }
-  .lab-btn { width: 36px; height: 36px; }
+  /* One row on phones: the title shrinks and the progress bar becomes a strip along the bottom edge. */
+  .lab-top { gap: 6px; padding: 8px 10px 11px; }
+  .lab-ttl { flex: 1 1 0; }
+  .lab-ttl b { font-size: 1rem; }
+  .lab-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; min-width: 0; border-radius: 0; }
+  .lab-prog i { border-radius: 0; }
+  .lab-stars { gap: 0; }
+  .lab-stars svg { width: 15px; height: 15px; }
+  .lab-btn { width: 34px; height: 34px; border-radius: 10px; }
+  .lab-btn svg { width: 18px; height: 18px; }
   .lab-mascot { width: 38px; height: 38px; }
   .lab-say { padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
   .lab-say p { font-size: .92rem; }
