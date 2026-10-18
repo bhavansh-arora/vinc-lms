@@ -313,7 +313,7 @@ function reports(ctx, sch) {
     </div>
     <section class="card tbl-card"><table class="tbl">
       <thead><tr><th>Student</th><th>Grade</th><th>Section</th>${['Life forms', 'Machines', 'Services'].map(x => `<th>${x}</th>`).join('')}<th>Year</th><th>Band</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>${r.y.per.map(x => `<td title="${esc(projectById(x.id).title)}">${x.score == null ? '—' : `${x.score}%${x.complete ? '' : '*'}`}</td>`).join('')}<td><b>${r.y.score == null ? '—' : `${r.y.score}%`}</b></td><td>${band(r.y.score)}</td></tr>`).join('')}</tbody>
+      <tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>${r.y.per.map(x => `<td title="${esc(projectById(x.id).title)}">${x.score == null ? '—' : `${x.score}%${x.complete ? '' : '*'}`}</td>`).join('')}<td><b>${r.y.score == null ? '—' : `${r.y.score}%`}</b></td><td>${band(r.y.score)}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">No students yet.</td></tr>'}</tbody>
     </table><p class="muted small">* still in progress, scored on the parts marked so far.</p></section>`,
     mount(el) {
       bindGradeTabs(el, ctx);

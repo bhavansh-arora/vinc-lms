@@ -26,11 +26,11 @@ Light and dark mode follow the device setting automatically.
 - **Assessment**: sliders and a donut chart showing how the CBSE five-part split
   adds up to one score.
 - **Dashboards**: tabbed previews of the student, parent, teacher and school dashboards, each with a button that
-  opens that role in the demo.
-- **Grades 6 to 8**: one card per grade with its projects and a link to a
-  student demo in that grade.
+  opens sign-up for that role.
+- **Grades 6 to 8**: one card per grade with its projects and a link to
+  student sign-up.
 - **For schools**: type a school name and pick a colour to preview the branded
-  student app, then open a full demo under that brand.
+  student app, then register the school with that name and colour.
 - **Also on the page**: a learning-outcomes explorer, the roadmap, FAQ, and a
   pilot request form.
 
@@ -105,8 +105,8 @@ ask their device for reduced motion.
     student and parent screen.
 - **Admin (VINC)**: network KPIs, weekly activity and per-grade figures, schools
   (add, pause, open a school's dashboard; new schools get 6 A, 7 A, 8 A and a
-  teacher), the Grade 6–8 content and question banks, and demo-data reset or
-  export.
+  teacher), the Grade 6–8 content and question banks, and data export or
+  delete.
 
 ### Lessons and virtual labs
 Every activity in Grades 6–8 (144 in all) has its own page in the student
@@ -158,35 +158,29 @@ activity book are marked automatically, and teachers mark the rubrics. The year
 score is the average of the three projects. The bands (Exemplary 85+,
 Proficient 70+, Developing 50+, Beginning) are VINC Lab's own.
 
-## Demo data
-This preview has no server. Everything is stored in the visitor's browser
-(`localStorage`) and seeded with three schools, ten Grade 6–8 sections, four
-teachers and 109 students. The admin settings page resets or exports the data.
-
-Demo accounts all use the password **`vinclab123`**. The login screen has a
-button for each; it types the User ID and password in and logs in.
-
-| Role | User ID | Who |
-|---|---|---|
-| Student | `aarav.sharma` | Grade 6 A, Greenwood |
-| Student | `meera.iyer` | Grade 7 A, Greenwood |
-| Student | `ananya.sharma` | Grade 8 A, Greenwood |
-| Parent | `priya.sharma` | Mother of Aarav and Ananya |
-| Teacher | `anjali.menon` | Teaches 6 A, 7 A and 8 A at Greenwood |
-| School | `kavita.rao` | Kaushal Bodh coordinator at Greenwood |
-
-Every seeded student, parent, teacher and coordinator has a User ID made from
-their name and the same demo password. For trying sign-up, the "Use Aarav's
-code" and "Use Greenwood's code" buttons on the forms fill in a family code and
-a joining code.
+## Accounts
+The site starts empty: there are no sample schools or demo accounts, only the
+VINC Lab admin. Everything is stored in the visitor's browser (`localStorage`).
 
 **VINC Lab admin.** The admin is not shown on the landing page or offered on the
 login and sign-up screens, but works in the background: log in on the normal
 login screen with User ID `admin` and password `Qwerty@21`, then change the
 password on the profile page. Admin accounts cannot be created through sign-up.
 
-Links like `app.html#/login/teacher` or `#/login/student7` fill in that demo
-account and log in; `app.html#/signup` opens the sign-up form.
+Setting up a school, in order:
+1. **School**: the coordinator registers the school on the sign-up page (or the
+   admin adds it on the Schools page). It starts with sections 6 A, 7 A and 8 A
+   and gets a teacher joining code, shown on its Teachers page.
+2. **Teachers** sign up, choose the school, enter the joining code and pick their
+   sections. The coordinator can also add teachers and change sections.
+3. **Students** sign up and choose their school and class, or the coordinator
+   adds them on the Students page (with a parent login and temporary passwords).
+4. **Parents** sign up with their child's family code, shown on the child's
+   Profile page.
+
+The admin's Settings page can export all data or delete it and start again.
+`app.html#/signup` opens the sign-up form; `app.html#/signup/school` opens it
+for a school.
 
 ## Structure
 
@@ -200,7 +194,7 @@ assets/js/data/courses.js  One lookup for all grades (projectById, projectsOfGra
 assets/js/art.js      Animated project illustrations and icons
 assets/js/landing.js  Landing page behaviour
 assets/js/app/        main.js (router, shell, page transitions), auth.js (log in and sign up),
-                      store.js (demo data, logins), sha256.js, scoring.js, ui.js
+                      store.js (data, logins), sha256.js, scoring.js, ui.js
 assets/js/app/views/  student, parent, teacher, school, admin, profile; shared.js holds marking,
                       heatmaps, class analytics and password resets used by teachers and schools;
                       activity.js is the student activity page (lesson + lab)
@@ -209,7 +203,7 @@ assets/js/app/lab/    runtime.js (the lab player), kit.js (shared helpers), spri
                       types/ (one file per lab type), SPEC.md (how to write a lesson or a lab type)
 assets/css/lab.css, assets/css/lab/   Lab player styles and one stylesheet per lab type
 assets/vendor/        GSAP 3.13 and Matter.js 0.20, with their licences
-lab-dev.html          Developer page: ?type=sort opens a type's demo, ?lesson=g6p1&n=3 opens a lesson's lab
+lab-dev.html          Developer page: ?type=sort opens a sample of that lab type, ?lesson=g6p1&n=3 opens a lesson's lab
 ```
 
 Each course file has the same shape: projects with activities (title, page,

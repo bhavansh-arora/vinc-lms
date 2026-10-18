@@ -57,6 +57,7 @@ export function currentProject(sec, kids) {
 
 export function heatmap(kids, pid, studentHref) {
   const P = projectById(pid);
+  if (!kids.length) return '<p class="empty-note">No students in this section yet. Students join on the sign-up page by choosing your school and class.</p>';
   return `<div class="heat-wrap"><table class="heat f-${P.form}">
     <thead><tr><th scope="col">Student</th>${P.activities.map(a => `<th scope="col" title="${esc(a.title)}">${a.n}</th>`).join('')}<th scope="col">Quiz</th><th scope="col">Viva</th></tr></thead>
     <tbody>${kids.map(k => { const pr = progress(k.id, pid); return `<tr><th scope="row"><a href="${studentHref(k)}">${esc(k.name)}</a></th>${P.activities.map(a => `<td class="${pr?.acts[a.n]?.done ? 'on' : ''}" title="${esc(a.title)}${pr?.acts[a.n]?.done ? ': done' : ''}"><span class="sr-only">${pr?.acts[a.n]?.done ? 'done' : 'not done'}</span></td>`).join('')}<td class="num">${pr?.quiz.length ? Math.max(...pr.quiz.map(q => q.score)) : '·'}</td><td class="num">${pr?.viva ? '✓' : '·'}</td></tr>`; }).join('')}</tbody>
@@ -73,7 +74,7 @@ export function markTable(kids, pid) {
       <td>${pr?.portfolio.length || 0} items ${pr?.portfolioScore != null ? `<span class="tag ok">${RUBRIC_LEVELS[pr.portfolioScore - 1]}</span>` : ''}</td>
       <td>${tag(sc.parts.viva)}</td><td>${tag(sc.parts.observation)}</td>
       <td><b>${sc.score == null ? '—' : `${sc.score}%`}</b></td>
-      <td><button class="btn btn-sm btn-ghost" data-mark="${k.id}">Mark</button></td></tr>`; }).join('')}</tbody>
+      <td><button class="btn btn-sm btn-ghost" data-mark="${k.id}">Mark</button></td></tr>`; }).join('') || '<tr><td colspan="8" class="muted">No students in this section yet.</td></tr>'}</tbody>
   </table></section>`;
 }
 export const bindMark = (el, ctx, pid) => $$('[data-mark]', el).forEach(b => b.addEventListener('click', () => markModal(ctx, user(b.dataset.mark), pid)));

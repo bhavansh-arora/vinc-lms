@@ -76,10 +76,10 @@ function overview(ctx) {
     }).join('')}</div>
     <div class="grid-2">
       <section class="card"><h2 class="h-card">${icon('school')} Schools</h2>
-        <ul class="sec-list">${rows.map(r => `<li><span class="badge sm" style="--brand:${r.s.color}">${esc(r.s.initials)}</span><div><b>${esc(r.s.name)}</b><small class="muted">${r.students} students · avg score ${r.score == null ? '—' : `${r.score}%`}</small></div>${bar(r.completion, r.s.color)}<span class="num">${r.completion}%</span></li>`).join('')}</ul>
+        ${rows.length ? `<ul class="sec-list">${rows.map(r => `<li><span class="badge sm" style="--brand:${r.s.color}">${esc(r.s.initials)}</span><div><b>${esc(r.s.name)}</b><small class="muted">${r.students} students · avg score ${r.score == null ? '—' : `${r.score}%`}</small></div>${bar(r.completion, r.s.color)}<span class="num">${r.completion}%</span></li>`).join('')}</ul>` : '<p class="empty-note">No schools yet. A school appears here when its coordinator registers, or when you add one on the Schools page.</p>'}
       </section>
       <section class="card"><h2 class="h-card">${icon('bell')} Live feed</h2>
-        <ul class="feed compact">${D.log.slice(0, 9).map(l => `<li><b>${esc(l.who)}</b> ${esc(l.what)} <small class="muted">· ${esc(D.schools.find(s => s.id === l.schoolId)?.name || '')} · ${timeAgo(l.at)}</small></li>`).join('')}</ul>
+        ${D.log.length ? `<ul class="feed compact">${D.log.slice(0, 9).map(l => `<li><b>${esc(l.who)}</b> ${esc(l.what)} <small class="muted">· ${esc(D.schools.find(s => s.id === l.schoolId)?.name || '')} · ${timeAgo(l.at)}</small></li>`).join('')}</ul>` : '<p class="empty-note">Nothing yet. Sign-ups, finished activities and quiz scores show up here.</p>'}
       </section>
     </div>`,
   };
@@ -99,7 +99,7 @@ function schools(ctx) {
         <td><div class="cell-bar">${bar(st.completion, s.color)}<span>${st.completion}%</span></div></td>
         <td>${st.score == null ? '—' : `${st.score}% <small class="muted">${band(st.score)}</small>`}</td>
         <td><button class="tag ${s.active ? 'ok' : 'todo'} tag-btn" data-toggle="${s.id}" aria-label="${s.active ? 'Pause' : 'Activate'} ${esc(s.name)}">${s.active ? 'Active' : 'Paused'}</button></td>
-        <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Logins</button></div></td></tr>`; }).join('')}</tbody>
+        <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Logins</button></div></td></tr>`; }).join('') || '<tr><td colspan="9" class="muted">No schools yet. Use Add school, or ask a coordinator to register on the sign-up page.</td></tr>'}</tbody>
     </table></section>`,
     mount(el) {
       $$('[data-open]', el).forEach(b => b.addEventListener('click', () => {
@@ -184,9 +184,9 @@ function settings(ctx) {
   return {
     title: 'Settings', nav: 'settings',
     html: `<div class="grid-2">
-      <section class="card"><h2 class="h-card">${icon('settings')} Demo data</h2>
+      <section class="card"><h2 class="h-card">${icon('settings')} Data</h2>
         <p>This preview keeps all data in this browser (${(size / 1024).toFixed(0)} KB used). Created ${fmtDate(D.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}.</p>
-        <div class="btn-row"><button class="btn btn-ghost" id="export">${icon('download')} Export data (JSON)</button><button class="btn btn-ghost danger" id="reset">Reset demo data</button></div>
+        <div class="btn-row"><button class="btn btn-ghost" id="export">${icon('download')} Export data (JSON)</button><button class="btn btn-ghost danger" id="reset">Delete all data</button></div>
       </section>
       <section class="card"><h2 class="h-card">${icon('shield')} Going live</h2>
         <ul><li>Server-side logins (this preview checks passwords in the browser)</li><li>Parent sign-in by phone OTP</li><li>Photo storage for portfolios</li><li>CBSE-ready mark sheets per section</li></ul>
@@ -194,10 +194,10 @@ function settings(ctx) {
       </section>
     </div>`,
     mount(el) {
-      $('#export', el).addEventListener('click', () => download('vinclab-demo-data.json', JSON.stringify(D, null, 1), 'application/json'));
+      $('#export', el).addEventListener('click', () => download('vinclab-data.json', JSON.stringify(D, null, 1), 'application/json'));
       $('#reset', el).addEventListener('click', () => {
-        if (!confirm('Reset all demo data? Schools, students and marks go back to the starting sample.')) return;
-        reset(); session.set({ userId: 'u_admin', at: Date.now() }); toast('Demo data reset. Demo accounts use vinclab123; the admin password is back to its default.'); ctx.go('/admin');
+        if (!confirm('Delete all data? Every school, teacher, student and parent account, and all their work, will be removed from this browser. Only the admin login stays.')) return;
+        reset(); session.set({ userId: 'u_admin', at: Date.now() }); toast('All data deleted. The admin password is back to its default.'); ctx.go('/admin');
       });
     },
   };

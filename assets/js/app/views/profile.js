@@ -72,7 +72,6 @@ export function render(ctx) {
           <input type="text" name="username" value="${esc(me.login)}" autocomplete="username" hidden>
           <div class="form-actions"><button class="btn btn-brand btn-go" type="submit"><span class="btn-label">Change password</span><span class="spinner" aria-hidden="true"></span><span class="tick" aria-hidden="true">${icon('check')}</span></button></div>
         </form>
-        ${me.pw === 'demo' ? '<p class="muted small">This demo account uses the shared password <code>vinclab123</code>.</p>' : ''}
       </section>
       ${roleCard(me, sch)}
     </div>`,

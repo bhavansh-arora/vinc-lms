@@ -7,7 +7,6 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const DEMO_LOGIN = { 6: 'student', 7: 'student7', 8: 'student8' };
 const TECH = { 6: 'Scratch games and simple machines', 7: 'An AI Assistant with Teachable Machine', 8: 'Home Automation with Arduino' };
 let courseGrade = 6;
 
@@ -361,7 +360,7 @@ function openDrawer(id) {
     <h4>How it's assessed</h4>
     <div class="weights-mini">${WEIGHTS.map((w, i) => `<i style="width:${w.weight}%;background:${segColor(i)};--i:${i}"></i>`).join('')}</div>
     <p class="small muted">${p.quiz.length}-question quiz · ${p.viva.length} viva prompts · activity book · portfolio · observation rubric</p>
-    <p><a class="btn btn-primary" href="app.html#/login/${DEMO_LOGIN[p.grade]}">Open a Grade ${p.grade} student demo</a></p>`;
+    <p><a class="btn btn-primary" href="app.html#/signup/student">Join as a Grade ${p.grade} student</a></p>`;
   $('.x', inner).addEventListener('click', closeDrawer);
   if (!drawer.open) drawer.showModal();
   inner.scrollTop = 0;
@@ -598,6 +597,7 @@ function renderBrand() {
   $('#brand-preview').style.setProperty('--bc', brandColor);
 }
 $('#b-name').addEventListener('input', () => {
+  $('#b-name').dataset.touched = '1';
   const v = $('#b-name').value.trim();
   if (!$('#b-studio').dataset.touched) $('#b-studio').value = studioName(v);
   renderBrand();
@@ -610,8 +610,10 @@ $$('.swatch').forEach(s => s.addEventListener('click', () => {
 }));
 $('#brand-form').addEventListener('submit', e => {
   e.preventDefault();
-  store.set('vinclab-brand-draft', JSON.stringify({ name: $('#b-name').value.trim() || 'Your School', studio: $('#b-studio').value.trim(), color: brandColor }));
-  location.href = 'app.html#/brand-demo';
+  // Carry the typed name (not the sample one) and the colour into the school sign-up form.
+  const named = $('#b-name').dataset.touched && $('#b-name').value.trim();
+  store.set('vinclab-brand-draft', JSON.stringify({ name: named || '', color: brandColor }));
+  location.href = 'app.html#/signup/school';
 });
 renderBrand();
 
@@ -645,7 +647,7 @@ $('#road').innerHTML = GRADES.map(g => `
     <span class="chip live">Live</span>
     <h3>Grade ${g}</h3><ul>${projectsOfGrade(g).map(p => `<li>${esc(p.title)}</li>`).join('')}</ul>
     <p class="tech">${icon('flask')} ${esc(TECH[g])}</p>
-    <a class="btn btn-ghost btn-sm demo" href="app.html#/login/${DEMO_LOGIN[g]}">Try a Grade ${g} student</a></div>`).join('');
+    <a class="btn btn-ghost btn-sm demo" href="app.html#/signup/student">Join as a Grade ${g} student</a></div>`).join('');
 
 /* ---------- FAQ: open and close with a height animation ----------
    Without JS (or with reduced motion) the native <details> behaviour is untouched. */

@@ -1,7 +1,7 @@
 // VINC Lab LMS: hash router, app shell and page transitions.
-import { load, db, session, user, school, brandDemo, canPersist, DEMO_PW } from './store.js';
+import { load, db, session, user, school, canPersist } from './store.js';
 import { $, $$, esc, icon, toast, countUp, REDUCED } from './ui.js';
-import { renderAuth, DEMO } from './auth.js';
+import { renderAuth } from './auth.js';
 import * as Student from './views/student.js';
 import * as Parent from './views/parent.js';
 import * as School from './views/school.js';
@@ -43,21 +43,12 @@ function route() {
   const [head, ...rest] = parts;
   if (head === 'login' || head === 'signup') {
     shellKey = null; lastHash = null;
-    renderAuth(root, { tab: head, role: head === 'signup' ? rest[0] : null, demo: head === 'login' ? rest[0] : null, onEnter: enter });
+    renderAuth(root, { tab: head, role: head === 'signup' ? rest[0] : null, onEnter: enter });
     document.title = `${head === 'login' ? 'Log in' : 'Create an account'} · VINC Lab`;
     return;
   }
-  if (head === 'brand-demo') {
-    let draft = null;
-    try { draft = JSON.parse(localStorage.getItem('vinclab-brand-draft') || 'null'); } catch { /* ignore */ }
-    const sch = brandDemo(draft || { name: 'Your School', studio: 'Your Skills Studio', color: '#1F6F66' });
-    const kid = db().users.find(u => u.role === 'student' && u.schoolId === sch.id);
-    const coord = db().users.find(u => u.role === 'school' && u.schoolId === sch.id);
-    session.set({ userId: kid.id, at: Date.now() });
-    go('/student');
-    setTimeout(() => toast(`Welcome to ${sch.studio}. To see the school side, log out and use ${coord.login} with ${DEMO_PW}.`, 'ok', 7000), 400);
-    return;
-  }
+  // Old link from the landing page's branding preview: register the school instead.
+  if (head === 'brand-demo') { go('/signup/school'); return; }
   const me = currentUser();
   if (!me) {
     shellKey = null; lastHash = null;
@@ -264,7 +255,6 @@ function restoreFocus(view, p) {
   if (el && (!p.tag || el.tagName === p.tag) && el !== document.activeElement) el.focus({ preventScroll: true });
 }
 
-export { DEMO };
 
 addEventListener('hashchange', route);
 route();

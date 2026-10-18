@@ -48,7 +48,7 @@ export async function launchLab(ctx, p, n, lesson, { record = true } = {}) {
     },
   });
 }
-// Keep portfolio images small so the demo fits in browser storage.
+// Keep portfolio images small so they fit in browser storage.
 function shrink(dataUrl, max = 560) {
   return new Promise(res => {
     const im = new Image();

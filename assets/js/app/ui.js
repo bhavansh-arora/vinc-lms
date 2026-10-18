@@ -162,7 +162,7 @@ export function confetti(colors = ['#D98A1C', '#1F6F66', '#C2502A', '#8C3557', '
   })(t0);
 }
 
-// Shrink an uploaded photo so the demo fits in browser storage.
+// Shrink an uploaded photo so it fits in browser storage.
 export function resizeImage(file, max = 560, q = 0.72) {
   return new Promise((res, rej) => {
     if (!file || !file.type.startsWith('image/')) { rej(new Error('Please choose an image file.')); return; }

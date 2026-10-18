@@ -1,14 +1,8 @@
 // Log in and create-account screens. Everyone logs in with a User ID and password; anyone can
 // sign up as a student, parent, teacher or school. The VINC Lab admin is not listed here.
-import { db, school, user, session, authenticate, signUp, makeLogin, loginTaken, LOGIN_RULE, normLogin, findByFamilyCode, studioName, initials, DEMO_PW } from './store.js';
+import { db, school, user, session, authenticate, signUp, makeLogin, loginTaken, LOGIN_RULE, normLogin, findByFamilyCode, studioName, initials } from './store.js';
 import { $, $$, esc, icon, art, confetti, bindCopy, modal, REDUCED } from './ui.js';
 
-// Demo accounts (seeded). Links like app.html#/login/teacher fill these in.
-export const DEMO = { student: 'u_aarav', student7: 'u_meera', student8: 'u_ananya', parent: 'u_priya', teacher: 'u_anjali', school: 'u_sch_greenwood_coord' };
-const DEMO_CHIPS = [
-  ['student', 'student', 'Grade 6'], ['student7', 'student', 'Grade 7'], ['student8', 'student', 'Grade 8'],
-  ['parent', 'parent', 'Parent'], ['teacher', 'teacher', 'Teacher'], ['school', 'school', 'School'],
-];
 export const ROLES = {
   student: { label: 'Student', icon: 'star', blurb: 'I am in Grade 6, 7 or 8' },
   parent: { label: 'Parent', icon: 'home', blurb: 'I want to follow my child\'s projects' },
@@ -114,7 +108,7 @@ export async function busy(btn, ok = true) {
 /* ---------- Page ---------- */
 let st = null;
 
-export function renderAuth(root, { tab = 'login', role = null, demo = null, onEnter }) {
+export function renderAuth(root, { tab = 'login', role = null, onEnter }) {
   st = { tab, role: ROLES[role] ? role : null, onEnter, step: tab === 'login' ? 'login' : (ROLES[role] ? 'form' : 'role') };
   root.className = 'auth-page';
   document.documentElement.style.removeProperty('--brand');
@@ -154,7 +148,7 @@ export function renderAuth(root, { tab = 'login', role = null, demo = null, onEn
         </div>
         <div class="auth-body" id="auth-body" role="tabpanel" aria-labelledby="tab-${st.tab}"></div>
       </div>
-      <p class="auth-foot"><a href="index.html">← Back to VINC Lab</a><span>Demo preview: accounts and data stay in this browser.</span></p>
+      <p class="auth-foot"><a href="index.html">← Back to VINC Lab</a><span>Preview: accounts and data are saved in this browser only.</span></p>
     </main>
   </div>`;
 
@@ -175,8 +169,7 @@ export function renderAuth(root, { tab = 'login', role = null, demo = null, onEn
     side.addEventListener('pointerleave', () => { side.style.setProperty('--px', 0); side.style.setProperty('--py', 0); });
   }
   paint(null, true);
-  if (demo && DEMO[demo]) fillDemo(demo, true);
-  else if (st.step === 'login') $('#f-uid')?.focus({ preventScroll: true });
+  if (st.step === 'login') $('#f-uid')?.focus({ preventScroll: true });
 }
 
 function setTab(tab) {
@@ -218,23 +211,7 @@ const loginHtml = () => `
     <p class="form-err" id="login-err" role="alert"></p>
     <button class="btn btn-primary btn-block btn-go" type="submit"><span class="btn-label">Log in ${icon('arrow')}</span><span class="spinner" aria-hidden="true"></span><span class="tick" aria-hidden="true">${icon('check')}</span></button>
     <p class="switch-line">New to VINC Lab? <button type="button" class="linkish strong" data-goto="signup">Create an account</button></p>
-  </form>
-  <div class="demo-box">
-    <p class="demo-title">${icon('sparkle')} <span>Explore with a demo account</span> <small>All use the password <code>${DEMO_PW}</code></small></p>
-    <div class="demo-chips">${DEMO_CHIPS.filter(([k]) => user(DEMO[k])).map(([k, role, tag], i) => `<button type="button" class="demo-chip r-${role}" data-demo="${k}" style="--i:${i}"><span class="dc-ic">${icon(ROLES[role].icon)}</span><span><b>${esc(user(DEMO[k]).name.split(' ')[0])}</b><small>${tag}</small></span></button>`).join('')}</div>
-    <details class="more-users"><summary>More demo accounts</summary>
-      <div class="more-row"><label for="any-user" class="sr-only">Choose a demo account</label>
-      <select id="any-user">${moreUsers()}</select>
-      <button type="button" class="btn btn-ghost btn-sm" id="any-go">Use this account</button></div>
-    </details>
-  </div>`;
-
-function moreUsers() {
-  const order = { school: 0, teacher: 1, student: 2, parent: 3 };
-  const list = db().users.filter(u => u.pw === 'demo' && (u.role === 'school' || u.role === 'teacher' || (u.role === 'student' && u.roll <= 2) || (u.role === 'parent' && u.childIds?.length > 1)))
-    .sort((a, b) => order[a.role] - order[b.role] || a.name.localeCompare(b.name));
-  return list.map(u => { const sch = school(u.schoolId); const sec = sch?.sections.find(x => x.id === u.sectionId); return `<option value="${u.id}">${esc(u.name)} · ${ROLES[u.role].label}${sec ? ` · Grade ${sec.grade} ${esc(sec.name.replace(/^\d+\s*/, ''))}` : ''} · ${esc(sch?.name || '')}</option>`; }).join('');
-}
+  </form>`;
 
 function bindLogin(pane) {
   const f = $('#login-f', pane);
@@ -257,34 +234,6 @@ function bindLogin(pane) {
     await busy(btn);
     st.onEnter(r.user, { fresh: false });
   });
-  $$('[data-demo]', pane).forEach(b => b.addEventListener('click', () => fillDemo(b.dataset.demo)));
-  $('#any-go', pane).addEventListener('click', () => fillDemo(null, false, $('#any-user', pane).value));
-}
-
-// Type a demo account's User ID and password into the form, then log in.
-let filling = false;
-async function fillDemo(key, fromLink = false, userId = null) {
-  if (filling) return;
-  const u = user(userId || DEMO[key]);
-  const f = $('#login-f');
-  if (!u || !f) return;
-  filling = true;
-  $$('[data-demo]').forEach(b => b.classList.toggle('on', b.dataset.demo === key));
-  const type = async (inp, text) => {
-    inp.value = '';
-    inp.classList.add('typing');
-    if (REDUCED) { inp.value = text; } else {
-      const per = Math.max(14, Math.min(34, 380 / text.length));
-      for (const ch of text) { inp.value += ch; await wait(per); }
-    }
-    inp.classList.remove('typing');
-  };
-  if (fromLink) await wait(450);
-  await type(f.uid, u.login);
-  await type(f.pw, DEMO_PW);
-  await wait(160);
-  filling = false;
-  f.requestSubmit();
 }
 
 function forgot() {
@@ -295,7 +244,7 @@ function forgot() {
       <li>${icon('book')} <span><b>Teachers:</b> ask your school coordinator.</span></li>
       <li>${icon('school')} <span><b>School coordinators:</b> ask VINC Lab.</span></li>
     </ul>
-    <p class="muted small">They will give you a temporary password. After you log in, you will be asked to choose a new one. Demo accounts use <code>${DEMO_PW}</code>.</p>
+    <p class="muted small">They will give you a temporary password. After you log in, you will be asked to choose a new one.</p>
     <div class="modal-actions"><button class="btn btn-primary" data-close>Got it</button></div>`);
 }
 
@@ -321,9 +270,9 @@ function bindRole(pane) {
 function formHtml(role) {
   const schools = db().schools.filter(s => s.active).sort((a, b) => a.name.localeCompare(b.name));
   const schoolOpts = options([['', 'Choose your school'], ...schools.map(s => [s.id, `${s.name}${s.city ? `, ${s.city}` : ''}`])]);
-  const gw = school('sch_greenwood');
-  const aarav = user('u_aarav');
-  const demoBtn = (attr, text) => `<button type="button" class="demo-hint" ${attr}>${icon('sparkle')} ${text}</button>`;
+  // Students and teachers join a school that is already on VINC Lab, so the school registers first.
+  const noSchools = (role === 'student' || role === 'teacher') && !schools.length
+    ? `<div class="callout warn no-schools"><span class="callout-ic">${icon('school')}</span><div><b>No schools have joined yet</b><p>Your school's Kaushal Bodh coordinator registers the school first. Then ${role === 'student' ? 'students' : 'teachers'} can join it here.</p><button type="button" class="linkish strong" data-role-switch="school">Register a school</button></div></div>` : '';
   const [title, sub] = TITLES[role];
   const head = `<div class="form-head"><button type="button" class="icon-btn back-btn" data-back aria-label="Back: choose who you are">${icon('arrow')}</button><span class="role-chip r-${role}">${icon(ROLES[role].icon)} ${ROLES[role].label}</span></div>
     <div class="auth-head"><h1 class="auth-h">${title}</h1><p class="muted">${sub}</p></div>`;
@@ -331,7 +280,7 @@ function formHtml(role) {
   const email = (req) => field({ name: 'email', label: req ? 'Email' : 'Email', type: 'email', ic: 'mail', auto: 'email', req, attrs: 'maxlength="80"' });
   const phone = (req) => field({ name: 'phone', label: 'Mobile number', type: 'tel', ic: 'phone', auto: 'tel', req, ph: '10-digit mobile', attrs: 'maxlength="15" inputmode="tel"' });
   let body = '';
-  if (role === 'student') body = `
+  if (role === 'student') body = `${noSchools}
     ${name('Full name', 'As in school records')}
     ${selField({ name: 'schoolId', label: 'School', ic: 'school', options: schoolOpts })}
     ${selField({ name: 'sectionId', label: 'Class and section', ic: 'users', options: options([['', 'Choose your school first']]) })}
@@ -340,12 +289,12 @@ function formHtml(role) {
     ${name()}
     <div class="row-2">${selField({ name: 'relation', label: 'You are their', ic: 'home', options: options([['Mother', 'Mother'], ['Father', 'Father'], ['Guardian', 'Guardian']]) })}${phone(true)}</div>
     ${email(false)}
-    ${field({ name: 'code', label: 'Child\'s family code', ic: 'link', ph: '6 letters or numbers', attrs: 'maxlength="6" autocapitalize="characters" spellcheck="false" autocomplete="off"', hint: 'Your child finds it on their Profile page. The school can also give it to you.', extra: aarav ? demoBtn(`data-fill-code="${aarav.familyCode}"`, 'Use Aarav\'s code') : '' })}
+    ${field({ name: 'code', label: 'Child\'s family code', ic: 'link', ph: '6 letters or numbers', attrs: 'maxlength="6" autocapitalize="characters" spellcheck="false" autocomplete="off"', hint: 'Your child finds it on their Profile page. The school can also give it to you.' })}
     <div class="found" id="kid-found" aria-live="polite"></div>`;
-  if (role === 'teacher') body = `
+  if (role === 'teacher') body = `${noSchools}
     ${name()}
     ${selField({ name: 'schoolId', label: 'School', ic: 'school', options: schoolOpts })}
-    ${field({ name: 'code', label: 'School joining code', ic: 'key', ph: 'e.g. GP-7KQ2', attrs: 'maxlength="8" autocapitalize="characters" spellcheck="false" autocomplete="off"', hint: 'Your coordinator finds it on the Teachers page.', extra: gw ? demoBtn(`data-fill-join="${gw.joinCode}"`, 'Use Greenwood\'s code') : '' })}
+    ${field({ name: 'code', label: 'School joining code', ic: 'key', ph: 'e.g. GP-7KQ2', attrs: 'maxlength="8" autocapitalize="characters" spellcheck="false" autocomplete="off"', hint: 'Your coordinator finds it on the Teachers page.' })}
     <fieldset class="field sec-pick" data-field="sectionIds" hidden><legend>Sections you teach <small class="opt">optional</small></legend><div class="pick-chips" id="sec-picks"></div><small class="hint">Your coordinator can change these later.</small><small class="err" id="e-sectionIds"></small></fieldset>
     <div class="row-2">${email(true)}${phone(false)}</div>`;
   if (role === 'school') body = `
@@ -364,7 +313,7 @@ function formHtml(role) {
   return `<form id="signup-f" class="auth-form" novalidate data-role="${role}">${head}${body}${account}
     <p class="form-err" id="signup-err" role="alert"></p>
     <button class="btn btn-primary btn-block btn-go" type="submit"><span class="btn-label">Create account ${icon('arrow')}</span><span class="spinner" aria-hidden="true"></span><span class="tick" aria-hidden="true">${icon('check')}</span></button>
-    <p class="fine">This demo keeps your details in this browser only.</p></form>`;
+    <p class="fine">This preview keeps your details in this browser only.</p></form>`;
 }
 
 function bindSignup(pane) {
@@ -415,10 +364,6 @@ function bindSignup(pane) {
       box.innerHTML = [...sch.sections].sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name)).map(s => `<label class="pick"><input type="checkbox" name="sectionIds" value="${s.id}"><span>Grade ${s.grade} · ${esc(s.name)}${s.teacherId && user(s.teacherId) ? `<small>now ${esc(user(s.teacherId).name)}</small>` : '<small>no teacher yet</small>'}</span></label>`).join('');
     };
     f.schoolId.addEventListener('change', fill); fill();
-    $('[data-fill-join]', f)?.addEventListener('click', e => {
-      f.schoolId.value = 'sch_greenwood'; fill(); clearErr(f, 'schoolId');
-      f.code.value = e.currentTarget.dataset.fillJoin; clearErr(f, 'code');
-    });
   }
   // Parent: show whose code it is as soon as it matches.
   if (role === 'parent') {
@@ -430,7 +375,6 @@ function bindSignup(pane) {
       found.innerHTML = kid ? `<span class="found-card">${icon('check')} <span><b>${esc(kid.name)}</b><small>Grade ${sec?.grade} · ${esc(sec?.name || '')} · ${esc(sch?.name || '')}</small></span></span>` : '';
     };
     f.code.addEventListener('input', look);
-    $('[data-fill-code]', f)?.addEventListener('click', e => { f.code.value = e.currentTarget.dataset.fillCode; clearErr(f, 'code'); look(); });
   }
   // School: live studio preview.
   if (role === 'school') {
@@ -442,7 +386,20 @@ function bindSignup(pane) {
       $('b', pv).textContent = n ? studioName(n) : 'Your Skills Studio';
     };
     f.addEventListener('input', upd); f.addEventListener('change', upd);
+    // Name and colour typed into the landing page's "Your school's name" preview.
+    let draft = null;
+    try { draft = JSON.parse(localStorage.getItem('vinclab-brand-draft') || 'null'); localStorage.removeItem('vinclab-brand-draft'); } catch { /* ignore */ }
+    if (draft?.name) f.schoolName.value = draft.name;
+    const sw = draft?.color && [...f.querySelectorAll('input[name=color]')].find(x => x.value.toLowerCase() === String(draft.color).toLowerCase());
+    if (sw) sw.checked = true;
+    upd();
   }
+  $('[data-role-switch]', f)?.addEventListener('click', e => {
+    st.role = e.currentTarget.dataset.roleSwitch;
+    try { history.replaceState(null, '', `#/signup/${st.role}`); } catch { /* ignore */ }
+    paint('fwd');
+    $('#f-schoolName')?.focus({ preventScroll: true });
+  });
 
   f.addEventListener('submit', async e => {
     e.preventDefault();
