@@ -1,0 +1,18 @@
+{
+  "name": "vinclab-server",
+  "private": true,
+  "type": "module",
+  "description": "VINC Lab server: website, API and PostgreSQL storage.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "backup": "node backup.js",
+    "restore": "node restore.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}

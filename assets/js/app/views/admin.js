@@ -1,7 +1,7 @@
 // VINC Lab admin: network overview, schools, course content and settings.
 import { COURSES, GRADES, FORMS, WEIGHTS, projectById } from '../../data/courses.js';
-import { db, save, reset, session, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf } from '../store.js';
-import { showCreds } from './shared.js';
+import { db, save, reset, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf, viewAs, isRemote } from '../store.js';
+import { showCredsSaved } from './shared.js';
 import { accountsPage, deleteSchoolModal, filterAccounts } from './accounts.js';
 import { yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, fmtDate, toast, modal, download } from '../ui.js';
@@ -105,11 +105,10 @@ function schools(ctx) {
         <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Accounts</button><button class="btn btn-sm btn-ghost danger" data-delsch="${s.id}" aria-label="Delete ${esc(s.name)}">${icon('trash')}</button></div></td></tr>`; }).join('') || '<tr><td colspan="9" class="muted">No schools yet. Use Add school, or ask a coordinator to register on the sign-up page.</td></tr>'}</tbody>
     </table></section>`,
     mount(el) {
-      $$('[data-open]', el).forEach(b => b.addEventListener('click', () => {
+      $$('[data-open]', el).forEach(b => b.addEventListener('click', async () => {
         const coord = D.users.find(u => u.role === 'school' && u.schoolId === b.dataset.open);
         if (!coord) { toast('This school has no coordinator yet.', 'warn'); return; }
-        session.set({ userId: coord.id, at: Date.now(), by: ctx.me.id });
-        ctx.go('/school');
+        try { await viewAs(ctx.me, coord); ctx.go('/school'); } catch (e) { toast(e.message, 'bad'); }
       }));
       $$('[data-logins]', el).forEach(b => b.addEventListener('click', () => { filterAccounts({ school: b.dataset.logins, role: 'all', q: '' }); ctx.go('/admin/accounts'); }));
       $$('[data-delsch]', el).forEach(b => b.addEventListener('click', () => deleteSchoolModal(ctx, D.schools.find(x => x.id === b.dataset.delsch), () => ctx.rerender())));
@@ -130,17 +129,18 @@ function schools(ctx) {
             <label>Coordinator's email<input name="coordEmail" type="email" maxlength="80"></label>
             <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-brand">Create school</button></div>
           </form>`);
-        $('#sf', d).addEventListener('submit', e => {
+        $('#sf', d).addEventListener('submit', async e => {
           e.preventDefault(); const f = e.target;
           if (!f.name.value.trim()) return;
           const { sch: s, coord, coordPw, teacher, teacherPw } = addSchool({ name: f.name.value.trim(), studio: f.studio.value.trim(), city: f.city.value.trim(), plan: f.plan.value, seats: f.seats.value, color: f.color.value,
             coord: { name: f.coord.value.trim() || undefined, email: f.coordEmail.value.trim() || undefined } });
           log(ctx.me.name, `added ${s.name}`, s.id); save();
-          d.close(); ctx.rerender();
-          showCreds(`${s.name} is ready`, [
-            { name: coord.name, role: 'School coordinator', icon: 'school', login: coord.login, pw: coordPw },
-            { name: teacher.name, role: 'Teacher for 6 A, 7 A and 8 A', icon: 'book', login: teacher.login, pw: teacherPw },
+          d.close();
+          await showCredsSaved(`${s.name} is ready`, [
+            { u: coord, name: coord.name, role: 'School coordinator', icon: 'school', login: coord.login, pw: coordPw },
+            { u: teacher, name: teacher.name, role: 'Teacher for 6 A, 7 A and 8 A', icon: 'book', login: teacher.login, pw: teacherPw },
           ], `Sections 6 A, 7 A and 8 A are set up. Teachers can also join with the code ${s.joinCode}.`);
+          ctx.rerender();
         });
       });
     },
@@ -181,19 +181,19 @@ function settings(ctx) {
     title: 'Settings', nav: 'settings',
     html: `<div class="grid-2">
       <section class="card"><h2 class="h-card">${icon('settings')} Data</h2>
-        <p>This preview keeps all data in this browser (${(size / 1024).toFixed(0)} KB used). Created ${fmtDate(D.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}.</p>
+        <p>${isRemote() ? 'All data is kept on the VINC Lab server, in its Postgres database, with a backup every night.' : `This preview keeps all data in this browser (${(size / 1024).toFixed(0)} KB used).`}${D.createdAt ? ` Started ${fmtDate(D.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}.` : ''}</p>
         <div class="btn-row"><button class="btn btn-ghost" id="export">${icon('download')} Export data (JSON)</button><button class="btn btn-ghost danger" id="reset">Delete all data</button></div>
       </section>
-      <section class="card"><h2 class="h-card">${icon('shield')} Going live</h2>
-        <ul><li>Server-side logins (this preview checks passwords in the browser)</li><li>Parent sign-in by phone OTP</li><li>Photo storage for portfolios</li><li>CBSE-ready mark sheets per section</li></ul>
-        <p class="muted small">The data shapes used here (schools, users, progress, log) map one-to-one onto the hosted version.</p>
+      <section class="card"><h2 class="h-card">${icon('shield')} ${isRemote() ? 'Security' : 'Going live'}</h2>
+        ${isRemote() ? '<ul><li>Passwords are checked on the server and stored only as scrypt hashes</li><li>Each person receives only the data their role allows</li><li>Logins are rate-limited against guessing</li></ul><p class="muted small">Next ideas: parent sign-in by phone OTP, photo storage outside the database, CBSE-ready mark sheets.</p>'
+          : '<ul><li>Server-side logins (this preview checks passwords in the browser)</li><li>Parent sign-in by phone OTP</li><li>Photo storage for portfolios</li><li>CBSE-ready mark sheets per section</li></ul><p class="muted small">The data shapes used here (schools, users, progress, log) map one-to-one onto the hosted version.</p>'}
       </section>
     </div>`,
     mount(el) {
       $('#export', el).addEventListener('click', () => download('vinclab-data.json', JSON.stringify(D, null, 1), 'application/json'));
-      $('#reset', el).addEventListener('click', () => {
-        if (!confirm('Delete all data? Every school, teacher, student and parent account, and all their work, will be removed from this browser. Only the admin login stays.')) return;
-        reset(); session.set({ userId: 'u_admin', at: Date.now() }); toast('All data deleted. The admin password is back to its default.'); ctx.go('/admin');
+      $('#reset', el).addEventListener('click', async () => {
+        if (!confirm('Delete all data? Every school, teacher, student and parent account, and all their work, will be removed. Only the admin login stays.')) return;
+        try { await reset(); toast('All data deleted. The admin password is back to its default.'); ctx.go('/admin'); } catch (e) { toast(e.message, 'bad'); }
       });
     },
   };

@@ -1,5 +1,5 @@
 // VINC Lab LMS: hash router, app shell and page transitions.
-import { load, db, session, user, school, canPersist, onSync, pull, takeRecovered } from './store.js';
+import { boot, session, user, school, canPersist, onSync, pull, takeRecovered, isRemote, refresh, loadPublic, logOut, backToAdmin } from './store.js';
 import { $, $$, esc, icon, toast, countUp, REDUCED } from './ui.js';
 import { renderAuth } from './auth.js';
 import * as Student from './views/student.js';
@@ -9,7 +9,7 @@ import * as Admin from './views/admin.js';
 import * as Teacher from './views/teacher.js';
 import * as Profile from './views/profile.js';
 
-load();
+await boot();
 
 const ROLE_LABEL = { student: 'Student', parent: 'Parent', teacher: 'Teacher', school: 'School', admin: 'Admin' };
 const VIEWS = { student: Student, parent: Parent, teacher: Teacher, school: School, admin: Admin };
@@ -29,13 +29,25 @@ function syncNow(what) {
   if (n) toast(`Carried over ${n} account${n === 1 ? '' : 's'} saved by an older VINC Lab tab.`, 'ok', 5000);
   if (busy()) { syncPending = true; return; }
   syncPending = false;
-  const changed = pull();
+  const changed = isRemote() ? true : pull();
   if (!$('#view')) return; // the login and sign-up pages read fresh data when submitted
   if (changed || what === 'session') rerender();
 }
-onSync(syncNow);
+// Messages from the store: new data, a save the server refused, a lost connection, or a session that ended.
+onSync(what => {
+  if (what === 'logout') { session.clear(); toast('Please log in again.', 'warn', 4500); go('/login'); return; }
+  if (what === 'offline') { toast('Cannot reach VINC Lab right now. Your changes will be saved when the connection is back.', 'warn', 6000); if ($('#view') && !busy()) rerender(); return; }
+  if (what?.type === 'errors') { toast(what.errors[0]?.message || 'Some changes could not be saved.', 'bad', 6000); syncNow('data'); return; }
+  syncNow(what);
+});
 document.addEventListener('close', () => { if (syncPending) setTimeout(() => syncNow('data'), 80); }, true);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow('data'); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (isRemote()) refresh(true).then(changed => { if (changed) syncNow('data'); });
+  else syncNow('data');
+});
+// On the server, fetch the sign-up lists (schools and classes) before showing the login or sign-up screen.
+const withPublic = fn => (isRemote() ? loadPublic().then(fn) : fn());
 { const n = takeRecovered(); if (n) setTimeout(() => toast(`Carried over ${n} account${n === 1 ? '' : 's'} saved by an older version of VINC Lab.`, 'ok', 5000), 900); }
 
 /* ---------- Session ---------- */
@@ -60,11 +72,12 @@ function enter(u, { fresh }) {
 /* ---------- Router ---------- */
 function route() {
   if (syncPending && !busy()) { syncPending = false; pull(); }
+  if (isRemote()) refresh().then(changed => { if (changed) syncNow('data'); });
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const [head, ...rest] = parts;
   if (head === 'login' || head === 'signup') {
     shellKey = null; lastHash = null;
-    renderAuth(root, { tab: head, role: head === 'signup' ? rest[0] : null, onEnter: enter });
+    withPublic(() => renderAuth(root, { tab: head, role: head === 'signup' ? rest[0] : null, onEnter: enter }));
     document.title = `${head === 'login' ? 'Log in' : 'Create an account'} · VINC Lab`;
     return;
   }
@@ -74,7 +87,7 @@ function route() {
   if (!me) {
     shellKey = null; lastHash = null;
     if (head) returnTo = `/${parts.join('/')}`;
-    renderAuth(root, { tab: 'login', onEnter: enter });
+    withPublic(() => renderAuth(root, { tab: 'login', onEnter: enter }));
     document.title = 'Log in · VINC Lab';
     return;
   }
@@ -166,15 +179,17 @@ function buildShell(me, sch, nav, s) {
           <button class="icon-btn" id="logout" aria-label="Log out" title="Log out">${icon('logout')}</button>
         </div>
       </header>
-      ${canPersist() ? '' : '<p class="warn-bar">This browser is blocking storage, so changes will not be kept after you leave.</p>'}
+      ${canPersist() ? '' : `<p class="warn-bar">${isRemote() ? 'Cannot reach VINC Lab right now. Your changes are kept here and will be saved when the connection is back.' : 'This browser is blocking storage, so changes will not be kept after you leave.'}</p>`}
       <main id="view" class="view" tabindex="-1"></main>
     </div>
     <nav class="tabbar" aria-label="Main">
       <span class="tab-pill" aria-hidden="true"></span>
       ${nav.slice(0, 5).map(n => `<a href="${href(n)}" data-path="${n.path}">${icon(n.icon)}<span>${esc(n.short || n.label)}</span></a>`).join('')}
     </nav>`;
-  $('#logout').addEventListener('click', () => { session.clear(); toast('You have logged out.'); go('/login'); });
-  $('#back-admin')?.addEventListener('click', () => { session.set({ userId: s.by, at: Date.now() }); go('/admin/schools'); });
+  $('#logout').addEventListener('click', async () => { await logOut(); toast('You have logged out.'); go('/login'); });
+  $('#back-admin')?.addEventListener('click', async () => {
+    try { await backToAdmin(); go('/admin/schools'); } catch { await logOut(); go('/login'); }
+  });
   $('#nav-open').addEventListener('click', () => toggleNav(!root.classList.contains('nav-open')));
   $$('.side-nav a, .me', root).forEach(a => a.addEventListener('click', () => toggleNav(false)));
   if (first) setTimeout(() => root.classList.remove('shell-in'), 900);

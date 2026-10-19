@@ -1,0 +1,16 @@
+# Keep secrets, git history, backups and deploy scripts out of the image.
+.git
+.github
+.env
+.env.*
+data
+backups
+deploy
+node_modules
+**/node_modules
+docker-compose*.yml
+Dockerfile
+.dockerignore
+.install-state
+**/*.md
+*.log

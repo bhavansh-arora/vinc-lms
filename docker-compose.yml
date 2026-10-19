@@ -1,0 +1,22 @@
+# VINC Lab - run with:  docker compose up -d --build   (from this folder)
+#
+# Settings and secrets live in .env (created by deploy/install.sh, never committed).
+# Networking (host network or the reverse proxy's Docker network, plus proxy labels) lives in
+# docker-compose.override.yml, which deploy/install.sh writes for this server; Compose loads it
+# automatically.
+name: vinclab
+
+services:
+  vinclab:
+    build: .
+    image: vinclab-lms:latest
+    container_name: vinclab
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./backups:/app/backups
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,9 @@
+# Server secrets and per-server files written by deploy/install.sh
+.env
+.env.*
+docker-compose.override.yml
+.install-state
+backups/
+data/
+# Dependencies
+node_modules/

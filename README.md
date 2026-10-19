@@ -179,14 +179,19 @@ Proficient 70+, Developing 50+, Beginning) are VINC Lab's own.
 
 ## Accounts
 The site starts empty: there are no sample schools or demo accounts, only the
-VINC Lab admin. Everything is stored in the visitor's browser (`localStorage`).
+VINC Lab admin.
 
-**Each browser has its own data.** Accounts made in Safari are not in Chrome,
-on another device, or in a private window, and clearing the browser's data
-removes them. Sharing accounts across browsers and devices needs the hosted
-backend described under "Before going live".
+**Where data lives.** The app works in two ways and picks one by itself when it
+starts:
+- **On the VINC Lab server** (the real setup, see [DEPLOY.md](DEPLOY.md)): logins
+  are checked on the server and all data is kept in PostgreSQL, so the same
+  accounts work in every browser and on every device. Each person only receives
+  what their role allows. See [server/README.md](server/README.md).
+- **On plain static hosting** (for example GitHub Pages, or the preview below):
+  everything is stored in that browser (`localStorage`). Accounts made in
+  Safari are then not in Chrome or on another device.
 
-Within one browser:
+In the browser-only mode, within one browser:
 - **Tabs stay in step.** When one tab saves, the others pick it up and redraw
   (waiting until any open dialog closes). Before saving, a tab merges in what
   other tabs saved, record by record, so a tab opened earlier can no longer
@@ -220,6 +225,9 @@ for a school.
 
 ```
 index.html, app.html
+server/               Node.js server: API, logins, role checks, PostgreSQL storage, backups (server/README.md)
+deploy/               install.sh, update.sh, uninstall.sh for the VPS (DEPLOY.md)
+Dockerfile, docker-compose.yml   The app container
 assets/logo/          VINC Lab logo (light, dark) and square mark
 assets/css/           tokens.css (shared palette, dark mode), art.css, landing.css, app.css
 assets/js/data/grade6.js   Grade 6 course, plus the shared forms of work, weights, rubrics and outcomes
@@ -246,23 +254,33 @@ task), goals, materials, safety, careers, viva prompts and a 10-question quiz.
 
 ## Preview locally
 
+Browser-only mode (no server):
+
 ```sh
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
+With the server and a local PostgreSQL database: see [server/README.md](server/README.md).
 ES modules need a web server; opening the files directly will not work.
 
 ## Deploy
-Any static host works: GitHub Pages from the repository root, Netlify,
-Cloudflare Pages or S3.
+The real setup runs on the VPS in Docker, with its own database in the shared
+PostgreSQL: follow [DEPLOY.md](DEPLOY.md) (one command; `deploy/install.sh`).
+Updates: `sudo bash /opt/vinclab/deploy/update.sh`.
+
+Any static host (GitHub Pages, Netlify, Cloudflare Pages, S3) still works for a
+browser-only preview.
 
 ## Before going live
-- **Backend**: replace `assets/js/app/store.js` with calls to a hosted database
-  and server-side logins. The data shapes (schools, users, progress, log) carry
-  over. In this preview, passwords are salted and hashed (SHA-256) but checked
-  in the browser, so they protect nothing on a shared computer; a live version
-  must check them on the server and use a slow hash such as bcrypt or Argon2.
+- **Server**: done (`server/`, `DEPLOY.md`): server-side logins with scrypt
+  password hashes, role-based access, PostgreSQL storage and nightly backups.
+  The browser-only mode is for previews only: there, passwords are checked in
+  the browser and protect nothing on a shared computer.
+- **Admin password**: change `Qwerty@21` after the first login on the server.
+- **Photos**: portfolio photos are stored inside the database (shrunk to about
+  560 px). With many schools, moving them to file storage would keep the
+  database small.
 - **Pilot form**: requests go to info@vinc-lab.com through FormSubmit.
   The first submission sends an activation email that must be confirmed once.
 - **Content**: project titles, page numbers and periods follow the 2026–27

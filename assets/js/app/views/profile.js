@@ -1,6 +1,6 @@
 // Profile page for every role: details, User ID, password, and the codes that link accounts
 // (a student's family code, a school's teacher joining code, a parent's linked children).
-import { save, school, section, childrenOf, parentsOf, sectionsOf, updateProfile, checkPassword, setPassword, linkChild, newFamilyCode, newJoinCode, loginTaken, LOGIN_RULE, normLogin, log } from '../store.js';
+import { save, school, section, childrenOf, parentsOf, sectionsOf, updateProfile, changePassword, linkChildByCode, newFamilyCode, newJoinCode, checkLogin, normLogin, log, syncNow, isRemote } from '../store.js';
 import { $, $$, esc, icon, toast, fmtDate, timeAgo, bindCopy } from '../ui.js';
 import { bindFields, setErr, shake, busy, strength } from '../auth.js';
 
@@ -80,13 +80,16 @@ export function render(ctx) {
       const df = $('#pf-details', el);
       bindFields(df);
       const hint = $('#h-login', df);
-      df.login.addEventListener('input', () => {
+      let seq = 0;
+      df.login.addEventListener('input', async () => {
         df.login.value = df.login.value.toLowerCase().replace(/\s+/g, '.');
-        const v = normLogin(df.login.value);
+        const v = normLogin(df.login.value), n = ++seq;
         hint.classList.remove('good', 'bad');
-        if (v === me.login) hint.textContent = 'You log in with this.';
-        else if (!LOGIN_RULE.test(v)) { hint.textContent = 'Start with a letter; 3 to 30 letters, numbers, dots, dashes or underscores.'; hint.classList.add('bad'); }
-        else if (loginTaken(v, me)) { hint.textContent = `${v} is taken.`; hint.classList.add('bad'); }
+        if (v === me.login) { hint.textContent = 'You log in with this.'; return; }
+        const r = await checkLogin(v, me);
+        if (n !== seq) return; // a newer keystroke is being checked
+        if (!r.valid) { hint.textContent = 'Start with a letter; 3 to 30 letters, numbers, dots, dashes or underscores.'; hint.classList.add('bad'); }
+        else if (!r.available) { hint.textContent = `${v} is taken.`; hint.classList.add('bad'); }
         else { hint.innerHTML = `${icon('check')} ${esc(v)} is available`; hint.classList.add('good'); }
       });
       df.addEventListener('submit', async e => {
@@ -96,6 +99,9 @@ export function render(ctx) {
         if (df.phone.value && df.phone.value.replace(/\D/g, '').length < 10) { setErr(df, 'phone', 'Enter a 10-digit mobile number.'); shake(df); return; }
         const data = Object.fromEntries(new FormData(df));
         try { updateProfile(me, data); } catch (err) { if (!setErr(df, err.field, err.message)) toast(err.message, 'bad'); shake(df); return; }
+        const r = await syncNow();
+        const bad2 = r.errors.find(x => !x.id || x.id === me.id);
+        if (bad2) { if (!setErr(df, bad2.field, bad2.message)) toast(bad2.message, 'bad'); shake(df); return; }
         await busy($('.btn-go', df));
         toast('Your details are saved.');
         ctx.rerender();
@@ -105,12 +111,12 @@ export function render(ctx) {
       bindFields(pf);
       pf.addEventListener('submit', async e => {
         e.preventDefault();
-        if (!checkPassword(me, pf.current.value)) { setErr(pf, 'current', 'That is not your current password.'); shake(pf); return; }
+        if (!pf.current.value) { setErr(pf, 'current', 'Enter your current password.'); shake(pf); return; }
         if (pf.next.value.length < 8) { setErr(pf, 'next', 'Use at least 8 characters.'); shake(pf); return; }
         if (pf.next.value === pf.current.value) { setErr(pf, 'next', 'Choose a password different from the current one.'); shake(pf); return; }
         if (strength(pf.next.value).score < 2) { setErr(pf, 'next', 'Add numbers or symbols to make it stronger.'); shake(pf); return; }
-        setPassword(me, pf.next.value);
-        save();
+        try { await changePassword(me, pf.current.value, pf.next.value); }
+        catch (err) { setErr(pf, err.field === 'next' ? 'next' : 'current', err.field === 'current' ? 'That is not your current password.' : err.message); shake(pf); return; }
         await busy($('.btn-go', pf));
         toast('Password changed.');
         ctx.rerender();
@@ -182,10 +188,13 @@ function bindRoleCard(el, ctx, me, sch) {
   if (lf) {
     bindFields(lf);
     lf.code.addEventListener('input', () => { lf.code.value = lf.code.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
-    lf.addEventListener('submit', e => {
+    lf.addEventListener('submit', async e => {
       e.preventDefault();
-      try { const kid = linkChild(me, lf.code.value); log(me.name, `linked to ${kid.name} as a parent`, kid.schoolId); save(); toast(`${kid.name} is now linked to your account.`); ctx.rerender(); }
-      catch (err) { setErr(lf, 'code', err.message); shake(lf); }
+      try {
+        const kid = await linkChildByCode(me, lf.code.value);
+        if (!isRemote()) { log(me.name, `linked to ${kid.name} as a parent`, kid.schoolId); save(); } // the server logs it itself
+        toast(`${kid.name} is now linked to your account.`); ctx.rerender();
+      } catch (err) { setErr(lf, 'code', err.message); shake(lf); }
     });
   }
 }

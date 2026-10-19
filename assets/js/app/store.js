@@ -1,5 +1,8 @@
-// Data store. Everything lives in this browser's localStorage, so the preview needs no server.
-// The shape mirrors what a hosted backend would hold: schools, users, per-project progress and a log.
+// Data store. Two modes, chosen when the app starts (see boot()):
+// - Server mode, on the VINC Lab server (server/): logins are checked there, data is saved there,
+//   and each person only receives what their role may see. Saves go up as small batches of changes.
+// - Browser mode, on plain static hosting: everything lives in this browser's localStorage.
+// The data shape is the same either way: schools, users, per-project progress and a log.
 import { emptyProgress } from './scoring.js';
 import { sha256 } from './sha256.js';
 
@@ -55,6 +58,7 @@ function readStored() {
 }
 
 export function save() {
+  if (REMOTE) return scheduleSync();
   const cur = readStored();
   if (cur && baseRaw && cur.raw !== baseRaw) {
     if (cur.d.createdAt !== DB.createdAt) DB = cur.d; // all data was deleted elsewhere: start from that
@@ -68,6 +72,7 @@ export function save() {
 
 // Bring this tab up to date with what another tab saved. Returns true if anything changed.
 export function pull() {
+  if (REMOTE) return false;
   const cur = readStored();
   if (!cur) return false; // another tab is mid-way through deleting all data: wait for its next save
   if (cur.raw === baseRaw) return false;
@@ -83,7 +88,7 @@ export function pull() {
 // A record only one side changed takes that side; if both changed it, this tab's version wins.
 // A record one side deleted stays deleted unless the other side changed it meanwhile.
 function merge3(mine, theirs, base) {
-  const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  const same = (x, y) => stable(x) === stable(y);
   const pick = (m, t, b) => {
     if (m && t) return same(m, b) ? t : m;
     if (m && !t) return b && same(m, b) ? null : m;  // they deleted it
@@ -120,6 +125,236 @@ try {
     }
   });
 } catch { /* no window */ }
+
+/* ---------- Server mode ---------- */
+let REMOTE = false;     // true when the VINC Lab server answers /api/health
+let syncBase = null;    // the data exactly as the server last sent it
+let timer = null, inflight = null, waiters = [], offline = false, lastPull = 0;
+export const isRemote = () => REMOTE;
+const isPlain = v => v && typeof v === 'object' && !Array.isArray(v);
+const clone = v => JSON.parse(JSON.stringify(v));
+// JSON with sorted keys, so two copies of a record compare equal whatever order their keys are in.
+export const stable = v => JSON.stringify(v, (k, x) => (isPlain(x) ? Object.keys(x).sort().reduce((o, key) => { o[key] = x[key]; return o; }, {}) : x));
+const emptyRemote = () => ({ version: VERSION, server: true, createdAt: 0, schools: [], users: [], progress: {}, log: [] });
+
+async function http(path, { method = 'GET', body } = {}) {
+  const s = session.get();
+  const headers = { 'Content-Type': 'application/json' };
+  if (s?.token) headers.Authorization = `Bearer ${s.token}`;
+  let r;
+  try { r = await fetch(`api/${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); }
+  catch { const e = new Error('Could not reach VINC Lab. Check your internet connection and try again.'); e.offline = true; throw e; }
+  let j = {};
+  try { j = await r.json(); } catch { /* empty */ }
+  if (!r.ok) { const e = new Error(j.error || 'Something went wrong. Please try again.'); e.field = j.field; e.status = r.status; throw e; }
+  return j;
+}
+
+// Start up: find out whether the server is there, and if this tab is logged in, fetch its data.
+export async function boot() {
+  try {
+    const r = await fetch('api/health', { cache: 'no-store' });
+    REMOTE = r.ok && (await r.json()).ok === true;
+  } catch { REMOTE = false; }
+  if (!REMOTE) { load(); return; }
+  adopt(emptyRemote());
+  const s = session.get();
+  if (!s?.token) return;
+  try {
+    const j = await http('me');
+    adopt(j.data);
+    session.set({ ...s, userId: j.me, by: j.by || s.by || null });
+  } catch (e) {
+    if (e.status === 401) session.clear();
+    else if (e.offline) offline = true;
+  }
+}
+function adopt(data) {
+  DB = { ...emptyRemote(), ...data };
+  syncBase = clone(DB);
+  lastPull = Date.now();
+}
+
+// The changes between our copy and what the server last sent: whole records added, changed or removed.
+function diff(cur, base) {
+  const ch = { users: { upsert: [], delete: [] }, schools: { upsert: [], delete: [] }, progress: { upsert: [] }, log: [] };
+  for (const k of ['users', 'schools']) {
+    const B = new Map((base[k] || []).map(x => [x.id, stable(x)]));
+    const seen = new Set();
+    const baseOf = new Map((base[k] || []).map(x => [x.id, x]));
+    // Each changed record goes with the version this tab last saw, so the server applies only what changed here.
+    for (const x of cur[k] || []) { seen.add(x.id); if (B.get(x.id) !== stable(x)) ch[k].upsert.push(baseOf.has(x.id) ? { ...x, _base: baseOf.get(x.id) } : x); }
+    for (const id of B.keys()) if (!seen.has(id)) ch[k].delete.push(id);
+  }
+  for (const [id, p] of Object.entries(cur.progress || {})) if (stable(p) !== stable(base.progress?.[id])) ch.progress.upsert.push({ id, data: p });
+  const logged = new Set((base.log || []).map(l => `${l.at}|${l.who}|${l.what}`));
+  ch.log = (cur.log || []).filter(l => !logged.has(`${l.at}|${l.who}|${l.what}`));
+  const n = ch.users.upsert.length + ch.users.delete.length + ch.schools.upsert.length + ch.schools.delete.length + ch.progress.upsert.length + ch.log.length;
+  return n ? ch : null;
+}
+
+// Copy `src` into `dst` without replacing objects, so pages holding a record keep a live one.
+function patch(dst, src) {
+  if (Array.isArray(dst)) {
+    const withIds = a => a.length && a.every(x => isPlain(x) && x.id != null);
+    if (withIds(dst) && withIds(src)) {
+      const byId = new Map(dst.map(x => [x.id, x]));
+      const out = src.map(x => { const cur = byId.get(x.id); if (cur) { patch(cur, x); return cur; } return x; });
+      dst.length = 0; dst.push(...out);
+    } else { dst.length = 0; dst.push(...src); }
+    return;
+  }
+  for (const k of Object.keys(dst)) if (!(k in src)) delete dst[k];
+  for (const [k, v] of Object.entries(src)) {
+    const cur = dst[k];
+    if ((isPlain(cur) && isPlain(v)) || (Array.isArray(cur) && Array.isArray(v))) patch(cur, v);
+    else dst[k] = v;
+  }
+}
+
+// Take the server's data. Records changed here since `base` are kept (and sent next time);
+// everything else follows the server. Returns true if the page should redraw.
+function reconcile(server, base) {
+  const before = stable(DB);
+  const merged = clone(DB);
+  merge3(merged, server, base);
+  for (const k of ['version', 'server', 'createdAt']) merged[k] = server[k];
+  patch(DB, merged);
+  syncBase = clone(server);
+  return stable(DB) !== before;
+}
+
+function scheduleSync() {
+  const p = new Promise(r => waiters.push(r));
+  clearTimeout(timer);
+  timer = setTimeout(runSync, 150);
+  return p;
+}
+// Save now. Resolves with { ok, errors } once the server has the changes.
+export function syncNow() {
+  if (!REMOTE) return Promise.resolve({ ok: true, errors: [] });
+  const p = new Promise(r => waiters.push(r));
+  clearTimeout(timer); timer = null;
+  if (!inflight) runSync();
+  return p;
+}
+function runSync() {
+  timer = null;
+  if (inflight) return;
+  const mine = waiters; waiters = [];
+  const done = res => mine.forEach(w => w(res));
+  const changes = syncBase && diff(DB, syncBase);
+  if (!changes || !session.get()?.token) { done({ ok: true, errors: [] }); return; }
+  const atSend = clone(DB);
+  inflight = http('sync', { method: 'POST', body: { changes } }).then(j => {
+    const wasOffline = offline; offline = false;
+    const changed = reconcile(j.data, atSend);
+    if (j.errors?.length) notify({ type: 'errors', errors: j.errors });
+    done({ ok: !j.errors?.length, errors: j.errors || [] });
+    if (changed || wasOffline) notify('data');
+  }, e => {
+    if (e.status === 401) { done({ ok: false, errors: [{ message: e.message }] }); notify('logout'); return; }
+    if (e.offline || e.status >= 500) {
+      // Keep the changes and try again shortly; pages are told the work is not saved yet.
+      if (!offline) { offline = true; notify('offline'); }
+      waiters.unshift(...mine);
+      clearTimeout(timer); timer = setTimeout(runSync, 5000);
+      return;
+    }
+    done({ ok: false, errors: [{ message: e.message, field: e.field }] });
+    notify({ type: 'errors', errors: [{ message: e.message }] });
+  }).finally(() => {
+    inflight = null;
+    if (!timer && (waiters.length || (syncBase && diff(DB, syncBase)))) runSync();
+  });
+}
+
+// Fetch what others changed (a teacher's marks, a new student...). Skips while a save is pending.
+export async function refresh(force = false) {
+  if (!REMOTE || !session.get()?.token || inflight || timer) return false;
+  if (!force && Date.now() - lastPull < 15000) return false;
+  lastPull = Date.now();
+  try {
+    const j = await http('me');
+    if (inflight || timer) return false;
+    return reconcile(j.data, clone(syncBase));
+  } catch (e) { if (e.status === 401) notify('logout'); return false; }
+}
+
+// Schools and classes for the sign-up forms, before anyone has logged in.
+let publicAt = 0;
+export async function loadPublic() {
+  if (!REMOTE || session.get()?.token) return;
+  if (Date.now() - publicAt < 30000) return;
+  try { const j = await http('public/schools'); DB.schools = j.schools || []; publicAt = Date.now(); } catch { /* the form shows no schools */ }
+}
+
+/* ---------- Account actions that work in both modes ---------- */
+export async function logIn(id, pw) {
+  if (!REMOTE) { const r = authenticate(id, pw); if (r.user) session.set({ userId: r.user.id, at: Date.now() }); return r; }
+  if (!normLogin(id)) return { error: 'Enter your User ID.', field: 'uid' };
+  if (!pw) return { error: 'Enter your password.', field: 'pw' };
+  try {
+    const j = await http('login', { method: 'POST', body: { login: id, password: pw } });
+    session.set({ userId: j.me, token: j.token, at: Date.now() });
+    adopt(j.data);
+    return { user: user(j.me) };
+  } catch (e) { return { error: e.message, field: e.field || 'pw' }; }
+}
+export async function register(role, fields) {
+  if (!REMOTE) { const u = signUp(role, fields); session.set({ userId: u.id, at: Date.now() }); return u; }
+  const j = await http('signup', { method: 'POST', body: { role, fields } });
+  session.set({ userId: j.me, token: j.token, at: Date.now() });
+  adopt(j.data);
+  return user(j.me);
+}
+export async function logOut() {
+  if (REMOTE) { await syncNow(); try { await http('logout', { method: 'POST' }); } catch { /* ignore */ } adopt(emptyRemote()); publicAt = 0; }
+  session.clear();
+}
+export async function changePassword(me, current, next) {
+  if (!REMOTE) {
+    if (!checkPassword(me, current)) fail('current', 'Your current password is not right.');
+    setPassword(me, next); save(); return;
+  }
+  await http('password', { method: 'POST', body: { current, next } });
+  delete me.pwTemp;
+  if (syncBase) { const b = syncBase.users.find(u => u.id === me.id); if (b) delete b.pwTemp; }
+}
+export async function linkChildByCode(me, code) {
+  if (!REMOTE) return linkChild(me, code);
+  const j = await http('link-child', { method: 'POST', body: { code } });
+  await syncNow();
+  reconcile(j.data, clone(syncBase));
+  return user(j.child.id) || j.child;
+}
+export async function lookupFamily(code) {
+  if (!REMOTE) { const k = findByFamilyCode(code); if (!k) return null; const sch = school(k.schoolId), sec = section(sch, k.sectionId); return { name: k.name, grade: sec?.grade, section: sec?.name || '', school: sch?.name || '' }; }
+  try { return (await http(`public/family?code=${encodeURIComponent(code)}`)).child; } catch { return null; }
+}
+// Whether a User ID can be used: { valid, available }.
+export async function checkLogin(id, except) {
+  const k = normLogin(id);
+  if (!REMOTE) return { valid: LOGIN_RULE.test(k), available: LOGIN_RULE.test(k) && !loginTaken(k, except) };
+  try { return await http(`public/login-available?login=${encodeURIComponent(k)}`); } catch { return { valid: LOGIN_RULE.test(k), available: true }; }
+}
+// The admin opens a school's dashboard as its coordinator, and comes back.
+export async function viewAs(admin, target) {
+  if (!REMOTE) { session.set({ userId: target.id, at: Date.now(), by: admin.id }); return; }
+  await syncNow();
+  const s = session.get();
+  const j = await http('impersonate', { method: 'POST', body: { userId: target.id } });
+  session.set({ userId: j.me, token: j.token, at: Date.now(), by: admin.id, byToken: s.token });
+  adopt((await http('me')).data);
+}
+export async function backToAdmin() {
+  const s = session.get();
+  if (!REMOTE) { session.set({ userId: s.by, at: Date.now() }); return; }
+  await syncNow();
+  try { await http('logout', { method: 'POST' }); } catch { /* ignore */ }
+  session.set({ userId: s.by, token: s.byToken, at: Date.now() });
+  adopt((await http('me')).data);
+}
 
 // Accounts people made under the previous version (v3), without its demo schools and demo logins.
 const DEMO_SCHOOLS = new Set(['sch_greenwood', 'sch_sunrise', 'sch_lakeview']);
@@ -158,9 +393,19 @@ const loginTakenIn = (d, id) => d.users.some(u => u.login === id) || id === ADMI
 // How many accounts were carried over from an older version since the last call.
 export function takeRecovered() { const n = recovered; recovered = 0; return n; }
 
-export const canPersist = () => persistOk;
+export const canPersist = () => (REMOTE ? !offline : persistOk);
 
-export function reset() { ls.del(KEY); session.clear(); ls.del(LEGACY); DB = null; baseRaw = null; return load(); }
+export async function reset() {
+  if (REMOTE) {
+    const j = await http('admin/reset', { method: 'POST' });
+    session.set({ userId: j.me, token: j.token, at: Date.now() });
+    adopt(j.data);
+    return DB;
+  }
+  ls.del(KEY); session.clear(); ls.del(LEGACY); DB = null; baseRaw = null; load();
+  session.set({ userId: 'u_admin', at: Date.now() });
+  return DB;
+}
 
 // Each tab has its own login, so a school can test as admin in one tab and as a student in another.
 // A new tab starts as whoever logged in last on this browser.
@@ -220,6 +465,7 @@ export function findByLogin(id) {
   return db().users.find(u => u.login === k) || db().users.find(u => u.email && u.email.toLowerCase() === k) || null;
 }
 export function setPassword(u, pw, { temp = false } = {}) {
+  if (REMOTE) { u._pw = { set: pw, temp }; delete u.pw; if (temp) u.pwTemp = true; else delete u.pwTemp; return; }
   const salt = randHex(16);
   u.pw = { s: salt, h: sha256(`${salt}|${pw}`) };
   if (temp) u.pwTemp = true; else delete u.pwTemp;

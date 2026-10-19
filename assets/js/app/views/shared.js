@@ -1,6 +1,6 @@
 // Pieces shared by the school and teacher dashboards: marking, heatmaps, scorecards and class analytics.
 import { WEIGHTS, VIVA_RUBRIC, OBSERVATION_RUBRIC, RUBRIC_LEVELS, LEARNING_OUTCOMES, projectById } from '../../data/courses.js';
-import { db, save, school, section, progress, projectsFor, lastActive, log, user, parentsOf } from '../store.js';
+import { db, save, school, section, progress, projectsFor, lastActive, log, user, parentsOf, syncNow } from '../store.js';
 import { passwordModal, deleteModal, addPersonModal } from './accounts.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, credsHtml, PART_COLOR, FORM_COLOR } from '../ui.js';
@@ -13,6 +13,15 @@ export function showCreds(title, rows, note) {
     ${credsHtml(rows, note)}
     <div class="modal-actions"><button class="btn btn-brand" data-close>Done</button></div>`);
 }
+// Show login details only once the server has the new accounts. It may have changed a User ID
+// (if another school already uses it) or a family code, so rows are read from the saved records (`u`).
+export async function showCredsSaved(title, rows, note) {
+  const r = await syncNow();
+  if (!r.ok) return false;
+  showCreds(title, rows.map(x => (x.u ? { ...x, login: x.u.login, ...(x.code ? { code: x.u.familyCode } : {}) } : x)), note);
+  return true;
+}
+
 export const INACTIVE_DAYS = 14;
 
 export function stats(students) {

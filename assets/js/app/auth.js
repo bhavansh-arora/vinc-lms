@@ -1,6 +1,6 @@
 // Log in and create-account screens. Everyone logs in with a User ID and password; anyone can
 // sign up as a student, parent, teacher or school. The VINC Lab admin is not listed here.
-import { db, school, user, session, authenticate, signUp, makeLogin, loginTaken, LOGIN_RULE, normLogin, findByFamilyCode, studioName, initials } from './store.js';
+import { db, school, user, session, logIn, register, makeLogin, checkLogin, normLogin, lookupFamily, studioName, initials } from './store.js';
 import { $, $$, esc, icon, art, confetti, bindCopy, modal, REDUCED } from './ui.js';
 
 export const ROLES = {
@@ -222,15 +222,16 @@ function bindLogin(pane) {
     e.preventDefault();
     const err = $('#login-err', f);
     err.textContent = '';
-    const r = authenticate(f.uid.value, f.pw.value);
     const btn = $('.btn-go', f);
+    btn.disabled = true;
+    const r = await logIn(f.uid.value, f.pw.value);
+    btn.disabled = false;
     if (r.error) {
       if (!f.uid.value.trim() || !f.pw.value) setErr(f, r.field, r.error);
       else { err.textContent = r.error; $(r.field === 'uid' ? '#f-uid' : '#f-pw', f).select(); }
       shake($('#auth-card'));
       return;
     }
-    session.set({ userId: r.user.id, at: Date.now() });
     await busy(btn);
     st.onEnter(r.user, { fresh: false });
   });
@@ -332,17 +333,24 @@ function bindSignup(pane) {
   const loginHint = $('#h-login', f);
   const baseHint = loginHint.textContent;
   let touched = false;
-  const checkLogin = () => {
-    const v = normLogin(login.value);
+  // Availability is checked with the server (when there is one), after a short pause in typing.
+  let seq = 0, wait = null;
+  const checkLoginHint = () => {
+    const v = normLogin(login.value), n = ++seq;
     loginHint.classList.remove('good', 'bad');
+    clearTimeout(wait);
     if (!v) { loginHint.textContent = baseHint; return; }
-    if (!LOGIN_RULE.test(v)) { loginHint.textContent = 'Start with a letter; use 3 to 30 letters, numbers, dots, dashes or underscores.'; loginHint.classList.add('bad'); return; }
-    if (loginTaken(v)) { loginHint.textContent = `${v} is taken. Try adding a number.`; loginHint.classList.add('bad'); return; }
-    loginHint.innerHTML = `${icon('check')} ${esc(v)} is available`; loginHint.classList.add('good');
+    wait = setTimeout(async () => {
+      const r = await checkLogin(v);
+      if (n !== seq) return;
+      if (!r.valid) { loginHint.textContent = 'Start with a letter; use 3 to 30 letters, numbers, dots, dashes or underscores.'; loginHint.classList.add('bad'); return; }
+      if (!r.available) { loginHint.textContent = `${v} is taken. Try adding a number.`; loginHint.classList.add('bad'); return; }
+      loginHint.innerHTML = `${icon('check')} ${esc(v)} is available`; loginHint.classList.add('good');
+    }, 250);
   };
-  login.addEventListener('input', () => { touched = !!login.value; login.value = login.value.toLowerCase().replace(/\s+/g, '.'); checkLogin(); });
+  login.addEventListener('input', () => { touched = !!login.value; login.value = login.value.toLowerCase().replace(/\s+/g, '.'); checkLoginHint(); });
   const nameInp = f.name;
-  nameInp?.addEventListener('input', () => { if (!touched) { login.value = nameInp.value.trim().length > 1 ? makeLogin(nameInp.value) : ''; checkLogin(); } });
+  nameInp?.addEventListener('input', () => { if (!touched) { login.value = nameInp.value.trim().length > 1 ? makeLogin(nameInp.value) : ''; checkLoginHint(); } });
 
   // Student: sections follow the chosen school.
   if (role === 'student') {
@@ -361,18 +369,20 @@ function bindSignup(pane) {
       const sch = school(f.schoolId.value);
       fs.hidden = !sch;
       if (!sch) { box.innerHTML = ''; return; }
-      box.innerHTML = [...sch.sections].sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name)).map(s => `<label class="pick"><input type="checkbox" name="sectionIds" value="${s.id}"><span>Grade ${s.grade} · ${esc(s.name)}${s.teacherId && user(s.teacherId) ? `<small>now ${esc(user(s.teacherId).name)}</small>` : '<small>no teacher yet</small>'}</span></label>`).join('');
+      box.innerHTML = [...sch.sections].sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name)).map(s => `<label class="pick"><input type="checkbox" name="sectionIds" value="${s.id}"><span>Grade ${s.grade} · ${esc(s.name)}${s.teacherId && user(s.teacherId) ? `<small>now ${esc(user(s.teacherId).name)}</small>` : s.hasTeacher ? '<small>has a teacher</small>' : '<small>no teacher yet</small>'}</span></label>`).join('');
     };
     f.schoolId.addEventListener('change', fill); fill();
   }
   // Parent: show whose code it is as soon as it matches.
   if (role === 'parent') {
     const found = $('#kid-found', f);
-    const look = () => {
+    let seq = 0;
+    const look = async () => {
       f.code.value = f.code.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const kid = f.code.value.length === 6 ? findByFamilyCode(f.code.value) : null;
-      const sch = kid && school(kid.schoolId), sec = sch?.sections.find(s => s.id === kid.sectionId);
-      found.innerHTML = kid ? `<span class="found-card">${icon('check')} <span><b>${esc(kid.name)}</b><small>Grade ${sec?.grade} · ${esc(sec?.name || '')} · ${esc(sch?.name || '')}</small></span></span>` : '';
+      const n = ++seq;
+      const kid = f.code.value.length === 6 ? await lookupFamily(f.code.value) : null;
+      if (n !== seq) return;
+      found.innerHTML = kid ? `<span class="found-card">${icon('check')} <span><b>${esc(kid.name)}</b><small>Grade ${kid.grade} · ${esc(kid.section)} · ${esc(kid.school)}</small></span></span>` : '';
     };
     f.code.addEventListener('input', look);
   }
@@ -412,13 +422,16 @@ function bindSignup(pane) {
     const data = Object.fromEntries(new FormData(f));
     data.sectionIds = new FormData(f).getAll('sectionIds');
     let u;
-    try { u = signUp(role, data); } catch (err) {
+    const go = $('.btn-go', f);
+    go.disabled = true;
+    try { u = await register(role, data); } catch (err) {
+      go.disabled = false;
       if (!err.field || !setErr(f, err.field, err.message)) $('#signup-err', f).textContent = err.message;
       shake($('#auth-card'));
       return;
     }
-    session.set({ userId: u.id, at: Date.now() });
-    await busy($('.btn-go', f));
+    go.disabled = false;
+    await busy(go);
     st.user = u; st.step = 'done';
     paint('fwd');
     confetti();

@@ -3,7 +3,7 @@
 import { db, save, school, section, user, studentsOf, parentsOf, childrenOf, log, resetPassword, setPasswordFor,
   addTeacher, addStudent, addParent, addCoordinator, deleteUser, deleteSchool, soleParents } from '../store.js';
 import { $, $$, esc, icon, timeAgo, toast, modal } from '../ui.js';
-import { showCreds, secLabel } from './shared.js';
+import { showCredsSaved, secLabel } from './shared.js';
 
 export const ROLE_LABEL = { school: 'Coordinator', teacher: 'Teacher', student: 'Student', parent: 'Parent' };
 const ROLE_ICON = { school: 'school', teacher: 'book', student: 'star', parent: 'home' };
@@ -32,10 +32,10 @@ export function passwordModal(ctx, u, onDone) {
         <button class="btn btn-ghost">Set this password</button></form>
     </div>
     <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button></div>`, { wide: true });
-  const done = (pw, temp) => {
+  const done = async (pw, temp) => {
     log(ctx.me.name, `reset the password for ${u.name}`, u.schoolId);
     save(); d.close();
-    showCreds(`New password for ${u.name}`, [{ name: u.name, role, icon: ROLE_ICON[u.role], login: u.login, pw, temp }],
+    await showCredsSaved(`New password for ${u.name}`, [{ u, name: u.name, role, icon: ROLE_ICON[u.role], login: u.login, pw, temp }],
       temp ? 'Share these privately. They will be asked to choose their own password after logging in.' : 'Share these privately.');
     onDone?.();
   };
@@ -134,7 +134,7 @@ export function addPersonModal(ctx, { schoolId = null, role = null, childId = nu
   $$('[data-r]', d).forEach(b => b.addEventListener('click', () => { st.role = b.dataset.r; $$('[data-r]', d).forEach(x => x.setAttribute('aria-pressed', String(x === b))); paint(); }));
   f.school?.addEventListener('change', () => { st.schoolId = f.school.value; paint(); });
   paint();
-  f.addEventListener('submit', e => {
+  f.addEventListener('submit', async e => {
     e.preventDefault();
     const err = msg => { $('#ap-err', d).textContent = msg; };
     const v = k => (f.elements[k]?.value || '').trim();
@@ -145,27 +145,27 @@ export function addPersonModal(ctx, { schoolId = null, role = null, childId = nu
     let rows = [], label = nm;
     if (st.role === 'school') {
       const { coord, pw } = addCoordinator(sch.id, nm, { email: v('email') || undefined, phone: v('phone') || undefined });
-      rows = [{ name: coord.name, role: `Coordinator · ${sch.name}`, icon: 'school', login: coord.login, pw }];
+      rows = [{ u: coord, name: coord.name, role: `Coordinator · ${sch.name}`, icon: 'school', login: coord.login, pw }];
     }
     if (st.role === 'teacher') {
       const ids = $$('input[name=sec]:checked', f).map(x => x.value);
       const { teacher, pw } = addTeacher(sch.id, nm, ids, { email: v('email') || undefined, phone: v('phone') || undefined });
-      rows = [{ name: teacher.name, role: ids.length ? `Teacher · ${sortedSecs(sch).filter(s => ids.includes(s.id)).map(s => s.name).join(', ')}` : 'Teacher (no sections yet)', icon: 'book', login: teacher.login, pw }];
+      rows = [{ name: teacher.name, role: ids.length ? `Teacher · ${sortedSecs(sch).filter(s => ids.includes(s.id)).map(s => s.name).join(', ')}` : 'Teacher (no sections yet)', icon: 'book', u: teacher, login: teacher.login, pw }];
     }
     if (st.role === 'student') {
       const { student, parent, stPw, parPw } = addStudent(sch.id, v('sec'), nm, v('parent').replace(/\s+/g, ' '), { parentPhone: v('parentPhone') || undefined });
-      rows = [{ name: student.name, role: `Student · ${secLabel(section(sch, student.sectionId))}`, icon: 'star', login: student.login, pw: stPw, code: student.familyCode }];
-      if (parent) rows.push({ name: parent.name, role: `Parent of ${student.name.split(' ')[0]}`, icon: 'home', login: parent.login, pw: parPw });
+      rows = [{ name: student.name, role: `Student · ${secLabel(section(sch, student.sectionId))}`, icon: 'star', u: student, login: student.login, pw: stPw, code: student.familyCode }];
+      if (parent) rows.push({ u: parent, name: parent.name, role: `Parent of ${student.name.split(' ')[0]}`, icon: 'home', login: parent.login, pw: parPw });
     }
     if (st.role === 'parent') {
       const kids = $$('input[name=kid]:checked', f).map(x => x.value);
       if (!kids.length) { err('Tick the child this parent belongs to.'); return; }
       const { parent, pw } = addParent(sch.id, nm, kids, { relation: v('relation'), email: v('email') || undefined, phone: v('phone') || undefined });
-      rows = [{ name: parent.name, role: `Parent of ${kids.map(id => user(id).name.split(' ')[0]).join(' and ')}`, icon: 'home', login: parent.login, pw }];
+      rows = [{ u: parent, name: parent.name, role: `Parent of ${kids.map(id => user(id).name.split(' ')[0]).join(' and ')}`, icon: 'home', login: parent.login, pw }];
     }
     log(ctx.me.name, `added the ${ROLE_LABEL[st.role].toLowerCase()} account of ${label}`, sch.id);
     save(); d.close();
-    showCreds(`${label} can log in now`, rows);
+    await showCredsSaved(`${label} can log in now`, rows);
     onDone?.();
   });
 }

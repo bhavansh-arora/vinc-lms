@@ -3,7 +3,7 @@ import { FORMS, GRADES, projectById, projectsOfGrade } from '../../data/courses.
 import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addSection, addTeacher, assignSections, setSectionTeacher, teachersOf, initials, user, parentsOf, newJoinCode } from '../store.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell, bindCopy } from '../ui.js';
-import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCreds } from './shared.js';
+import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCredsSaved } from './shared.js';
 import { accountsPage, addPersonModal, passwordModal, deleteModal } from './accounts.js';
 
 export const nav = () => [
@@ -142,15 +142,16 @@ function teachers(ctx, sch) {
           <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-brand">Save</button></div></form>`;
       const open = t => {
         const d = modal(`<h2>${t ? `Sections for ${esc(t.name)}` : 'Add a teacher'}</h2>${form(t)}`);
-        $('#tf', d).addEventListener('submit', e => {
+        $('#tf', d).addEventListener('submit', async e => {
           e.preventDefault(); const f = e.target;
           const ids = $$('input[name=sec]:checked', f).map(x => x.value);
           if (t) { assignSections(t, ids); log(ctx.me.name, `updated sections for ${t.name}`, sch.id); }
           else {
             if (!f.name.value.trim()) return;
             const { teacher: nt, pw } = addTeacher(sch.id, f.name.value.trim(), ids, { email: f.email.value.trim() || undefined });
-            log(ctx.me.name, `added teacher ${nt.name}`, sch.id); save(); d.close(); ctx.rerender();
-            showCreds(`${nt.name} can log in now`, [{ name: nt.name, role: 'Teacher', icon: 'book', login: nt.login, pw }]);
+            log(ctx.me.name, `added teacher ${nt.name}`, sch.id); save(); d.close();
+            await showCredsSaved(`${nt.name} can log in now`, [{ u: nt, name: nt.name, role: 'Teacher', icon: 'book', login: nt.login, pw }]);
+            ctx.rerender();
             return;
           }
           save(); d.close(); toast('Teacher saved.'); ctx.rerender();
@@ -193,7 +194,7 @@ function changeTeacherModal(ctx, sch, sec) {
   const f = $('#ct', d), box = $('#ct-new', d);
   const sync = () => { box.hidden = f.t.value !== '__new'; if (!box.hidden) f.name.focus(); };
   $$('input[name=t]', f).forEach(r => r.addEventListener('change', sync)); sync();
-  f.addEventListener('submit', e => {
+  f.addEventListener('submit', async e => {
     e.preventDefault();
     const pick = f.t.value;
     let to = null, creds = null;
@@ -203,14 +204,14 @@ function changeTeacherModal(ctx, sch, sec) {
       if (f.email.value && f.email.validity.typeMismatch) { $('#ct-err', d).textContent = 'That email does not look right.'; return; }
       const { teacher, pw } = addTeacher(sch.id, nm, [], { email: f.email.value.trim() || undefined });
       log(ctx.me.name, `added teacher ${teacher.name}`, sch.id);
-      to = teacher; creds = [{ name: teacher.name, role: `Teacher · ${secLabel(sec)}`, icon: 'book', login: teacher.login, pw }];
+      to = teacher; creds = [{ u: teacher, name: teacher.name, role: `Teacher · ${secLabel(sec)}`, icon: 'book', login: teacher.login, pw }];
     } else to = pick ? user(pick) : null;
     setSectionTeacher(sch, sec.id, to?.id || null);
     log(ctx.me.name, to ? `made ${to.name} the teacher of ${secLabel(sec)}${cur ? ` (was ${cur.name})` : ''}` : `removed ${cur?.name || 'the teacher'} from ${secLabel(sec)}`, sch.id);
     save(); d.close();
     toast(to ? `${to.name} now teaches ${sec.name}. All student work is kept.` : `${sec.name} has no teacher for now. All student work is kept.`);
+    if (creds) await showCredsSaved(`${to.name} can log in now`, creds);
     ctx.rerender();
-    if (creds) showCreds(`${to.name} can log in now`, creds);
   });
 }
 
