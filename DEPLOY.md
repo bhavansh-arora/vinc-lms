@@ -90,7 +90,7 @@ the installer again at any time. It repairs and updates the install and never de
 4. Writes the settings file `/opt/vinclab/.env` (readable only by root), then tests the database
    login before starting anything.
 5. Builds and starts the `vinclab` container, then checks that it answers.
-6. Sets up a nightly backup at 02:30.
+6. Sets up a database backup every 3 hours.
 7. Connects `lms.vinc-lab.com` to the app and sets up HTTPS (see below).
 
 ### How it connects to the web server
@@ -149,25 +149,56 @@ the script prints the command that returns to the previous version.
 
 ## Backups
 
-- A backup is made every night at 02:30 into `/opt/vinclab/backups/`. The newest 14 are kept.
-- Make one now: `sudo systemctl start vinclab-backup`
+A backup is made **every 3 hours** (at 00:15, 03:15, 06:15 … UTC) into `/opt/vinclab/backups/`.
+Each backup is two files with the same time in the name:
+
+| File | What it is | Restore with |
+|---|---|---|
+| `vinclab-YYYYMMDD-HHMMSS.dump` | A full PostgreSQL backup (`pg_dump`) of the `vinc_lms` database | `pg_restore` (below) |
+| `vinclab-YYYYMMDD-HHMMSS.json.gz` | The app's own export of the same data | `server/restore.js` (below) |
+
+(With `--db shared` only the `.json.gz` file is made.)
+
+Old backups are deleted automatically:
+
+- every backup from the **last 2 days** is kept (16 a day), then
+- the **newest backup of each day** for **30 days**,
+- anything older is deleted.
+
+To keep more or fewer, add `BACKUP_KEEP_HOURS=48` and/or `BACKUP_KEEP_DAYS=30` with your numbers
+to `/opt/vinclab/.env`, then run `sudo docker compose up -d` in `/opt/vinclab`.
+
+- Make one now: `sudo systemctl start vinclab-backup` (or `sudo bash /opt/vinclab/deploy/backup.sh`)
 - See them: `sudo ls -lh /opt/vinclab/backups/`
+- When they run: `systemctl list-timers vinclab-backup.timer`; results: `journalctl -u vinclab-backup -n 50`
 - Copy them off the server from time to time, for example with
   `scp` or `rsync`. A backup that only exists on the VPS is lost if the VPS is lost.
 
 ### Restoring a backup
 
-A restore **replaces all current data** with the data in the backup.
+A restore **replaces all current data** with the data in the backup. Make a fresh backup first
+(`sudo systemctl start vinclab-backup`) so you can go back if you pick the wrong file.
+
+From a `.dump` file (the usual choice):
 
 ```sh
 cd /opt/vinclab
 sudo ls backups/                                   # pick a file
 sudo docker compose stop vinclab                   # stop the app so nothing writes during the restore
-sudo docker compose run --rm vinclab node server/restore.js /app/backups/FILE-NAME --yes
+sudo docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < backups/FILE-NAME.dump
 sudo docker compose start vinclab
 ```
 
-Inside the container, the backups folder is `/app/backups`.
+From a `.json.gz` file:
+
+```sh
+cd /opt/vinclab
+sudo docker compose stop vinclab
+sudo docker compose run --rm vinclab node server/restore.js /app/backups/FILE-NAME.json.gz --yes
+sudo docker compose start vinclab
+```
+
+Inside the app container, the backups folder is `/app/backups`.
 
 ## Useful commands
 
@@ -229,6 +260,6 @@ hosting provider (this applies to all sites on the server).
 | `/opt/vinclab` | App code (a git checkout of the `main` branch) |
 | `/opt/vinclab/.env` | Settings and secrets (database URL, first admin password) |
 | `/opt/vinclab/docker-compose.override.yml` | Networking and proxy settings, written by the installer |
-| `/opt/vinclab/backups/` | Nightly backups |
+| `/opt/vinclab/backups/` | Database backups (every 3 hours) |
 | Container `vinclab-db`, volume `vinclab-pgdata` | All app data (own database; with `--db shared`, the `vinc_lms` database in that container) |
 | `/var/log/vinclab-install.log` | Detailed installer log |

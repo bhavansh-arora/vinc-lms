@@ -4,7 +4,7 @@
 # What it does:
 #   - makes a last backup (skip with --no-backup)
 #   - stops and removes the vinclab container and its image (docker compose down)
-#   - removes the nightly backup timer
+#   - removes the backup timer
 #   - removes the web-server site config the installer added (host nginx/Apache/Caddy, nginx-proxy
 #     upload-size file); labels for Traefik/caddy-docker-proxy/nginx-proxy go away with the container
 # What it never does:
@@ -184,9 +184,9 @@ main() {
     run systemctl disable -q --now "$SERVICE-backup.timer" 2>/dev/null || true
     run rm -f "$UNIT_DIR/$SERVICE-backup.timer" "$UNIT_DIR/$SERVICE-backup.service"
     run systemctl daemon-reload || true
-    ok "Removed the nightly backup timer"
+    ok "Removed the backup timer"
   fi
-  if [ -e "/etc/cron.d/$SERVICE-backup" ]; then run rm -f "/etc/cron.d/$SERVICE-backup"; ok "Removed the nightly backup cron entry"; fi
+  if [ -e "/etc/cron.d/$SERVICE-backup" ]; then run rm -f "/etc/cron.d/$SERVICE-backup"; ok "Removed the backup cron entry"; fi
 
   # 4. Web-server config we added
   remove_nginx

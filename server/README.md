@@ -31,13 +31,15 @@ Needs Node.js 20 or newer. Tables are created on first start.
 | `ADMIN_PASSWORD` | `Qwerty@21` | Password for the `admin` login, used only when the database is first created |
 | `TRUST_PROXY` | `1` | Read the client IP from `X-Forwarded-For` (for rate limits) |
 | `BACKUP_DIR` | `./backups` | Where backups are written |
+| `BACKUP_KEEP_HOURS` | `48` | Keep every backup this many hours old or newer |
+| `BACKUP_KEEP_DAYS` | `30` | After that, keep the newest backup of each day for this many days |
 
 Health check: `GET /api/health` returns `{"ok":true}`.
 
 ## Backups
 
 ```sh
-node server/backup.js                       # writes BACKUP_DIR/vinclab-YYYYMMDD-HHMMSS.json.gz, keeps 14
+node server/backup.js                       # writes BACKUP_DIR/vinclab-YYYYMMDD-HHMMSS.json.gz, then deletes old backups
 node server/restore.js FILE.json.gz --yes   # replaces ALL data with the backup (stop the app first)
 ```
 
@@ -48,7 +50,7 @@ node server/restore.js FILE.json.gz --yes   # replaces ALL data with the backup 
 | `server.js` | HTTP server: API routes, rate limits, static files |
 | `logic.js` | Logins, sign-up, what each role sees, which changes each role may make |
 | `db.js` | Postgres storage with an in-memory copy; each request's writes go in one transaction |
-| `backup.js`, `restore.js` | Backups as gzipped JSON |
+| `backup.js`, `restore.js` | Backups as gzipped JSON; `backup.js` also deletes old backups |
 
 The browser side is `assets/js/app/store.js`: it detects the server at start-up (`/api/health`)
 and then loads and saves through it. Without a server (plain static hosting) it keeps everything

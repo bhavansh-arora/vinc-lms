@@ -363,7 +363,7 @@ check_system() {
 
   if ! dry; then
     command -v apt-get >/dev/null || die "apt-get not found. This installer needs Ubuntu or Debian."
-    if command -v systemctl >/dev/null && [ -d /run/systemd/system ]; then HAS_SYSTEMD=1; else HAS_SYSTEMD=0; warn "systemd is not running; the nightly backup will use cron instead."; fi
+    if command -v systemctl >/dev/null && [ -d /run/systemd/system ]; then HAS_SYSTEMD=1; else HAS_SYSTEMD=0; warn "systemd is not running; backups will use cron instead."; fi
     : >>"$LOG_FILE" && chmod 600 "$LOG_FILE"
     printf '\n===== VINC Lab install %s =====\n' "$(date -u +%FT%TZ)" >>"$LOG_FILE"
     ok "Detailed log: $LOG_FILE"
@@ -632,6 +632,15 @@ port_conflict() {
 decide_setup() {
   step "Looking at this server's reverse proxy and database"
   detect_proxy
+  # On a re-run, keep the proxy network chosen last time (if it still exists).
+  if [ -z "$PROXY_NETWORK_OPT" ] && [ -n "$DOCKER_BIN" ]; then
+    local last
+    last=$(kv_get "$STATE_FILE" PROXY_NETWORK)
+    if [ -n "$last" ] && [[ $last =~ ^[A-Za-z0-9._-]+$ ]] && "$DOCKER_BIN" network inspect "$last" >/dev/null 2>&1; then
+      PROXY_NETWORK_OPT=$last
+      info "Using the proxy network from the last install: $last"
+    fi
+  fi
   case $PROXY_WHERE in
     none) warn "Nothing is serving ports 80/443 on this server." ;;
     *) ok "Ports 80/443 are served by: $PROXY_PROGRAMS"; info "Proxy type: $PROXY_KIND" ;;
@@ -1155,7 +1164,9 @@ start_app() {
 
 # ----------------------------------------------------------------------------- step 7: backups
 setup_backups() {
-  step "Nightly backups (02:30)"
+  step "Backups (every 3 hours)"
+  local keep="all from the last 2 days, then one a day for 30 days"
+  run chmod 755 "$APP_DIR/deploy/backup.sh"
   if [ "${HAS_SYSTEMD:-1}" = 1 ]; then
   write_file "$UNIT_DIR/$SERVICE-backup.service" 644 root:root <<EOF
 # Managed by the VINC Lab installer (deploy/install.sh).
@@ -1167,15 +1178,16 @@ After=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=$APP_DIR
-ExecStart=${DOCKER_BIN:-/usr/bin/docker} compose exec -T $SERVICE node server/backup.js
+ExecStart=/bin/bash $APP_DIR/deploy/backup.sh
 EOF
   write_file "$UNIT_DIR/$SERVICE-backup.timer" 644 root:root <<EOF
 # Managed by the VINC Lab installer (deploy/install.sh).
 [Unit]
-Description=Nightly VINC Lab database backup
+Description=VINC Lab database backup, every 3 hours
 
 [Timer]
-OnCalendar=*-*-* 02:30:00
+OnCalendar=*-*-* 00/3:15:00
+RandomizedDelaySec=120
 Persistent=true
 
 [Install]
@@ -1185,13 +1197,16 @@ EOF
   if [ "${HAS_SYSTEMD:-1}" = 1 ]; then
     run systemctl daemon-reload
     run systemctl enable -q --now "$SERVICE-backup.timer"
-    ok "Backups go to $BACKUP_DIR (newest 14 kept). Make one now: sudo systemctl start $SERVICE-backup"
+    if [ -f "/etc/cron.d/$SERVICE-backup" ]; then run rm -f "/etc/cron.d/$SERVICE-backup"; fi
+    ok "Backups go to $BACKUP_DIR every 3 hours ($keep)."
+    info "Make one now: sudo systemctl start $SERVICE-backup"
   else
     write_file "/etc/cron.d/$SERVICE-backup" 644 root:root <<EOF
-# Managed by the VINC Lab installer (deploy/install.sh). Nightly database backup.
-30 2 * * * root cd $APP_DIR && ${DOCKER_BIN:-/usr/bin/docker} compose exec -T $SERVICE node server/backup.js >>/var/log/$SERVICE-backup.log 2>&1
+# Managed by the VINC Lab installer (deploy/install.sh). Database backup every 3 hours.
+15 */3 * * * root /bin/bash $APP_DIR/deploy/backup.sh >>/var/log/$SERVICE-backup.log 2>&1
 EOF
-    ok "Backups go to $BACKUP_DIR (newest 14 kept), via cron. Make one now: cd $APP_DIR && sudo docker compose exec $SERVICE node server/backup.js"
+    ok "Backups go to $BACKUP_DIR every 3 hours via cron ($keep)."
+    info "Make one now: sudo bash $APP_DIR/deploy/backup.sh"
   fi
 }
 
@@ -1735,6 +1750,7 @@ MODE=$MODE
 DB_KIND=$DB_KIND
 PROXY_KIND=$PROXY_KIND
 PROXY_WHERE=$PROXY_WHERE
+PROXY_NETWORK=$PROXY_NETWORK
 DOMAIN=$DOMAIN
 PROXY_FILES='${list% }'
 INSTALLED_AT=$(date -u +%FT%TZ)
@@ -1772,7 +1788,7 @@ summary() {
   cat <<EOF
 
   Data:      $(if [ "$DB_KIND" = own ]; then printf "own PostgreSQL 18 container '%s' (data in Docker volume '%s')" "$DB_CONTAINER_OWN" "$DB_VOLUME"; else printf "PostgreSQL database '%s' (%s)" "$DB_NAME" "$DB_URL_HOSTPORT"; fi)
-  Backups:   $BACKUP_DIR/  (nightly at 02:30, newest 14 kept)
+  Backups:   $BACKUP_DIR/  (every 3 hours; all from the last 2 days, then one a day for 30 days)
   Settings:  $ENV_FILE
   Update:    sudo bash $APP_DIR/deploy/update.sh
   Logs:      cd $APP_DIR && sudo docker compose logs -f

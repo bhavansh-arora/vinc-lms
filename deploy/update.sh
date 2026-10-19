@@ -75,8 +75,9 @@ main() {
   if [ "$DO_BACKUP" -eq 1 ]; then
     if [ "$(docker inspect -f '{{.State.Running}}' "$SERVICE" 2>/dev/null)" = true ]; then
       info "Making a backup first..."
-      if dry; then run docker compose exec -T "$SERVICE" node server/backup.js
-      elif dc exec -T "$SERVICE" node server/backup.js; then ok "Backup saved in $APP_DIR/backups"
+      if dry; then run bash "$APP_DIR/deploy/backup.sh"
+      elif [ -f "$APP_DIR/deploy/backup.sh" ] && bash "$APP_DIR/deploy/backup.sh"; then ok "Backup saved in $APP_DIR/backups"
+      elif [ ! -f "$APP_DIR/deploy/backup.sh" ] && dc exec -T "$SERVICE" node server/backup.js; then ok "Backup saved in $APP_DIR/backups"
       else die "The backup failed, so nothing was updated. Fix it, or run with --no-backup to skip it."; fi
     else
       warn "The app is not running, so no backup was made before updating."

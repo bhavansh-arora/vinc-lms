@@ -274,7 +274,7 @@ browser-only preview.
 
 ## Before going live
 - **Server**: done (`server/`, `DEPLOY.md`): server-side logins with scrypt
-  password hashes, role-based access, PostgreSQL storage and nightly backups.
+  password hashes, role-based access, PostgreSQL storage and backups every 3 hours.
   The browser-only mode is for previews only: there, passwords are checked in
   the browser and protect nothing on a shared computer.
 - **Admin password**: change `Qwerty@21` after the first login on the server.
