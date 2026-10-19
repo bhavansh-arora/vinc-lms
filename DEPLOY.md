@@ -105,6 +105,9 @@ The installer chooses one of two **modes**:
   separate site file for `lms.vinc-lab.com` and checks the configuration before reloading (if the
   check fails, it removes its file again). For nginx and Apache it also gets a free Let's Encrypt
   certificate; Caddy gets its own.
+  If PostgreSQL is not published on the server (`docker ps` shows only `5432/tcp`, with no
+  `127.0.0.1:5432->`), the app joins PostgreSQL's own Docker network and reaches it by container
+  name; it still listens only on `127.0.0.1:3100`.
 - **Docker mode** is for a web server that runs in a container. The app joins that container's
   Docker network and the PostgreSQL container's network. It does not open any port on the server.
   - **Traefik**, **nginx-proxy** and **caddy-docker-proxy** are set up automatically, with labels
