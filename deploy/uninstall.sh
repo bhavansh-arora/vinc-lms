@@ -100,6 +100,26 @@ remove_apache() {
   fi
 }
 
+# Our marked block in a Caddy container's Caddyfile (entry: caddy-container:CONTAINER:HOSTFILE:CONFIG).
+remove_container_caddy() {
+  local rest c host cfg bak
+  rest=${1#caddy-container:}; c=${rest%%:*}; rest=${rest#*:}; host=${rest%%:*}; cfg=${rest#*:}
+  [ -f "$host" ] || return 0
+  grep -qF '# >>> vinclab (added by' "$host" || return 0
+  if dry; then run "remove the vinclab block from $host, then: docker exec $c caddy reload"; return 0; fi
+  bak=$(mktemp); cp -p "$host" "$bak"
+  awk '/^# >>> vinclab \(added by/ {skip = 1; next} /^# <<< vinclab <<</ {skip = 0; next} !skip' "$bak" >"$bak.new"
+  cat "$bak.new" >"$host"   # in place, so a single-file bind mount keeps seeing it
+  if docker exec "$c" caddy validate --config "$cfg" --adapter caddyfile >/dev/null 2>&1; then
+    docker exec -w "$(dirname "$cfg")" "$c" caddy reload --config "$cfg" --adapter caddyfile >/dev/null 2>&1 \
+      && ok "Caddy (container $c) no longer serves the VINC Lab site" \
+      || warn "Removed our block from $host; restart Caddy to apply it: sudo docker restart $c"
+  else
+    cat "$bak" >"$host"; fail "Caddy rejected its configuration without our block, so $host was put back."
+  fi
+  rm -f "$bak" "$bak.new"
+}
+
 remove_caddy() {
   [ -e /etc/caddy/sites/vinclab.caddy ] || return 0
   remove_files /etc/caddy/sites/vinclab.caddy || return 0
@@ -163,7 +183,7 @@ main() {
   if [ -e "$UNIT_DIR/$SERVICE-backup.timer" ] || [ -e "$UNIT_DIR/$SERVICE-backup.service" ]; then
     run systemctl disable -q --now "$SERVICE-backup.timer" 2>/dev/null || true
     run rm -f "$UNIT_DIR/$SERVICE-backup.timer" "$UNIT_DIR/$SERVICE-backup.service"
-    run systemctl daemon-reload
+    run systemctl daemon-reload || true
     ok "Removed the nightly backup timer"
   fi
   if [ -e "/etc/cron.d/$SERVICE-backup" ]; then run rm -f "/etc/cron.d/$SERVICE-backup"; ok "Removed the nightly backup cron entry"; fi
@@ -173,6 +193,7 @@ main() {
   remove_apache
   remove_caddy
   for f in $files; do
+    case $f in caddy-container:*) remove_container_caddy "$f"; continue ;; esac
     case $f in /etc/nginx/*|/etc/apache2/*|/etc/caddy/*) ;; *)   # e.g. nginx-proxy vhost.d file
       remove_files "$f" || true ;;
     esac

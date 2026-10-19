@@ -107,6 +107,12 @@ The installer chooses one of two **modes**:
   name; it still listens only on `127.0.0.1:3100`.
 - **Docker mode** is for a web server that runs in a container. The app joins that container's
   Docker network and the PostgreSQL container's network. It does not open any port on the server.
+  - **Caddy in a container** (for example another project's `caddy:2-alpine`, reading a Caddyfile
+    mounted from the server) is set up automatically: the installer finds that Caddyfile through
+    the container's mounts, adds one marked block for `lms.vinc-lab.com` (pointing to
+    `vinclab:3100`), lets Caddy check it (and puts the file back if the check fails), and reloads
+    Caddy without a restart. The other sites in the file are not touched. Caddy gets the HTTPS
+    certificate itself. `deploy/uninstall.sh` removes only that block.
   - **Traefik**, **nginx-proxy** and **caddy-docker-proxy** are set up automatically, with labels
     or settings in `/opt/vinclab/docker-compose.override.yml`. They get the certificate themselves.
   - **Nginx Proxy Manager** cannot be set up automatically. The installer prints the exact values

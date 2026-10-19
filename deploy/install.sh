@@ -1156,6 +1156,7 @@ start_app() {
 # ----------------------------------------------------------------------------- step 7: backups
 setup_backups() {
   step "Nightly backups (02:30)"
+  if [ "${HAS_SYSTEMD:-1}" = 1 ]; then
   write_file "$UNIT_DIR/$SERVICE-backup.service" 644 root:root <<EOF
 # Managed by the VINC Lab installer (deploy/install.sh).
 [Unit]
@@ -1180,6 +1181,7 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF
+  fi
   if [ "${HAS_SYSTEMD:-1}" = 1 ]; then
     run systemctl daemon-reload
     run systemctl enable -q --now "$SERVICE-backup.timer"
@@ -1505,6 +1507,94 @@ EOF
   info "nginx-proxy applies it the next time it regenerates its config (e.g. when our container starts)."
 }
 
+# ----------------------------------------------------------------------------- Caddy in a container
+# A plain Caddy container (for example another project's) that reads a Caddyfile mounted from this
+# server. We add one clearly marked block for our domain, let Caddy check the result (and put the
+# file back if it fails), then reload Caddy gracefully. Other sites in the file are not touched.
+CC_BEGIN="# >>> vinclab (added by /opt/vinclab/deploy/install.sh; deploy/uninstall.sh removes it) >>>"
+CC_END="# <<< vinclab <<<"
+
+# Prints the Caddyfile's path on this server and inside the container, separated by a tab.
+container_caddyfile() {
+  local c=$1 cmd cfg mounts line type src dst best="" bestlen=0
+  cmd=$("$DOCKER_BIN" inspect -f '{{join .Config.Cmd " "}} {{join .Args " "}}' "$c" 2>/dev/null || true)
+  cfg=$(grep -oE -- '--config[= ]+[^ ]+' <<<"$cmd" | head -n 1 | sed -E 's/^--config[= ]+//' || true)
+  cfg=${cfg:-/etc/caddy/Caddyfile}
+  case $cmd in *--adapter*) grep -qE -- '--adapter[= ]+caddyfile' <<<"$cmd" || return 1 ;; esac
+  # shellcheck disable=SC2016  # Go template, not shell
+  mounts=$("$DOCKER_BIN" inspect -f '{{range .Mounts}}{{.Type}}|{{.Source}}|{{.Destination}}{{"\n"}}{{end}}' "$c" 2>/dev/null || true)
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    IFS='|' read -r type src dst <<<"$line"
+    case $type in bind|volume) ;; *) continue ;; esac
+    case $cfg in "$dst"|"$dst"/*) if [ ${#dst} -gt "$bestlen" ]; then best="$src|$dst"; bestlen=${#dst}; fi ;; esac
+  done <<<"$mounts"
+  [ -n "$best" ] || return 1
+  src=${best%%|*}; dst=${best#*|}
+  [ -f "$src${cfg#"$dst"}" ] || return 1
+  printf '%s\t%s\n' "$src${cfg#"$dst"}" "$cfg"
+}
+
+caddy_block() {
+  cat <<EOF
+$CC_BEGIN
+$DOMAIN {
+	encode gzip
+	request_body {
+		max_size ${BODY_MB}MB
+	}
+	reverse_proxy $CONTAINER:$PORT
+}
+$CC_END
+EOF
+}
+
+configure_container_caddy() {
+  local c=$PROXY_CONTAINER found host cfg rest
+  if ! found=$(container_caddyfile "$c"); then
+    warn "Could not find the Caddyfile of container $c on this server."
+    print_generic_instructions "Caddy (container $c)"
+    info "In its Caddyfile, add:  $DOMAIN { reverse_proxy $CONTAINER:$PORT }   then: sudo docker exec $c caddy reload --config /etc/caddy/Caddyfile"
+    return 0
+  fi
+  host=${found%%$'\t'*}; cfg=${found#*$'\t'}
+  info "Caddy (container $c) reads $cfg, which is $host on this server"
+  # The file without any block we added before.
+  rest=$(awk -v b="$CC_BEGIN" -v e="$CC_END" '$0 == b {skip = 1; next} $0 == e {skip = 0; next} !skip' "$host")
+  if grep -qE "^[[:space:]]*(https?://)?$DOMAIN([[:space:],:{]|$)" <<<"$rest"; then
+    warn "$host already has a site for $DOMAIN that the installer did not add; leaving it as it is."
+    info "Make sure it says:  reverse_proxy $CONTAINER:$PORT"
+    WEB_RESULT="Caddy (container '$c'), existing site block"
+    return 0
+  fi
+  if dry; then
+    info "[dry-run] would add to $host:"
+    caddy_block | sed 's/^/      | /'
+    WEB_RESULT="Caddy (container '$c')"
+    return 0
+  fi
+  cp -p "$host" "$TMP_DIR/Caddyfile.container.bak"
+  # Write in place (same file), so a single-file bind mount keeps seeing it.
+  { printf '%s\n' "$rest" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'; printf '\n'; caddy_block; } >"$TMP_DIR/Caddyfile.new"
+  cat "$TMP_DIR/Caddyfile.new" >"$host"
+  if ! "$DOCKER_BIN" exec "$c" caddy validate --config "$cfg" --adapter caddyfile >>"$LOG_FILE" 2>&1; then
+    cat "$TMP_DIR/Caddyfile.container.bak" >"$host"
+    fail "Caddy rejected the configuration with our site added, so $host was put back as it was (see $LOG_FILE)."
+    return 1
+  fi
+  STATE_FILES+=("caddy-container:$c:$host:$cfg")
+  if "$DOCKER_BIN" exec -w "$(dirname "$cfg")" "$c" caddy reload --config "$cfg" --adapter caddyfile >>"$LOG_FILE" 2>&1; then
+    ok "Caddy (container $c) now serves https://$DOMAIN and gets its certificate by itself"
+    WEB_RESULT="Caddy (container '$c')"
+  else
+    warn "The new Caddy configuration is valid, but Caddy could not reload it (its admin API may be turned off)."
+    info "Restart it once to load it (its sites are down for a second or two):  sudo docker restart $c"
+    WEB_RESULT="Caddy (container '$c') - restart it once: sudo docker restart $c"
+    MANUAL_STEP=1
+  fi
+  return 0
+}
+
 docker_proxy_note() {
   if [ "$DNS_OK" -eq 1 ]; then
     info "The proxy gets the HTTPS certificate by itself; give it a minute."
@@ -1606,8 +1696,14 @@ setup_routing() {
         WEB_RESULT="nginx-proxy (container '$PROXY_CONTAINER')"
         docker_proxy_note ;;
       npm) print_npm_instructions ;;
+      caddy) configure_container_caddy || rc=1 ;;
       *) print_generic_instructions "${PROXY_PROGRAMS:-your reverse proxy}" ;;
     esac
+    if [ "$rc" -ne 0 ]; then
+      WEB_FAILED=1
+      WEB_RESULT="FAILED - see the messages above"
+      warn "The web server step did not finish. Other sites were not changed."
+    fi
     return 0
   fi
 
