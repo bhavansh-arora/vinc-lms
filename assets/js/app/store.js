@@ -36,7 +36,7 @@ export function load() {
     DB = seed();
   }
   baseRaw = cur?.raw || null;
-  const changed = applyAdminDefaults(DB);
+  const changed = applyAdminDefaults(DB) | migrateCodes(DB);
   if (importLegacy(DB) || changed || !cur) save();
   return DB;
 }
@@ -96,7 +96,8 @@ function merge3(mine, theirs, base) {
     return null;
   };
   const byId = list => new Map((list || []).map(x => [x.id, x]));
-  for (const k of ['users', 'schools']) {
+  for (const k of ['users', 'schools', 'schoolIds']) {
+    if (!mine[k] && !theirs[k]) continue;
     const M = byId(mine[k]), T = byId(theirs[k]), B = byId(base?.[k]);
     const ids = [...new Set([...M.keys(), ...T.keys()])];
     mine[k] = ids.map(id => pick(M.get(id), T.get(id), B.get(id))).filter(Boolean);
@@ -219,6 +220,7 @@ function reconcile(server, base) {
   const merged = clone(DB);
   merge3(merged, server, base);
   for (const k of ['version', 'server', 'createdAt']) merged[k] = server[k];
+  if (server.schoolIds) merged.schoolIds = server.schoolIds; else delete merged.schoolIds;
   patch(DB, merged);
   syncBase = clone(server);
   return stable(DB) !== before;
@@ -328,6 +330,54 @@ export async function linkChildByCode(me, code) {
   reconcile(j.data, clone(syncBase));
   return user(j.child.id) || j.child;
 }
+
+/* ---------- School IDs (VINC Lab admin) ----------
+   The admin makes School IDs and gives one to each school; a school needs an unused one to register. */
+export const schoolIdList = () => db().schoolIds || [];
+const normCode = c => String(c || '').trim().toUpperCase().replace(/\s+/g, '');
+const newSchoolIdCode = (d = db()) => `VL-${makeCode(6, c => (d.schoolIds || []).some(x => x.id === `VL-${c}`))}`;
+// Make `count` new School IDs, with an optional note (who they are for). Returns the new records.
+export async function createSchoolIds(count, note = '') {
+  const n = Math.max(1, Math.min(50, Math.round(+count) || 1));
+  note = String(note || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+  if (REMOTE) { await syncNow(); const j = await http('admin/school-ids', { method: 'POST', body: { create: n, note } }); reconcile(j.data, clone(syncBase)); return j.made; }
+  const d = db(); d.schoolIds ||= [];
+  const made = [];
+  for (let i = 0; i < n; i++) { const rec = { id: newSchoolIdCode(d), note, createdAt: Date.now(), usedBy: null, usedAt: null }; d.schoolIds.push(rec); made.push(rec); }
+  log(user('u_admin')?.name || 'Admin', `made ${n} School ID${n === 1 ? '' : 's'}${note ? ` for ${note}` : ''}`, null);
+  save();
+  return made;
+}
+export async function deleteSchoolId(id) {
+  if (REMOTE) { await syncNow(); const j = await http('admin/school-ids', { method: 'POST', body: { delete: id } }); reconcile(j.data, clone(syncBase)); return; }
+  const d = db(); const rec = (d.schoolIds || []).find(x => x.id === id);
+  if (!rec) return;
+  if (rec.usedBy && school(rec.usedBy)) fail('', `This School ID belongs to ${school(rec.usedBy).name}. Delete the school first.`);
+  d.schoolIds = d.schoolIds.filter(x => x !== rec);
+  save();
+}
+export async function noteSchoolId(id, note) {
+  note = String(note || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+  if (REMOTE) { await syncNow(); const j = await http('admin/school-ids', { method: 'POST', body: { id, note } }); reconcile(j.data, clone(syncBase)); return; }
+  const rec = (db().schoolIds || []).find(x => x.id === id);
+  if (rec) { rec.note = note; save(); }
+}
+// Give a school a School ID marked as used by it (schools the admin adds, older schools).
+function attachSchoolId(sch, d) {
+  d.schoolIds ||= [];
+  const rec = { id: newSchoolIdCode(d), note: sch.name, createdAt: Date.now(), usedBy: sch.id, usedAt: Date.now() };
+  d.schoolIds.push(rec); sch.regCode = rec.id;
+}
+// Older browser data: every school gets a student joining code and a School ID.
+function migrateCodes(d) {
+  let changed = false;
+  for (const sch of d.schools) {
+    if (!sch.studentCode) { sch.studentCode = newJoinCode(sch, d); changed = true; }
+    if (!sch.regCode || !(d.schoolIds || []).some(x => x.id === sch.regCode)) { attachSchoolId(sch, d); changed = true; }
+  }
+  return changed;
+}
+
 export async function lookupFamily(code) {
   if (!REMOTE) { const k = findByFamilyCode(code); if (!k) return null; const sch = school(k.schoolId), sec = section(sch, k.sectionId); return { name: k.name, grade: sec?.grade, section: sec?.name || '', school: sch?.name || '' }; }
   try { return (await http(`public/family?code=${encodeURIComponent(code)}`)).child; } catch { return null; }
@@ -492,10 +542,14 @@ function makeCode(len, taken, r = Math.random) {
 }
 // Family code: a student shares it so a parent can link their account.
 export const newFamilyCode = (d = db(), r) => makeCode(6, c => d.users.some(u => u.familyCode === c), r);
-// Joining code: a coordinator shares it so teachers can create accounts for that school.
-export const newJoinCode = (sch, d = db(), r) => `${(sch.initials || 'SC').slice(0, 3)}-${makeCode(4, c => d.schools.some(s => s.joinCode === `${(sch.initials || 'SC').slice(0, 3)}-${c}`), r)}`;
+// Joining codes: the school shares joinCode with its teachers and studentCode with its students,
+// so each can create their own account for that school. No two codes are the same.
+export const newJoinCode = (sch, d = db(), r) => {
+  const p = (sch.initials || 'SC').slice(0, 3);
+  return `${p}-${makeCode(4, c => { const k = `${p}-${c}`; return k === sch.joinCode || k === sch.studentCode || d.schools.some(s => s.joinCode === k || s.studentCode === k); }, r)}`;
+};
 export const findByFamilyCode = code => db().users.find(u => u.role === 'student' && u.familyCode === String(code || '').trim().toUpperCase()) || null;
-export const findByJoinCode = (schoolId, code) => { const s = school(schoolId); return s && s.joinCode === String(code || '').trim().toUpperCase() ? s : null; };
+export const findByJoinCode = (schoolId, code, field = 'joinCode') => { const s = school(schoolId); const c = normCode(code); return s && c && s[field] === c ? s : null; };
 
 // Check a sign-in. Returns { user } or { error, field }.
 export function authenticate(id, pw) {
@@ -582,11 +636,17 @@ export function isoDate(d) { const z = n => String(n).padStart(2, '0'); return `
 /* ---------------- Mutations used by the views ---------------- */
 // New school with sections 6 A, 7 A and 8 A and a coordinator login. With withTeacher, a
 // placeholder teacher takes all three sections. Returns the school, its users and their passwords.
-export function addSchool({ name, studio, color, city, plan, seats, board, coord = {}, withTeacher = true, pw }) {
+export function addSchool({ name, studio, color, city, plan, seats, board, coord = {}, withTeacher = true, pw, regCode }) {
   const d = db();
   const id = uid('sch');
   const sch = { id, name, studio: studio || studioName(name), color: color || '#1F6F66', initials: initials(name), city: city || '', board: board || 'CBSE', plan: plan || 'Pilot', seats: +seats || 60, active: true, createdAt: Date.now(), melaDate: melaDate(), sections: [] };
   sch.joinCode = newJoinCode(sch, d);
+  sch.studentCode = newJoinCode(sch, d);
+  // The School ID: the one the school registered with, or a new one when the admin adds the school.
+  if (!REMOTE) {
+    const reg = regCode && (d.schoolIds || []).find(x => x.id === regCode && !x.usedBy);
+    if (reg) { reg.usedBy = id; reg.usedAt = Date.now(); sch.regCode = reg.id; } else attachSchoolId(sch, d);
+  }
   const coordinator = { id: `u_${id}_coord`, role: 'school', name: coord.name || `${name} coordinator`, title: 'Kaushal Bodh coordinator', schoolId: id, createdAt: Date.now() };
   if (coord.email) coordinator.email = coord.email;
   if (coord.phone) coordinator.phone = coord.phone;
@@ -729,6 +789,7 @@ export function deleteSchool(id) {
   d.users = d.users.filter(u => !users.includes(u));
   d.log = d.log.filter(l => l.schoolId !== id);
   d.schools = d.schools.filter(s => s.id !== id);
+  if (d.schoolIds && !REMOTE) d.schoolIds = d.schoolIds.filter(x => x.usedBy !== id);
   d.gone = [...(d.gone || []), id, ...users.map(u => u.id)].slice(-3000);
   save();
   return users.length;
@@ -765,6 +826,7 @@ export function signUp(role, f) {
   if (role === 'student') {
     const sch = school(f.schoolId);
     if (!sch || !sch.active) fail('schoolId', 'Choose your school.');
+    if (!findByJoinCode(sch.id, f.code, 'studentCode')) fail('code', 'That joining code does not match this school. Ask your Kaushal Bodh teacher for it.');
     const sec = section(sch, f.sectionId);
     if (!sec) fail('sectionId', 'Choose your class and section.');
     const login = checkNewLogin(f.login, f.password);
@@ -798,6 +860,8 @@ export function signUp(role, f) {
     return t;
   }
   if (role === 'school') {
+    const reg = (d.schoolIds || []).find(x => x.id === normCode(f.schoolCode));
+    if (!reg || reg.usedBy) fail('schoolCode', 'That School ID is not right, or it has already been used. VINC Lab gives each school its own School ID.');
     const schoolName = String(f.schoolName || '').trim().replace(/\s+/g, ' ');
     if (schoolName.length < 3) fail('schoolName', 'Enter your school\'s full name.');
     if (d.schools.some(s => s.name.toLowerCase() === schoolName.toLowerCase())) fail('schoolName', 'A school with this name is already on VINC Lab. Ask its coordinator to add you, or sign in.');
@@ -805,7 +869,7 @@ export function signUp(role, f) {
     if (name.length < 2) fail('name', 'Enter the coordinator\'s full name.');
     if (!f.email) fail('email', 'Enter an email for the coordinator.');
     checkNewLogin(f.login, f.password);
-    const { sch, coord } = addSchool({ name: schoolName, city: f.city.trim(), color: f.color, board: f.board, plan: 'Trial', seats: 60, withTeacher: false,
+    const { sch, coord } = addSchool({ name: schoolName, city: f.city.trim(), color: f.color, board: f.board, plan: 'Trial', seats: 60, withTeacher: false, regCode: reg.id,
       coord: { name, email: f.email.trim(), phone: f.phone?.trim(), login: f.login, password: f.password } });
     coord.lastLogin = Date.now();
     log(name, `registered ${sch.name}`, sch.id);

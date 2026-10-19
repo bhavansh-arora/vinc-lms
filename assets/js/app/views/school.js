@@ -1,9 +1,9 @@
 // School dashboard: overview across Grades 6–8, teachers, year plan, students, marking, reports and branding.
 import { FORMS, GRADES, projectById, projectsOfGrade } from '../../data/courses.js';
-import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addSection, addTeacher, assignSections, setSectionTeacher, teachersOf, initials, user, parentsOf, newJoinCode } from '../store.js';
+import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addSection, addTeacher, assignSections, setSectionTeacher, teachersOf, initials, user, parentsOf } from '../store.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
-import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell, bindCopy } from '../ui.js';
-import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCredsSaved } from './shared.js';
+import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell } from '../ui.js';
+import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCredsSaved, codeCard, bindCodeCards } from './shared.js';
 import { accountsPage, addPersonModal, passwordModal, deleteModal } from './accounts.js';
 
 export const nav = () => [
@@ -118,8 +118,7 @@ function teachers(ctx, sch) {
   const unassigned = sortedSecs(sch).filter(s => !s.teacherId);
   return {
     title: 'Teachers', nav: 'teachers',
-    html: `<section class="card join-card"><div><h2 class="h-card">${icon('key')} Teacher joining code</h2><p class="muted">Teachers can create their own account: they choose ${esc(sch.name)} and enter this code. Or add them yourself below.</p></div>
-      <div class="big-code"><code>${esc(sch.joinCode)}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${esc(sch.joinCode)}">${icon('copy')} Copy</button><button type="button" class="icon-btn" id="new-join" aria-label="Make a new joining code" title="Make a new code">${icon('refresh')}</button></div></section>
+    html: `${codeCard(sch, 'joinCode', { renew: true, note: `Teachers can create their own account: they choose ${esc(sch.name)} and enter this code. Or add them yourself below.` })}
     <div class="toolbar"><p class="muted">Each section has one Kaushal Bodh teacher. Teachers see only their sections in the teacher portal.</p><button class="btn btn-brand btn-sm" id="add-t">${icon('plus')} Add teacher</button></div>
     ${unassigned.length ? `<p class="warn-bar round">${unassigned.length} section${unassigned.length > 1 ? 's have' : ' has'} no teacher: ${unassigned.map(s => esc(secLabel(s))).join(', ')}.</p>` : ''}
     <section class="card tbl-card"><div class="card-head pad"><h2 class="h-card">${icon('users')} Classes and their teachers</h2><span class="muted small">Changing a teacher keeps every student's work and marks.</span></div>
@@ -157,11 +156,7 @@ function teachers(ctx, sch) {
           save(); d.close(); toast('Teacher saved.'); ctx.rerender();
         });
       };
-      bindCopy(el);
-      $('#new-join', el).addEventListener('click', () => {
-        if (!confirm('Make a new joining code? The old one will stop working.')) return;
-        sch.joinCode = newJoinCode(sch); log(ctx.me.name, 'made a new teacher joining code', sch.id); save(); toast('New joining code made.'); ctx.rerender();
-      });
+      bindCodeCards(el, ctx, sch);
       $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => passwordModal(ctx, user(b.dataset.reset))));
       $$('[data-del]', el).forEach(b => b.addEventListener('click', () => deleteModal(ctx, user(b.dataset.del), () => ctx.rerender())));
       $('#add-t', el).addEventListener('click', () => open(null));
@@ -281,7 +276,8 @@ function students(ctx, sch) {
     .sort((a, b) => a.g - b.g || secName(sch, a.s.sectionId).localeCompare(secName(sch, b.s.sectionId)) || a.s.roll - b.s.roll);
   return {
     title: 'Students', nav: 'students',
-    html: `<div class="toolbar">
+    html: `${codeCard(sch, 'studentCode', { renew: true, note: `Students can create their own account: they choose ${esc(sch.name)}, enter this code and pick their class. Give it to your Kaushal Bodh teachers to share in class, or add students yourself below.` })}
+    <div class="toolbar">
       <label class="search">${icon('eye')}<span class="sr-only">Search students</span><input id="q" placeholder="Search by name" value="${esc(state.q)}"></label>
       <label class="sel"><span class="sr-only">Section</span><select id="sec-f"><option value="">All sections</option>${sortedSecs(sch).map(s => `<option value="${s.id}" ${state.sec === s.id ? 'selected' : ''}>${esc(secLabel(s))}</option>`).join('')}</select></label>
       <button class="btn btn-brand btn-sm" id="add">${icon('plus')} Add student</button>
@@ -304,6 +300,7 @@ function students(ctx, sch) {
         $('#count', el).textContent = `${n} student${n === 1 ? '' : 's'}`;
       };
       $('#q', el).addEventListener('input', filter); $('#sec-f', el).addEventListener('change', filter); filter();
+      bindCodeCards(el, ctx, sch);
       $('#add', el).addEventListener('click', () => addPersonModal(ctx, { role: 'student', onDone: () => ctx.rerender() }));
       $$('[data-pw]', el).forEach(b => b.addEventListener('click', () => passwordModal(ctx, user(b.dataset.pw))));
       $$('[data-del]', el).forEach(b => b.addEventListener('click', () => deleteModal(ctx, user(b.dataset.del), () => ctx.rerender())));

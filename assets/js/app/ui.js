@@ -14,6 +14,7 @@ const EXTRA = {
   sparkle: '<path d="M12 3c.6 4.2 2.8 6.4 7 7-4.2.6-6.4 2.8-7 7-.6-4.2-2.8-6.4-7-7 4.2-.6 6.4-2.8 7-7Z"/><path d="M19 15.5c.25 1.6 1 2.35 2.5 2.5-1.5.25-2.25 1-2.5 2.5-.25-1.5-1-2.25-2.5-2.5 1.5-.15 2.25-.9 2.5-2.5Z"/>',
   link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L11.8 5.8"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.4-1.4"/>',
   refresh: '<path d="M20 11a8 8 0 0 0-14.7-4.3L3.5 9"/><path d="M3.5 4v5h5"/><path d="M4 13a8 8 0 0 0 14.7 4.3l1.8-2.3"/><path d="M20.5 20v-5h-5"/>',
+  edit: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   'id-card': '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5 16a3.6 3.6 0 0 1 7 0M14.5 10h4M14.5 13.5h3"/>',
   alert: '<path d="M12 3.5 2.8 19.5h18.4L12 3.5Z"/><path d="M12 10v4M12 17v.2"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
@@ -107,7 +108,7 @@ export function modal(html, { wide = false, onClose } = {}) {
 
 // Buttons with data-copy="text" copy it and flash a tick.
 export function bindCopy(el) {
-  $$('[data-copy]', el).forEach(b => b.addEventListener('click', async () => {
+  $$('[data-copy]', el).forEach(b => !b.dataset.copyBound && (b.dataset.copyBound = '1') && b.addEventListener('click', async () => {
     const text = b.dataset.copy;
     let ok = false;
     try { await navigator.clipboard.writeText(text); ok = true; } catch {

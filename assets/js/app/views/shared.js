@@ -1,11 +1,35 @@
 // Pieces shared by the school and teacher dashboards: marking, heatmaps, scorecards and class analytics.
 import { WEIGHTS, VIVA_RUBRIC, OBSERVATION_RUBRIC, RUBRIC_LEVELS, LEARNING_OUTCOMES, projectById } from '../../data/courses.js';
-import { db, save, school, section, progress, projectsFor, lastActive, log, user, parentsOf, syncNow } from '../store.js';
+import { db, save, school, section, progress, projectsFor, lastActive, log, user, parentsOf, syncNow, newJoinCode } from '../store.js';
 import { passwordModal, deleteModal, addPersonModal } from './accounts.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
-import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, credsHtml, PART_COLOR, FORM_COLOR } from '../ui.js';
+import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, credsHtml, bindCopy, PART_COLOR, FORM_COLOR } from '../ui.js';
 
 export const secLabel = s => s ? `Grade ${s.grade} · ${s.name}` : '';
+
+/* ---------- Joining codes ----------
+   Each school has two: teachers sign up with the teacher code, students with the student code. */
+const CODES = {
+  joinCode: { title: 'Teacher joining code', who: 'Teachers', from: 'you' },
+  studentCode: { title: 'Student joining code', who: 'Students', from: 'their Kaushal Bodh teacher' },
+};
+// A card showing one of the school's codes. With renew, the coordinator can make a new one.
+export function codeCard(sch, field, { renew = false, note = '' } = {}) {
+  const c = CODES[field], code = sch?.[field] || '';
+  if (!code) return '';
+  return `<section class="card join-card"><div><h2 class="h-card">${icon('key')} ${c.title}</h2><p class="muted">${note || `${c.who} create their own account: they choose ${esc(sch.name)} and enter this code.`}</p></div>
+    <div class="big-code"><code>${esc(code)}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${esc(code)}">${icon('copy')} Copy</button>${renew ? `<button type="button" class="icon-btn" data-renew="${field}" aria-label="Make a new ${c.title.toLowerCase()}" title="Make a new code">${icon('refresh')}</button>` : ''}</div></section>`;
+}
+export function bindCodeCards(el, ctx, sch) {
+  bindCopy(el);
+  $$('[data-renew]', el).forEach(b => b.addEventListener('click', () => {
+    const field = b.dataset.renew, c = CODES[field];
+    if (!confirm(`Make a new ${c.title.toLowerCase()}? The old one will stop working for new sign-ups. Accounts already made are not affected.`)) return;
+    sch[field] = newJoinCode(sch);
+    log(ctx.me.name, `made a new ${c.title.toLowerCase()}`, sch.id); save();
+    toast('New joining code made.'); ctx.rerender();
+  }));
+}
 
 /* ---------- Logins ---------- */
 export function showCreds(title, rows, note) {

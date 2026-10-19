@@ -40,13 +40,17 @@ Light and dark mode follow the device setting automatically.
 - **Create account** works for students, parents, teachers and schools. Each form asks for basic profile
   details and suggests a User ID from the name, with a live availability check
   and a password-strength meter:
-  - **Student**: name, school, class and section, optional date of birth and email.
+  - **Student**: name, school, the school's **student joining code** (shown to the
+    coordinator on the Students page and to teachers on their Students page), class and
+    section, optional date of birth and email.
   - **Parent**: name, relation, mobile, optional email, and the child's
     **family code** (shown on the student's Profile page).
-  - **Teacher**: name, school, the school's **joining code** (shown to the
-    coordinator on the Teachers page), the sections they teach, email.
-  - **School**: school name, city, board, coordinator's name and email, brand
-    colour. The school is set up with sections 6 A, 7 A and 8 A.
+  - **Teacher**: name, school, the school's **teacher joining code** (shown to the
+    coordinator on the Teachers page), the sections they teach, email. The two codes are
+    different, so a student cannot sign up as a teacher.
+  - **School**: a **School ID** from the VINC Lab admin, school name, city, board,
+    coordinator's name and email, brand colour. The school is set up with sections 6 A, 7 A
+    and 8 A.
 - **Profile** page for every role: edit name, User ID, email and mobile, change
   the password, see or renew the family code or joining code, and (for
   parents) link another child.
@@ -207,19 +211,24 @@ login screen with User ID `admin` and password `Qwerty@21`, then change the
 password on the profile page. Admin accounts cannot be created through sign-up.
 
 Setting up a school, in order:
-1. **School**: the coordinator registers the school on the sign-up page (or the
-   admin adds it on the Schools page). It starts with sections 6 A, 7 A and 8 A
-   and gets a teacher joining code, shown on its Teachers page.
-2. **Teachers** sign up, choose the school, enter the joining code and pick their
+1. **School ID**: the admin makes one on the **School IDs** page (optionally noting who it
+   is for) and sends it to the school, as the ID or as a sign-up link that fills it in.
+   Each School ID works once.
+2. **School**: the coordinator registers the school on the sign-up page with that School
+   ID (or the admin adds it on the Schools page, which gives it a School ID by itself).
+   It starts with sections 6 A, 7 A and 8 A and gets a teacher joining code and a student
+   joining code.
+3. **Teachers** sign up, choose the school, enter the teacher joining code and pick their
    sections. The coordinator can also add teachers and change sections.
-3. **Students** sign up and choose their school and class, or the coordinator
-   adds them on the Students page (with a parent login and temporary passwords).
-4. **Parents** sign up with their child's family code, shown on the child's
+4. **Students** sign up, choose the school, enter the student joining code and pick their
+   class, or the coordinator adds them on the Students page (with a parent login and
+   temporary passwords).
+5. **Parents** sign up with their child's family code, shown on the child's
    Profile page.
 
 The admin's Settings page can export all data or delete it and start again.
 `app.html#/signup` opens the sign-up form; `app.html#/signup/school` opens it
-for a school.
+for a school, and `app.html#/signup/school/VL-XXXXXX` also fills in the School ID.
 
 ## Structure
 

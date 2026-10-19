@@ -4,7 +4,7 @@ import { db, school, section, studentsOf, sectionsOf, progress, lastActive, user
 import { projectScore, yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, FORM_COLOR } from '../ui.js';
 import { loadLessons, lessonsFor, lessonOf, launchLab, LAB_KIND } from './activity.js';
-import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, quizAnalysis, rubricAnalysis, rubricBars, quizBars, INACTIVE_DAYS } from './shared.js';
+import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, quizAnalysis, rubricAnalysis, rubricBars, quizBars, INACTIVE_DAYS, codeCard, bindCodeCards } from './shared.js';
 
 const myGrades = me => [...new Set(sectionsOf(me).map(s => s.grade))];
 
@@ -250,7 +250,8 @@ function students(ctx) {
   const rows = secs.flatMap(sec => studentsOf(sch.id, sec.id).map(s => ({ s, sec, y: yearSummary(db().progress[s.id], Object.values(sec.projects)), la: lastActive(s.id) })));
   return {
     title: 'My students', nav: 'students',
-    html: `<div class="toolbar">
+    html: `${codeCard(sch, 'studentCode', { note: `Students create their own account: they choose ${esc(sch?.name || 'your school')}, enter this code and pick their class. Share it in class.` })}
+    <div class="toolbar">
       <label class="search">${icon('eye')}<span class="sr-only">Search students</span><input id="q" placeholder="Search by name" value="${esc(state.q)}"></label>
       <div class="seg-tabs" role="group" aria-label="Grade"><button data-fg="all" aria-pressed="${state.g === 'all'}">All</button>${myGrades(ctx.me).map(g => `<button data-fg="${g}" aria-pressed="${String(state.g) === String(g)}">Grade ${g}</button>`).join('')}</div>
     </div>
@@ -270,6 +271,7 @@ function students(ctx) {
         $('#count', el).textContent = `${n} student${n === 1 ? '' : 's'}`;
       };
       $('#q', el).addEventListener('input', filter);
+      bindCodeCards(el, ctx, sch);
       $$('[data-fg]', el).forEach(b => b.addEventListener('click', () => { state.g = b.dataset.fg; $$('[data-fg]', el).forEach(x => x.setAttribute('aria-pressed', x === b)); filter(); }));
       filter();
     },

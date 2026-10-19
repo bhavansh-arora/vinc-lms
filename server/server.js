@@ -19,6 +19,7 @@ const VERSION = '1';
 const db = await openDb(process.env.DATABASE_URL);
 const logic = createLogic(db, { adminPassword: process.env.ADMIN_PASSWORD || 'Qwerty@21' });
 await logic.ensureAdmin();
+await logic.migrate();
 db.session.prune(60 * 86400000);
 setInterval(() => { db.session.prune(60 * 86400000); db.trimLog(); }, 6 * 3600000).unref();
 
@@ -137,6 +138,12 @@ async function api(req, res, path, url) {
     const t = logic.user(b.userId);
     if (!t || t.role === 'admin') return err(res, 404, 'That account was not found.');
     return send(res, 200, { token: logic.startSession(t, actor.u.id), me: t.id });
+  }
+  if (path === '/api/admin/school-ids' && method === 'POST') {
+    if (!needAuth()) return;
+    if (actor.u.role !== 'admin' || actor.by) return err(res, 403, 'Only the admin can do this.');
+    const made = await logic.manageSchoolIds(actor.u, await body());
+    return send(res, 200, { made, data: logic.snapshot(actor) });
   }
   if (path === '/api/admin/reset' && method === 'POST') {
     if (!needAuth()) return;

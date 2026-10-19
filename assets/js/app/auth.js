@@ -1,6 +1,6 @@
 // Log in and create-account screens. Everyone logs in with a User ID and password; anyone can
 // sign up as a student, parent, teacher or school. The VINC Lab admin is not listed here.
-import { db, school, user, session, logIn, register, makeLogin, checkLogin, normLogin, lookupFamily, studioName, initials } from './store.js';
+import { db, school, user, session, logIn, register, makeLogin, checkLogin, normLogin, lookupFamily, studioName, initials, isRemote } from './store.js';
 import { $, $$, esc, icon, art, confetti, bindCopy, modal, REDUCED } from './ui.js';
 
 export const ROLES = {
@@ -10,10 +10,10 @@ export const ROLES = {
   school: { label: 'School', icon: 'school', blurb: 'Register my school as its coordinator' },
 };
 const TITLES = {
-  student: ['Join your skill studio', 'Find your school and class, then choose a User ID.'],
+  student: ['Join your skill studio', 'Your Kaushal Bodh teacher gives you the school\'s joining code.'],
   parent: ['Follow your child\'s projects', 'You need your child\'s family code. It is on their Profile page in VINC Lab.'],
   teacher: ['Set up your teacher account', 'Your Kaushal Bodh coordinator gives you the school\'s joining code.'],
-  school: ['Register your school', 'You become the school\'s Kaushal Bodh coordinator. We set up Grades 6, 7 and 8 for you.'],
+  school: ['Register your school', 'You need the School ID that VINC Lab gave you. You become the school\'s Kaushal Bodh coordinator, and we set up Grades 6, 7 and 8 for you.'],
 };
 const COLORS = ['#1F6F66', '#2D5BA8', '#7A3FA0', '#B23A48', '#C26A12', '#3E7B2A', '#0F4C5C', '#8C3557'];
 const EASE = 'cubic-bezier(.22, 1, .36, 1)';
@@ -108,8 +108,8 @@ export async function busy(btn, ok = true) {
 /* ---------- Page ---------- */
 let st = null;
 
-export function renderAuth(root, { tab = 'login', role = null, onEnter }) {
-  st = { tab, role: ROLES[role] ? role : null, onEnter, step: tab === 'login' ? 'login' : (ROLES[role] ? 'form' : 'role') };
+export function renderAuth(root, { tab = 'login', role = null, code = '', onEnter }) {
+  st = { tab, role: ROLES[role] ? role : null, code: role === 'school' ? String(code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 9) : '', onEnter, step: tab === 'login' ? 'login' : (ROLES[role] ? 'form' : 'role') };
   root.className = 'auth-page';
   document.documentElement.style.removeProperty('--brand');
   const s = session.get();
@@ -148,7 +148,7 @@ export function renderAuth(root, { tab = 'login', role = null, onEnter }) {
         </div>
         <div class="auth-body" id="auth-body" role="tabpanel" aria-labelledby="tab-${st.tab}"></div>
       </div>
-      <p class="auth-foot"><a href="index.html">← Back to VINC Lab</a><span>Preview: accounts and data are saved in this browser only.</span></p>
+      <p class="auth-foot"><a href="index.html">← Back to VINC Lab</a>${isRemote() ? '' : '<span>Preview: accounts and data are saved in this browser only.</span>'}</p>
     </main>
   </div>`;
 
@@ -263,7 +263,7 @@ function bindRole(pane) {
     st.role = b.dataset.role; st.step = 'form';
     try { history.replaceState(null, '', `#/signup/${st.role}`); } catch { /* ignore */ }
     paint('fwd');
-    $('#f-name, #f-schoolName')?.focus({ preventScroll: true });
+    $('#f-name, #f-schoolCode')?.focus({ preventScroll: true });
   }));
 }
 
@@ -284,6 +284,7 @@ function formHtml(role) {
   if (role === 'student') body = `${noSchools}
     ${name('Full name', 'As in school records')}
     ${selField({ name: 'schoolId', label: 'School', ic: 'school', options: schoolOpts })}
+    ${field({ name: 'code', label: 'School joining code', ic: 'key', ph: 'e.g. GP-7KQ2', attrs: 'maxlength="8" autocapitalize="characters" spellcheck="false" autocomplete="off"', hint: 'Your Kaushal Bodh teacher gives it to you.' })}
     ${selField({ name: 'sectionId', label: 'Class and section', ic: 'users', options: options([['', 'Choose your school first']]) })}
     <div class="row-2">${field({ name: 'dob', label: 'Date of birth', type: 'date', ic: 'calendar', req: false, attrs: `max="${new Date().toISOString().slice(0, 10)}"` })}${email(false)}</div>`;
   if (role === 'parent') body = `
@@ -299,6 +300,7 @@ function formHtml(role) {
     <fieldset class="field sec-pick" data-field="sectionIds" hidden><legend>Sections you teach <small class="opt">optional</small></legend><div class="pick-chips" id="sec-picks"></div><small class="hint">Your coordinator can change these later.</small><small class="err" id="e-sectionIds"></small></fieldset>
     <div class="row-2">${email(true)}${phone(false)}</div>`;
   if (role === 'school') body = `
+    ${field({ name: 'schoolCode', label: 'School ID', ic: 'id-card', ph: 'e.g. VL-7KQ2X9', value: st.code, attrs: 'maxlength="9" autocapitalize="characters" spellcheck="false" autocomplete="off"', hint: 'VINC Lab gives each school its own School ID. No ID yet? Write to info@vinc-lab.com.' })}
     ${field({ name: 'schoolName', label: 'School name', ic: 'school', ph: 'e.g. Sunflower Public School', attrs: 'maxlength="60"' })}
     <div class="row-2">${field({ name: 'city', label: 'City', ic: 'home', auto: 'address-level2', attrs: 'maxlength="40"' })}${selField({ name: 'board', label: 'Board', ic: 'book', options: options([['CBSE', 'CBSE'], ['State board', 'State board'], ['Other', 'Other']]) })}</div>
     ${name('Your name (coordinator)')}
@@ -314,7 +316,7 @@ function formHtml(role) {
   return `<form id="signup-f" class="auth-form" novalidate data-role="${role}">${head}${body}${account}
     <p class="form-err" id="signup-err" role="alert"></p>
     <button class="btn btn-primary btn-block btn-go" type="submit"><span class="btn-label">Create account ${icon('arrow')}</span><span class="spinner" aria-hidden="true"></span><span class="tick" aria-hidden="true">${icon('check')}</span></button>
-    <p class="fine">This preview keeps your details in this browser only.</p></form>`;
+    ${isRemote() ? '' : '<p class="fine">This preview keeps your details in this browser only.</p>'}</form>`;
 }
 
 function bindSignup(pane) {
@@ -352,6 +354,8 @@ function bindSignup(pane) {
   const nameInp = f.name;
   nameInp?.addEventListener('input', () => { if (!touched) { login.value = nameInp.value.trim().length > 1 ? makeLogin(nameInp.value) : ''; checkLoginHint(); } });
 
+  // Codes are typed in capitals.
+  for (const n of ['code', 'schoolCode']) if (f[n] && role !== 'parent') f[n].addEventListener('input', () => { f[n].value = f[n].value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
   // Student: sections follow the chosen school.
   if (role === 'student') {
     const fill = () => {
@@ -408,7 +412,7 @@ function bindSignup(pane) {
     st.role = e.currentTarget.dataset.roleSwitch;
     try { history.replaceState(null, '', `#/signup/${st.role}`); } catch { /* ignore */ }
     paint('fwd');
-    $('#f-schoolName')?.focus({ preventScroll: true });
+    $('#f-schoolCode')?.focus({ preventScroll: true });
   });
 
   f.addEventListener('submit', async e => {
@@ -445,7 +449,7 @@ function doneHtml(u) {
   if (u.role === 'student') extra = `<div class="done-note">${icon('link')}<p>Your family code is <code class="code">${esc(u.familyCode)}</code>. Give it to your parent so they can follow your projects. You can find it later on your Profile page.</p></div>`;
   if (u.role === 'parent') { const kid = user(u.childIds[0]); const sch = school(kid?.schoolId); const sec = sch?.sections.find(s => s.id === kid?.sectionId); extra = `<div class="done-note">${icon('check')}<p>Linked to <b>${esc(kid?.name || '')}</b>, Grade ${sec?.grade} · ${esc(sec?.name || '')} at ${esc(sch?.name || '')}.</p></div>`; }
   if (u.role === 'teacher') { const secs = (u.sectionIds || []).length; extra = `<div class="done-note">${icon('school')}<p>${secs ? `You teach ${secs} section${secs > 1 ? 's' : ''}. They are ready in your teacher portal.` : 'Your coordinator will assign your sections. Until then your portal will be empty.'}</p></div>`; }
-  if (u.role === 'school') { const sch = school(u.schoolId); extra = `<div class="done-note">${icon('key')}<p><b>${esc(sch.studio)}</b> is ready with sections 6 A, 7 A and 8 A. Teachers join with the code <code class="code">${esc(sch.joinCode)}</code>.</p></div>`; }
+  if (u.role === 'school') { const sch = school(u.schoolId); extra = `<div class="done-note">${icon('key')}<p><b>${esc(sch.studio)}</b> is ready with sections 6 A, 7 A and 8 A. Teachers join with the code <code class="code">${esc(sch.joinCode)}</code> and students with <code class="code">${esc(sch.studentCode)}</code>. Both are on your Profile page.</p></div>`; }
   return `<div class="signup-done">
     <svg class="done-check" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28"/><path d="M20 33l8 8 16-17"/></svg>
     <h1 class="auth-h">Welcome, ${first}!</h1>

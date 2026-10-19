@@ -946,3 +946,24 @@ code.code { font: 600 1em var(--mono); padding: .05em .4em; border-radius: 6px; 
 .pick-list { display: grid; gap: 8px; }
 .pick-list .check input { accent-color: var(--brand); }
 .row-2[hidden] { display: none; }
+
+/* Admin: School IDs */
+.sid-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.sid-form label { display: grid; gap: 6px; font-weight: 700; font-size: var(--t-small); }
+.sid-form label.grow { flex: 1 1 260px; }
+.sid-form input[type=number] { width: 7em; }
+.sid-code { font-weight: 600; letter-spacing: .08em; }
+.sid-made { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+.sid-made li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sid-made .sid-code { font-size: 1.15rem; margin-right: auto; }
+.sid-code { white-space: nowrap; }
+@media (max-width: 700px) {
+  .sid-tbl thead { display: none; }
+  .sid-tbl, .sid-tbl tbody { display: block; }
+  .sid-tbl tr { display: grid; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .sid-tbl tr:last-child { border-bottom: none; }
+  .card .tbl.sid-tbl td { display: block; padding: 0; border: none; }
+  .tbl.sid-tbl td:nth-child(4) { display: none; }
+  .sid-tbl .sid-code { font-size: 1.05rem; }
+  .sid-tbl td:last-child .btn-row { flex-wrap: wrap; justify-content: flex-start; }
+}

@@ -1,8 +1,9 @@
 // Profile page for every role: details, User ID, password, and the codes that link accounts
 // (a student's family code, a school's teacher joining code, a parent's linked children).
-import { save, school, section, childrenOf, parentsOf, sectionsOf, updateProfile, changePassword, linkChildByCode, newFamilyCode, newJoinCode, checkLogin, normLogin, log, syncNow, isRemote } from '../store.js';
+import { save, school, section, childrenOf, parentsOf, sectionsOf, updateProfile, changePassword, linkChildByCode, newFamilyCode, checkLogin, normLogin, log, syncNow, isRemote } from '../store.js';
 import { $, $$, esc, icon, toast, fmtDate, timeAgo, bindCopy } from '../ui.js';
 import { bindFields, setErr, shake, busy, strength } from '../auth.js';
+import { codeCard, bindCodeCards } from './shared.js';
 
 const ROLE = { student: 'Student', parent: 'Parent', teacher: 'Teacher', school: 'School coordinator', admin: 'VINC Lab admin' };
 const secName = s => s ? `Grade ${s.grade} · ${s.name}` : '';
@@ -158,15 +159,13 @@ function roleCard(me, sch) {
       <h2 class="h-card">${icon('school')} Your sections</h2>
       <div class="chips">${secs.map(s => `<span class="chip">${esc(secName(s))}</span>`).join('') || '<span class="muted">None yet.</span>'}</div>
       <p class="muted small">Your Kaushal Bodh coordinator assigns sections. Share your User ID <code>${esc(me.login)}</code> with them.</p>
-    </section>`;
+    </section>
+    ${codeCard(sch, 'studentCode', { note: `Students choose ${esc(sch?.name || 'your school')} and enter this code when they create their account.` })}`;
   }
   if (me.role === 'school') {
-    return `<section class="card code-card">
-      <h2 class="h-card">${icon('key')} Teacher joining code</h2>
-      <p>Teachers choose ${esc(sch?.name || 'your school')} and enter this code when they create their account.</p>
-      <div class="big-code"><code>${esc(sch?.joinCode || '')}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${esc(sch?.joinCode || '')}">${icon('copy')} Copy</button></div>
-      <button type="button" class="linkish" id="new-join">${icon('refresh')} Make a new code</button>
-    </section>`;
+    return `${codeCard(sch, 'joinCode', { renew: true, note: `Teachers choose ${esc(sch?.name || 'your school')} and enter this code when they create their account.` })}
+      ${codeCard(sch, 'studentCode', { renew: true, note: `Students choose ${esc(sch?.name || 'your school')} and enter this code when they create their account.` })}
+      ${sch?.regCode ? `<p class="muted small">School ID: <code>${esc(sch.regCode)}</code></p>` : ''}`;
   }
   return `<section class="card">
     <h2 class="h-card">${icon('shield')} Admin access</h2>
@@ -180,10 +179,7 @@ function bindRoleCard(el, ctx, me, sch) {
     if (!confirm('Make a new family code? The old one will stop working for new parent accounts.')) return;
     me.familyCode = newFamilyCode(); save(); toast('New family code made.'); ctx.rerender();
   });
-  $('#new-join', el)?.addEventListener('click', () => {
-    if (!confirm('Make a new joining code? The old one will stop working.')) return;
-    sch.joinCode = newJoinCode(sch); log(ctx.me.name, 'made a new teacher joining code', sch.id); save(); toast('New joining code made.'); ctx.rerender();
-  });
+  if (sch && (me.role === 'school' || me.role === 'teacher')) bindCodeCards(el, ctx, sch);
   const lf = $('#link-f', el);
   if (lf) {
     bindFields(lf);

@@ -77,7 +77,7 @@ function route() {
   const [head, ...rest] = parts;
   if (head === 'login' || head === 'signup') {
     shellKey = null; lastHash = null;
-    withPublic(() => renderAuth(root, { tab: head, role: head === 'signup' ? rest[0] : null, onEnter: enter }));
+    withPublic(() => renderAuth(root, { tab: head, role: head === 'signup' ? rest[0] : null, code: head === 'signup' ? rest[1] : '', onEnter: enter }));
     document.title = `${head === 'login' ? 'Log in' : 'Create an account'} · VINC Lab`;
     return;
   }

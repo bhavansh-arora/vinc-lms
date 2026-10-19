@@ -1,14 +1,15 @@
 // VINC Lab admin: network overview, schools, course content and settings.
 import { COURSES, GRADES, FORMS, WEIGHTS, projectById } from '../../data/courses.js';
-import { db, save, reset, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf, viewAs, isRemote } from '../store.js';
+import { db, save, reset, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf, viewAs, isRemote, schoolIdList, createSchoolIds, deleteSchoolId, noteSchoolId } from '../store.js';
 import { showCredsSaved } from './shared.js';
 import { accountsPage, deleteSchoolModal, filterAccounts } from './accounts.js';
 import { yearSummary, band } from '../scoring.js';
-import { $, $$, esc, icon, art, ring, bar, timeAgo, fmtDate, toast, modal, download } from '../ui.js';
+import { $, $$, esc, icon, art, ring, bar, timeAgo, fmtDate, toast, modal, download, bindCopy } from '../ui.js';
 
 export const nav = () => [
   { path: '', label: 'Overview', icon: 'home' },
   { path: 'schools', label: 'Schools', icon: 'school' },
+  { path: 'school-ids', label: 'School IDs', short: 'IDs', icon: 'id-card' },
   { path: 'accounts', label: 'Accounts', icon: 'key' },
   { path: 'content', label: 'Course content', short: 'Content', icon: 'book' },
   { path: 'settings', label: 'Settings', icon: 'settings' },
@@ -17,6 +18,7 @@ export const nav = () => [
 export function render(ctx) {
   const [page, a] = ctx.params;
   if (page === 'schools') return schools(ctx);
+  if (page === 'school-ids') return schoolIdsPage(ctx);
   if (page === 'accounts') return accountsPage(ctx);
   if (page === 'content') return a ? projectContent(ctx, a) : content(ctx);
   if (page === 'settings') return settings(ctx);
@@ -95,14 +97,14 @@ function schools(ctx) {
     title: 'Schools', nav: 'schools',
     html: `<div class="toolbar"><p class="muted">Each school gets its own branded studio, sections and coordinator login.</p><button class="btn btn-brand btn-sm" id="add">${icon('plus')} Add school</button></div>
     <section class="card tbl-card"><table class="tbl">
-      <thead><tr><th>School</th><th>City</th><th>Plan</th><th>Students</th><th>Teachers</th><th>Activities</th><th>Avg score</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>School</th><th>School ID</th><th>City</th><th>Plan</th><th>Students</th><th>Teachers</th><th>Activities</th><th>Avg score</th><th>Status</th><th></th></tr></thead>
       <tbody>${D.schools.map(s => { const st = schoolStats(s); return `<tr>
         <td><div class="sch-cell"><span class="badge sm" style="--brand:${s.color}">${esc(s.initials)}</span><div><b>${esc(s.name)}</b><small class="muted">${esc(s.studio)}</small></div></div></td>
-        <td>${esc(s.city)}</td><td>${esc(s.plan)}</td><td>${st.students}/${s.seats}</td><td>${teachersOf(s.id).length}</td>
+        <td><code class="mono">${esc(s.regCode || '—')}</code></td><td>${esc(s.city)}</td><td>${esc(s.plan)}</td><td>${st.students}/${s.seats}</td><td>${teachersOf(s.id).length}</td>
         <td><div class="cell-bar">${bar(st.completion, s.color)}<span>${st.completion}%</span></div></td>
         <td>${st.score == null ? '—' : `${st.score}% <small class="muted">${band(st.score)}</small>`}</td>
         <td><button class="tag ${s.active ? 'ok' : 'todo'} tag-btn" data-toggle="${s.id}" aria-label="${s.active ? 'Pause' : 'Activate'} ${esc(s.name)}">${s.active ? 'Active' : 'Paused'}</button></td>
-        <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Accounts</button><button class="btn btn-sm btn-ghost danger" data-delsch="${s.id}" aria-label="Delete ${esc(s.name)}">${icon('trash')}</button></div></td></tr>`; }).join('') || '<tr><td colspan="9" class="muted">No schools yet. Use Add school, or ask a coordinator to register on the sign-up page.</td></tr>'}</tbody>
+        <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">Open dashboard</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} Accounts</button><button class="btn btn-sm btn-ghost danger" data-delsch="${s.id}" aria-label="Delete ${esc(s.name)}">${icon('trash')}</button></div></td></tr>`; }).join('') || '<tr><td colspan="10" class="muted">No schools yet. Use Add school, or give a coordinator a School ID so they can register on the sign-up page.</td></tr>'}</tbody>
     </table></section>`,
     mount(el) {
       $$('[data-open]', el).forEach(b => b.addEventListener('click', async () => {
@@ -139,10 +141,77 @@ function schools(ctx) {
           await showCredsSaved(`${s.name} is ready`, [
             { u: coord, name: coord.name, role: 'School coordinator', icon: 'school', login: coord.login, pw: coordPw },
             { u: teacher, name: teacher.name, role: 'Teacher for 6 A, 7 A and 8 A', icon: 'book', login: teacher.login, pw: teacherPw },
-          ], `Sections 6 A, 7 A and 8 A are set up. Teachers can also join with the code ${s.joinCode}.`);
+          ], `Sections 6 A, 7 A and 8 A are set up. Teachers can also join with the code ${s.joinCode}, and students with ${s.studentCode}.`);
           ctx.rerender();
         });
       });
+    },
+  };
+}
+
+/* ---------- School IDs ----------
+   The admin makes School IDs and gives one to each school. A school needs an unused one to
+   register on the sign-up page; each works once. */
+let idFilter = 'unused';
+const signupLink = id => `${location.origin}${location.pathname}#/signup/school/${id}`;
+
+function schoolIdsPage(ctx) {
+  const D = db();
+  const list = [...schoolIdList()].sort((a, b) => (!!a.usedBy - !!b.usedBy) || b.createdAt - a.createdAt);
+  const unused = list.filter(x => !x.usedBy).length;
+  const nameOf = id => D.schools.find(s => s.id === id)?.name || 'a deleted school';
+  const shown = list.filter(x => idFilter === 'all' || (idFilter === 'used') === !!x.usedBy);
+  return {
+    title: 'School IDs', nav: 'school-ids',
+    html: `<section class="card"><h2 class="h-card">${icon('id-card')} Make School IDs</h2>
+      <p class="muted">Give one School ID to each school. The coordinator enters it on the sign-up page to register the school. Each School ID works once.</p>
+      <form id="sid-f" class="sid-form" novalidate>
+        <label>How many<input name="count" type="number" min="1" max="50" value="1" required></label>
+        <label class="grow"><span>Who it is for <small class="muted">optional</small></span><input name="note" maxlength="80" placeholder="e.g. Sunflower Public School, Pune"></label>
+        <button class="btn btn-brand" type="submit">${icon('plus')} Make School IDs</button>
+      </form>
+    </section>
+    <div class="toolbar"><div class="seg-tabs" role="group" aria-label="Show">${[['unused', `Unused (${unused})`], ['used', `Used (${list.length - unused})`], ['all', `All (${list.length})`]].map(([k, t]) => `<button data-f="${k}" aria-pressed="${idFilter === k}">${t}</button>`).join('')}</div></div>
+    <section class="card tbl-card"><table class="tbl sid-tbl">
+      <thead><tr><th>School ID</th><th>For</th><th>Status</th><th>Made</th><th aria-label="Actions"></th></tr></thead>
+      <tbody>${shown.map(x => `<tr>
+        <td><code class="mono sid-code">${esc(x.id)}</code></td>
+        <td>${x.note ? esc(x.note) : '<span class="muted">—</span>'}</td>
+        <td>${x.usedBy ? `<span class="tag ok">Used</span> <small class="muted">by ${esc(nameOf(x.usedBy))}${x.usedAt ? `, ${fmtDate(x.usedAt, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}</small>` : '<span class="tag todo">Unused</span>'}</td>
+        <td><small class="muted">${fmtDate(x.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}</small></td>
+        <td><div class="btn-row nowrap">${x.usedBy ? '' : `<button class="btn btn-sm btn-ghost" data-copy="${esc(x.id)}" title="Copy the School ID">${icon('copy')} ID</button><button class="btn btn-sm btn-ghost" data-copy="${esc(signupLink(x.id))}" title="Copy a sign-up link with this School ID filled in">${icon('link')} Link</button>`}
+          <button class="btn btn-sm btn-ghost" data-note="${esc(x.id)}" aria-label="Change who ${esc(x.id)} is for" title="Change who it is for">${icon('edit')}</button>
+          ${x.usedBy && D.schools.some(s => s.id === x.usedBy) ? '' : `<button class="btn btn-sm btn-ghost danger" data-del="${esc(x.id)}" aria-label="Delete ${esc(x.id)}" title="Delete">${icon('trash')}</button>`}</div></td></tr>`).join('')
+        || `<tr><td colspan="5" class="muted">${list.length ? 'None here.' : 'No School IDs yet. Make one above for each school that will register.'}</td></tr>`}</tbody>
+    </table></section>`,
+    mount(el) {
+      bindCopy(el);
+      $$('[data-f]', el).forEach(b => b.addEventListener('click', () => { idFilter = b.dataset.f; ctx.rerender(); }));
+      $('#sid-f', el).addEventListener('submit', async e => {
+        e.preventDefault();
+        const f = e.target, btn = $('button[type=submit]', f);
+        btn.disabled = true;
+        let made;
+        try { made = await createSchoolIds(f.count.value, f.note.value); } catch (err) { btn.disabled = false; toast(err.message, 'bad'); return; }
+        idFilter = 'unused';
+        ctx.rerender();
+        const all = made.map(x => x.id).join('\n');
+        const d = modal(`<h2>${made.length === 1 ? 'New School ID' : `${made.length} new School IDs`}</h2>
+          <p class="muted">Send ${made.length === 1 ? 'it' : 'one'} to each school's coordinator. They enter it on the sign-up page under <b>Create account → School</b>, or open the sign-up link, which fills it in.</p>
+          <ul class="sid-made">${made.map(x => `<li><code class="mono sid-code">${esc(x.id)}</code><button class="btn btn-sm btn-ghost" data-copy="${esc(x.id)}">${icon('copy')} ID</button><button class="btn btn-sm btn-ghost" data-copy="${esc(signupLink(x.id))}">${icon('link')} Link</button></li>`).join('')}</ul>
+          <div class="modal-actions">${made.length > 1 ? `<button class="btn btn-ghost" data-copy="${esc(all)}">${icon('copy')} Copy all IDs</button>` : ''}<button class="btn btn-primary" data-close>Done</button></div>`);
+        bindCopy(d);
+      });
+      $$('[data-note]', el).forEach(b => b.addEventListener('click', async () => {
+        const x = schoolIdList().find(r => r.id === b.dataset.note); if (!x) return;
+        const note = prompt(`Who is ${x.id} for?`, x.note || '');
+        if (note == null) return;
+        try { await noteSchoolId(x.id, note); ctx.rerender(); } catch (err) { toast(err.message, 'bad'); }
+      }));
+      $$('[data-del]', el).forEach(b => b.addEventListener('click', async () => {
+        if (!confirm(`Delete the School ID ${b.dataset.del}? A school can no longer register with it.`)) return;
+        try { await deleteSchoolId(b.dataset.del); toast('School ID deleted.'); ctx.rerender(); } catch (err) { toast(err.message, 'bad'); }
+      }));
     },
   };
 }
@@ -181,7 +250,7 @@ function settings(ctx) {
     title: 'Settings', nav: 'settings',
     html: `<div class="grid-2">
       <section class="card"><h2 class="h-card">${icon('settings')} Data</h2>
-        <p>${isRemote() ? 'All data is kept on the VINC Lab server, in its Postgres database, with a backup every night.' : `This preview keeps all data in this browser (${(size / 1024).toFixed(0)} KB used).`}${D.createdAt ? ` Started ${fmtDate(D.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}.` : ''}</p>
+        <p>${isRemote() ? 'All data is kept on the VINC Lab server, in its Postgres database, with a backup every 3 hours.' : `This preview keeps all data in this browser (${(size / 1024).toFixed(0)} KB used).`}${D.createdAt ? ` Started ${fmtDate(D.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}.` : ''}</p>
         <div class="btn-row"><button class="btn btn-ghost" id="export">${icon('download')} Export data (JSON)</button><button class="btn btn-ghost danger" id="reset">Delete all data</button></div>
       </section>
       <section class="card"><h2 class="h-card">${icon('shield')} ${isRemote() ? 'Security' : 'Going live'}</h2>

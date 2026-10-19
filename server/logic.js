@@ -15,7 +15,7 @@ const STUDENT_FIELDS = ['acts', 'quiz', 'portfolio', 'labs', 'steps', 'records']
 const MARKER_FIELDS = ['viva', 'obs', 'portfolioScore', 'feedback'];
 const SELF_FIELDS = ['name', 'login', 'email', 'phone', 'title', 'relation', 'dob'];
 const MANAGER_FIELDS = [...SELF_FIELDS, 'familyCode', 'sectionId', 'sectionIds', 'roll', 'childIds', 'parentId'];
-const SCHOOL_FIELDS_COORD = ['name', 'studio', 'color', 'initials', 'city', 'board', 'melaDate', 'joinCode'];
+const SCHOOL_FIELDS_COORD = ['name', 'studio', 'color', 'initials', 'city', 'board', 'melaDate', 'joinCode', 'studentCode'];
 const SCHOOL_FIELDS_ADMIN = [...SCHOOL_FIELDS_COORD, 'plan', 'seats', 'active', 'createdAt'];
 const PICKS = { 6: { life: 'g6p1', machines: 'g6p3', services: 'g6p6' }, 7: { life: 'g7p1', machines: 'g7p4', services: 'g7p6' }, 8: { life: 'g8p1', machines: 'g8p4', services: 'g8p5' } };
 
@@ -91,8 +91,22 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
   const makeCode = (len, taken) => { let c; do { c = Array.from({ length: len }, () => CODE_CHARS[rnd(CODE_CHARS.length)]).join(''); } while (taken(c)); return c; };
   const familyCodeTaken = (c, exceptId) => users().some(u => u.id !== exceptId && u.familyCode === c);
   const newFamilyCode = () => makeCode(6, c => familyCodeTaken(c));
-  const joinCodeTaken = (c, exceptId) => [...mem.schools.values()].some(s => s.id !== exceptId && s.joinCode === c);
-  const newJoinCode = sch => { const p = (sch.initials || 'SC').slice(0, 3); return `${p}-${makeCode(4, c => joinCodeTaken(`${p}-${c}`))}`; };
+  // Joining codes: a school's teacher code (joinCode) and student code (studentCode). Every code
+  // is different from every other school's codes, and a school's two codes differ from each other.
+  const joinCodeTaken = (c, exceptId, field) => [...mem.schools.values()].some(s => (s.id !== exceptId && (s.joinCode === c || s.studentCode === c)) || (s.id === exceptId && field && s[field === 'joinCode' ? 'studentCode' : 'joinCode'] === c));
+  const newJoinCode = sch => { const p = (sch.initials || 'SC').slice(0, 3); return `${p}-${makeCode(4, c => joinCodeTaken(`${p}-${c}`) || sch.joinCode === `${p}-${c}` || sch.studentCode === `${p}-${c}`)}`; };
+  const normCode = c => str(c, 12).toUpperCase().replace(/\s+/g, '');
+
+  // School IDs: the VINC Lab admin makes them and gives one to each school; a school needs an
+  // unused one to register. Kept in meta as a list of { id, note, createdAt, usedBy, usedAt }.
+  const schoolIds = () => { try { const v = JSON.parse(db.meta.get('schoolIds') || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const saveSchoolIds = list => db.meta.set('schoolIds', JSON.stringify(list));
+  const newSchoolIdCode = list => `VL-${makeCode(6, c => list.some(x => x.id === `VL-${c}`))}`;
+  // Give a school a School ID that is marked as used by it (schools the admin adds, older schools).
+  const attachSchoolId = (sch, list) => {
+    const rec = { id: newSchoolIdCode(list), note: sch.name, createdAt: Date.now(), usedBy: sch.id, usedAt: Date.now() };
+    list.push(rec); sch.regCode = rec.id;
+  };
 
   const findByLogin = id => {
     const k = normLogin(id);
@@ -133,7 +147,14 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
     for (const k of ['sectionId', 'sectionIds', 'title', 'relation', 'childIds']) if (u[k] != null) o[k] = clone(u[k]);
     return o;
   };
-  const schoolFor = (s, withCode) => { const o = clone(s); if (!withCode) delete o.joinCode; return o; };
+  // Codes in a school record: the coordinator and admin see all; teachers see the student code
+  // (to give it to their classes); students and parents see none.
+  const schoolFor = (s, who) => {
+    const o = clone(s);
+    if (who !== 'school') { delete o.joinCode; delete o.regCode; }
+    if (who !== 'school' && who !== 'teacher') delete o.studentCode;
+    return o;
+  };
 
   function snapshot(actor) {
     const me = actor.u;
@@ -141,7 +162,8 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
     const addUser = (u, how) => { if (u && !out.users.some(x => x.id === u.id)) out.users.push(how === 'full' ? full(u) : minimal(u)); };
     const addProgress = id => { const p = mem.progress.get(id); if (p) out.progress[id] = clone(p); };
     if (me.role === 'admin') {
-      out.schools = [...mem.schools.values()].map(s => schoolFor(s, true));
+      out.schools = [...mem.schools.values()].map(s => schoolFor(s, 'school'));
+      out.schoolIds = clone(schoolIds());
       for (const u of users()) addUser(u, 'full');
       for (const [id, p] of mem.progress) out.progress[id] = clone(p);
       out.log = mem.log.slice(0, 250);
@@ -150,18 +172,18 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
     const sch = school(me.schoolId);
     addUser(me, 'full');
     if (me.role === 'school') {
-      if (sch) out.schools.push(schoolFor(sch, true));
+      if (sch) out.schools.push(schoolFor(sch, 'school'));
       for (const u of users()) if (u.schoolId === me.schoolId && u.role !== 'admin') addUser(u, 'full');
       for (const st of studentsOf(me.schoolId)) addProgress(st.id);
       out.log = mem.log.filter(l => l.schoolId === me.schoolId).slice(0, 250);
     } else if (me.role === 'teacher') {
-      if (sch) out.schools.push(schoolFor(sch, false));
+      if (sch) out.schools.push(schoolFor(sch, 'teacher'));
       const secs = teacherSecs(me);
       for (const st of studentsOf(me.schoolId)) if (secs.has(st.sectionId)) { addUser(st, 'full'); addProgress(st.id); for (const p of parentsOf(st)) addUser(p, 'full'); }
       for (const u of users()) if (u.schoolId === me.schoolId && (u.role === 'teacher' || u.role === 'school')) addUser(u, 'min');
       out.log = mem.log.filter(l => l.schoolId === me.schoolId).slice(0, 100);
     } else if (me.role === 'student') {
-      if (sch) out.schools.push(schoolFor(sch, false));
+      if (sch) out.schools.push(schoolFor(sch, 'student'));
       addProgress(me.id);
       const sec = sch?.sections.find(s => s.id === me.sectionId);
       if (sec?.teacherId) addUser(user(sec.teacherId), 'min');
@@ -171,7 +193,7 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
         const k = user(id); if (!k) continue;
         addUser(k, 'full'); addProgress(k.id);
         const ks = school(k.schoolId);
-        if (ks && !out.schools.some(s => s.id === ks.id)) out.schools.push(schoolFor(ks, false));
+        if (ks && !out.schools.some(s => s.id === ks.id)) out.schools.push(schoolFor(ks, 'parent'));
         const sec = ks?.sections.find(s => s.id === k.sectionId);
         if (sec?.teacherId) addUser(user(sec.teacherId), 'min');
         for (const p of parentsOf(k)) addUser(p, 'min');
@@ -295,8 +317,11 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
           const s = { id: str(rec.id, 80), name: str(rec.name, 80) || 'New school', createdAt: Date.now(), active: true, sections: [] };
           for (const k of SCHOOL_FIELDS_ADMIN) if (k in rec && k !== 'createdAt') s[k] = k === 'seats' ? Math.max(1, +rec.seats || 60) : k === 'active' ? !!rec.active : str(rec[k], 80);
           s.studio ||= studioName(s.name); s.initials ||= initials(s.name); s.color ||= '#1F6F66'; s.melaDate ||= melaDate(); s.board ||= 'CBSE'; s.plan ||= 'Pilot'; s.seats ||= 60;
-          if (!s.joinCode || joinCodeTaken(s.joinCode, s.id)) s.joinCode = newJoinCode(s);
+          s.joinCode = normCode(rec.joinCode); s.studentCode = normCode(rec.studentCode);
+          if (!s.joinCode || joinCodeTaken(s.joinCode, s.id, 'joinCode')) s.joinCode = newJoinCode(s);
+          if (!s.studentCode || s.studentCode === s.joinCode || joinCodeTaken(s.studentCode, s.id, 'studentCode')) s.studentCode = newJoinCode(s);
           s.sections = cleanSections(rec.sections, [], false);
+          const ids = schoolIds(); attachSchoolId(s, ids); saveSchoolIds(ids);
           db.saveSchool(s); touchedSchools.add(s.id);
           continue;
         }
@@ -306,7 +331,7 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
             if (k === 'seats') cur.seats = Math.max(1, +rec.seats || cur.seats);
             else if (k === 'active') cur.active = !!rec.active;
             else if (k === 'createdAt') continue;
-            else if (k === 'joinCode') { const c = str(rec.joinCode, 12).toUpperCase(); cur.joinCode = c && !joinCodeTaken(c, cur.id) ? c : (cur.joinCode || newJoinCode(cur)); }
+            else if (k === 'joinCode' || k === 'studentCode') { const c = normCode(rec[k]); cur[k] = /^[A-Z0-9-]{4,12}$/.test(c) && !joinCodeTaken(c, cur.id, k) ? c : (cur[k] || newJoinCode(cur)); }
             else { const v = str(rec[k], 80); if (v || k === 'city') cur[k] = v; }
           }
           if ('sections' in rec && changedFields(rec, ['sections']).length) cur.sections = mergeSections(cur.sections, rec.sections, rec._base?.sections, me.role !== 'admin');
@@ -435,6 +460,8 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
   }
   function removeSchool(id) {
     for (const u of users()) if (u.schoolId === id && u.role !== 'admin') { db.deleteProgress(u.id); db.deleteUser(u.id); }
+    const ids = schoolIds();
+    if (ids.some(x => x.usedBy === id)) saveSchoolIds(ids.filter(x => x.usedBy !== id));
     db.deleteSchool(id);
   }
 
@@ -461,6 +488,7 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
       if (role === 'student') {
         const sch = school(f.schoolId);
         if (!sch || sch.active === false) fail('schoolId', 'Choose your school.');
+        if (!sch.studentCode || sch.studentCode !== normCode(f.code)) fail('code', 'That joining code does not match this school. Ask your Kaushal Bodh teacher for it.');
         const sec = sch.sections.find(s => s.id === f.sectionId);
         if (!sec) fail('sectionId', 'Choose your class and section.');
         const login = checkNewLogin(f.login, f.password);
@@ -477,13 +505,16 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
       } else if (role === 'teacher') {
         const sch = school(f.schoolId);
         if (!sch || sch.active === false) fail('schoolId', 'Choose your school.');
-        if (!sch.joinCode || sch.joinCode !== str(f.code, 12).toUpperCase()) fail('code', 'That joining code does not match this school. Ask your Kaushal Bodh coordinator for it.');
+        if (!sch.joinCode || sch.joinCode !== normCode(f.code)) fail('code', 'That joining code does not match this school. Ask your Kaushal Bodh coordinator for it.');
         if (!contact.email) fail('email', 'Enter your email.');
         const login = checkNewLogin(f.login, f.password);
         const want = Array.isArray(f.sectionIds) ? f.sectionIds.filter(id => sch.sections.some(s => s.id === id)) : [];
         u = { id: uid('tch'), role: 'teacher', name, login, title: str(f.title, 60) || 'Kaushal Bodh teacher', schoolId: sch.id, sectionIds: want, ...contact };
         after = () => { syncTeachers(sch.id, [u]); db.addLog({ who: name, what: 'joined as a Kaushal Bodh teacher', schoolId: sch.id }); };
       } else if (role === 'school') {
+        const ids = schoolIds();
+        const reg = ids.find(x => x.id === normCode(f.schoolCode));
+        if (!reg || reg.usedBy) fail('schoolCode', 'That School ID is not right, or it has already been used. VINC Lab gives each school its own School ID.');
         const schoolName = str(f.schoolName, 80);
         if (schoolName.length < 3) fail('schoolName', 'Enter your school\'s full name.');
         if ([...mem.schools.values()].some(s => s.name.toLowerCase() === schoolName.toLowerCase())) fail('schoolName', 'A school with this name is already on VINC Lab. Ask its coordinator to add you, or sign in.');
@@ -494,6 +525,10 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
         const id = uid('sch');
         const sch = { id, name: schoolName, studio: studioName(schoolName), color: /^#[0-9a-f]{6}$/i.test(f.color) ? f.color : '#1F6F66', initials: initials(schoolName), city: str(f.city, 40), board: str(f.board, 20) || 'CBSE', plan: 'Trial', seats: 60, active: true, createdAt: Date.now(), melaDate: melaDate(), sections: [] };
         sch.joinCode = newJoinCode(sch);
+        sch.studentCode = newJoinCode(sch);
+        sch.regCode = reg.id;
+        reg.usedBy = id; reg.usedAt = Date.now();
+        saveSchoolIds(ids);
         for (const g of [6, 7, 8]) sch.sections.push({ id: `${id}_${g}a`, name: `${g} A`, grade: g, teacherId: null, projects: { ...PICKS[g] }, taught: {} });
         db.saveSchool(sch);
         u = { id: `u_${id}_coord`, role: 'school', name, login, title: 'Kaushal Bodh coordinator', schoolId: id, ...contact };
@@ -544,12 +579,53 @@ export function createLogic(db, { adminPassword = 'Qwerty@21' } = {}) {
     });
     return kid;
   }
+  /* ----- School IDs (admin only) ----- */
+  async function manageSchoolIds(me, b) {
+    if (me.role !== 'admin') fail('', 'Only the VINC Lab admin can do this.', 403);
+    let made = [];
+    await db.tx(() => {
+      const list = schoolIds();
+      if (b.create != null) {
+        const n = Math.max(1, Math.min(50, Math.round(+b.create) || 1));
+        const note = str(b.note, 80);
+        for (let i = 0; i < n; i++) { const rec = { id: newSchoolIdCode(list), note, createdAt: Date.now(), usedBy: null, usedAt: null }; list.push(rec); made.push(rec); }
+        db.addLog({ who: me.name, what: `made ${n} School ID${n === 1 ? '' : 's'}${note ? ` for ${note}` : ''}`, schoolId: null });
+      } else if (b.delete) {
+        const rec = list.find(x => x.id === normCode(b.delete));
+        if (!rec) fail('', 'That School ID was not found.', 404);
+        if (rec.usedBy && school(rec.usedBy)) fail('', `This School ID belongs to ${school(rec.usedBy).name}. Delete the school first.`);
+        list.splice(list.indexOf(rec), 1);
+      } else if (b.note != null && b.id) {
+        const rec = list.find(x => x.id === normCode(b.id));
+        if (!rec) fail('', 'That School ID was not found.', 404);
+        rec.note = str(b.note, 80);
+      } else fail('', 'Nothing to do.');
+      saveSchoolIds(list);
+    });
+    return made;
+  }
+
+  // Older data: give every school a student joining code and a School ID.
+  async function migrate() {
+    const list = schoolIds();
+    let changedIds = false;
+    for (const s of mem.schools.values()) {
+      let changed = false;
+      if (!s.studentCode) { s.studentCode = newJoinCode(s); changed = true; }
+      if (!s.regCode || !list.some(x => x.id === s.regCode)) { attachSchoolId(s, list); changed = changedIds = true; }
+      if (changed) db.saveSchool(s);
+    }
+    if (changedIds) saveSchoolIds(list);
+    await db.commit();
+  }
+
   async function resetAll() {
     db.wipe();
+    db.meta.set('schoolIds', '[]');
     db.meta.set('createdAt', Date.now());
     await ensureAdmin();
     return user('u_admin');
   }
 
-  return { ensureAdmin, startSession, actorFrom, snapshot, applyChanges, signUp, publicSchools, familyLookup, loginTaken, login, changeOwnPassword, linkChild, resetAll, user, manages, ROLES };
+  return { ensureAdmin, migrate, startSession, actorFrom, snapshot, applyChanges, signUp, publicSchools, familyLookup, loginTaken, login, changeOwnPassword, linkChild, manageSchoolIds, resetAll, user, manages, ROLES };
 }
