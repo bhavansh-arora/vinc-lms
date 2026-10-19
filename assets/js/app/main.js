@@ -1,5 +1,5 @@
 // VINC Lab LMS: hash router, app shell and page transitions.
-import { load, db, session, user, school, canPersist } from './store.js';
+import { load, db, session, user, school, canPersist, onSync, pull, takeRecovered } from './store.js';
 import { $, $$, esc, icon, toast, countUp, REDUCED } from './ui.js';
 import { renderAuth } from './auth.js';
 import * as Student from './views/student.js';
@@ -17,6 +17,26 @@ const root = $('#app');
 
 // Light or dark always follows the device setting; drop any old manual override.
 try { localStorage.removeItem('vinclab-theme'); } catch { /* ignore */ }
+
+/* ---------- Other tabs ----------
+   When another tab saves, this tab takes the new data and redraws the page, but never while a
+   dialog is open or someone is typing; then it waits until the dialog closes or the next page. */
+let syncPending = false;
+const busy = () => !!document.querySelector('dialog[open]')
+  || (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '') && !!document.activeElement.closest('#app'));
+function syncNow(what) {
+  const n = takeRecovered();
+  if (n) toast(`Carried over ${n} account${n === 1 ? '' : 's'} saved by an older VINC Lab tab.`, 'ok', 5000);
+  if (busy()) { syncPending = true; return; }
+  syncPending = false;
+  const changed = pull();
+  if (!$('#view')) return; // the login and sign-up pages read fresh data when submitted
+  if (changed || what === 'session') rerender();
+}
+onSync(syncNow);
+document.addEventListener('close', () => { if (syncPending) setTimeout(() => syncNow('data'), 80); }, true);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow('data'); });
+{ const n = takeRecovered(); if (n) setTimeout(() => toast(`Carried over ${n} account${n === 1 ? '' : 's'} saved by an older version of VINC Lab.`, 'ok', 5000), 900); }
 
 /* ---------- Session ---------- */
 function currentUser() { const s = session.get(); return s ? user(s.userId) : null; }
@@ -39,6 +59,7 @@ function enter(u, { fresh }) {
 
 /* ---------- Router ---------- */
 function route() {
+  if (syncPending && !busy()) { syncPending = false; pull(); }
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const [head, ...rest] = parts;
   if (head === 'login' || head === 'signup') {

@@ -181,6 +181,21 @@ Proficient 70+, Developing 50+, Beginning) are VINC Lab's own.
 The site starts empty: there are no sample schools or demo accounts, only the
 VINC Lab admin. Everything is stored in the visitor's browser (`localStorage`).
 
+**Each browser has its own data.** Accounts made in Safari are not in Chrome,
+on another device, or in a private window, and clearing the browser's data
+removes them. Sharing accounts across browsers and devices needs the hosted
+backend described under "Before going live".
+
+Within one browser:
+- **Tabs stay in step.** When one tab saves, the others pick it up and redraw
+  (waiting until any open dialog closes). Before saving, a tab merges in what
+  other tabs saved, record by record, so a tab opened earlier can no longer
+  overwrite people another tab just added.
+- **Each tab has its own login**, so you can be the admin in one tab and a
+  student in another. A new tab starts as whoever logged in last.
+- Accounts made under the previous version of the app (stored as
+  `vinclab:db:v3`) are carried over; its demo schools and demo logins are not.
+
 **VINC Lab admin.** The admin is not shown on the landing page or offered on the
 login and sign-up screens, but works in the background: log in on the normal
 login screen with User ID `admin` and password `Qwerty@21`, then change the

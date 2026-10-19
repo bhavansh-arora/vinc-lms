@@ -3,14 +3,17 @@
 import { emptyProgress } from './scoring.js';
 import { sha256 } from './sha256.js';
 
-// v4 starts empty. Older keys held the sample schools and demo accounts and are removed.
+// v4 starts empty. v3 held the sample schools and demo accounts: anything people created there
+// themselves is carried over (see importLegacy), the demo data is dropped.
 const KEY = 'vinclab:db:v4';
 const VERSION = 4;
-const OLD_KEYS = ['vinclab:db:v3', 'vinclab:db:v2'];
+const LEGACY = 'vinclab:db:v3';
+const OLD_KEYS = ['vinclab:db:v2'];
 const SESSION = 'vinclab:session:v1';
 
 let DB = null;
 let persistOk = true;
+let recovered = 0;    // accounts carried over from an older version, reported once
 
 const ls = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -22,27 +25,158 @@ export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}
 
 export function load() {
   OLD_KEYS.forEach(k => ls.del(k));
-  const raw = ls.get(KEY);
-  if (raw) { try { DB = JSON.parse(raw); if (DB?.version === VERSION) { if (applyAdminDefaults(DB)) save(); return DB; } } catch { /* start fresh */ } }
-  DB = seed();
-  applyAdminDefaults(DB);
-  save();
+  const cur = readStored();
+  DB = cur?.d || null;
+  if (!DB) {
+    const raw = ls.get(KEY);
+    if (raw) ls.set(`${KEY}:backup`, raw); // never throw away data we could not read
+    DB = seed();
+  }
+  baseRaw = cur?.raw || null;
+  const changed = applyAdminDefaults(DB);
+  if (importLegacy(DB) || changed || !cur) save();
   return DB;
 }
 export const db = () => DB || load();
 
+/* ---------- Several tabs at once ----------
+   Each open tab keeps the data in memory. Without care, a tab opened earlier would save its older
+   copy over people another tab had just added. So:
+   - save() first checks whether another tab saved since this tab last read. If so it merges record
+     by record (each person, school and student's work), keeping whichever side changed it.
+   - When another tab saves, pull() brings this tab up to date (main.js calls it when no form or
+     dialog is open, then redraws the page). */
+let baseRaw = null; // the data exactly as this tab last read or wrote it
+
+function readStored() {
+  const raw = ls.get(KEY);
+  if (!raw) return null;
+  try { const d = JSON.parse(raw); return d?.version === VERSION ? { raw, d } : null; } catch { return null; }
+}
+
 export function save() {
-  persistOk = ls.set(KEY, JSON.stringify(DB));
+  const cur = readStored();
+  if (cur && baseRaw && cur.raw !== baseRaw) {
+    if (cur.d.createdAt !== DB.createdAt) DB = cur.d; // all data was deleted elsewhere: start from that
+    else merge3(DB, cur.d, JSON.parse(baseRaw));
+  }
+  const raw = JSON.stringify(DB);
+  persistOk = ls.set(KEY, raw);
+  if (persistOk) baseRaw = raw;
   return persistOk;
 }
+
+// Bring this tab up to date with what another tab saved. Returns true if anything changed.
+export function pull() {
+  const cur = readStored();
+  if (!cur) return false; // another tab is mid-way through deleting all data: wait for its next save
+  if (cur.raw === baseRaw) return false;
+  const local = baseRaw && JSON.stringify(DB) !== baseRaw; // edits here that were not saved yet
+  if (!local || cur.d.createdAt !== DB.createdAt) { DB = cur.d; baseRaw = cur.raw; return true; }
+  merge3(DB, cur.d, JSON.parse(baseRaw));
+  baseRaw = cur.raw;
+  save();
+  return true;
+}
+
+// Three-way merge of whole records: mine, theirs and the common base this tab started from.
+// A record only one side changed takes that side; if both changed it, this tab's version wins.
+// A record one side deleted stays deleted unless the other side changed it meanwhile.
+function merge3(mine, theirs, base) {
+  const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  const pick = (m, t, b) => {
+    if (m && t) return same(m, b) ? t : m;
+    if (m && !t) return b && same(m, b) ? null : m;  // they deleted it
+    if (!m && t) return b && same(t, b) ? null : t;  // we deleted it
+    return null;
+  };
+  const byId = list => new Map((list || []).map(x => [x.id, x]));
+  for (const k of ['users', 'schools']) {
+    const M = byId(mine[k]), T = byId(theirs[k]), B = byId(base?.[k]);
+    const ids = [...new Set([...M.keys(), ...T.keys()])];
+    mine[k] = ids.map(id => pick(M.get(id), T.get(id), B.get(id))).filter(Boolean);
+  }
+  const P = {}, mp = mine.progress || {}, tp = theirs.progress || {}, bp = base?.progress || {};
+  for (const id of new Set([...Object.keys(mp), ...Object.keys(tp)])) { const v = pick(mp[id], tp[id], bp[id]); if (v) P[id] = v; }
+  mine.progress = P;
+  const seen = new Set((mine.log || []).map(l => `${l.at}|${l.who}|${l.what}`));
+  for (const l of theirs.log || []) if (!seen.has(`${l.at}|${l.who}|${l.what}`)) mine.log.push(l);
+  mine.log.sort((a, b) => b.at - a.at); mine.log.length = Math.min(mine.log.length, 250);
+  mine.gone = [...new Set([...(mine.gone || []), ...(theirs.gone || [])])].slice(-3000);
+}
+
+// Tell the app when another tab changed the data.
+const listeners = new Set();
+export const onSync = fn => { listeners.add(fn); return () => listeners.delete(fn); };
+const notify = what => listeners.forEach(fn => { try { fn(what); } catch { /* ignore */ } });
+try {
+  addEventListener('storage', e => {
+    if (e.key === KEY || e.key === null) {
+      try { const d = e.newValue && JSON.parse(e.newValue); if (d && d.version !== VERSION) { location.reload(); return; } } catch { /* half-written */ }
+      notify('data');
+    } else if (e.key === LEGACY && e.newValue) {
+      // A tab still running the previous version saved: carry its new accounts over.
+      if (importLegacy(db())) { save(); notify('data'); }
+    }
+  });
+} catch { /* no window */ }
+
+// Accounts people made under the previous version (v3), without its demo schools and demo logins.
+const DEMO_SCHOOLS = new Set(['sch_greenwood', 'sch_sunrise', 'sch_lakeview']);
+function importLegacy(d) {
+  const raw = ls.get(LEGACY);
+  if (!raw) return false;
+  let old;
+  try { old = JSON.parse(raw); } catch { return false; }
+  ls.set(`${LEGACY}:backup`, raw);
+  ls.del(LEGACY);
+  if (!old || !Array.isArray(old.users)) return false;
+  const gone = new Set(d.gone || []);
+  const haveIds = new Set([...d.users.map(u => u.id), ...d.schools.map(x => x.id)]);
+  const schools = (old.schools || []).filter(x => !DEMO_SCHOOLS.has(x.id) && !x.demo && !gone.has(x.id));
+  const schoolIds = new Set(schools.map(x => x.id));
+  const users = old.users.filter(u => u.role !== 'admin' && u.pw && u.pw !== 'demo' && schoolIds.has(u.schoolId) && !haveIds.has(u.id) && !gone.has(u.id));
+  let n = 0;
+  for (const x of schools) if (!haveIds.has(x.id)) { d.schools.push(x); n++; }
+  for (const u of users) {
+    if (loginTakenIn(d, u.login)) u.login = makeLogin(u.login.replace(/\d+$/, ''), id => loginTakenIn(d, id));
+    d.users.push(u); n++;
+    if (old.progress?.[u.id] && !d.progress[u.id]) d.progress[u.id] = old.progress[u.id];
+  }
+  const keep = new Set(d.users.map(u => u.id));
+  for (const u of users) {
+    if (u.childIds) u.childIds = u.childIds.filter(id => keep.has(id));
+    if (u.parentId && !keep.has(u.parentId)) delete u.parentId;
+  }
+  for (const x of schools) for (const sec of x.sections || []) if (sec.teacherId && !keep.has(sec.teacherId)) sec.teacherId = null;
+  for (const l of old.log || []) if (schoolIds.has(l.schoolId)) d.log.push(l);
+  d.log.sort((a, b) => b.at - a.at); d.log.length = Math.min(d.log.length, 250);
+  recovered += users.length;
+  return n > 0;
+}
+const loginTakenIn = (d, id) => d.users.some(u => u.login === id) || id === ADMIN_LOGIN;
+// How many accounts were carried over from an older version since the last call.
+export function takeRecovered() { const n = recovered; recovered = 0; return n; }
+
 export const canPersist = () => persistOk;
 
-export function reset() { ls.del(KEY); ls.del(SESSION); DB = null; return load(); }
+export function reset() { ls.del(KEY); session.clear(); ls.del(LEGACY); DB = null; baseRaw = null; return load(); }
 
+// Each tab has its own login, so a school can test as admin in one tab and as a student in another.
+// A new tab starts as whoever logged in last on this browser.
+const ss = {
+  get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch { /* ignore */ } },
+  del(k) { try { sessionStorage.removeItem(k); } catch { /* ignore */ } },
+};
 export const session = {
-  get() { try { return JSON.parse(ls.get(SESSION) || 'null'); } catch { return null; } },
-  set(s) { ls.set(SESSION, JSON.stringify(s)); },
-  clear() { ls.del(SESSION); },
+  get() {
+    let raw = ss.get(SESSION);
+    if (raw === null) { raw = ls.get(SESSION); if (raw) ss.set(SESSION, raw); }
+    try { return JSON.parse(raw || 'null'); } catch { return null; }
+  },
+  set(s) { const v = JSON.stringify(s); ss.set(SESSION, v); ls.set(SESSION, v); },
+  clear() { ss.set(SESSION, 'null'); ls.del(SESSION); },
 };
 
 /* ---------------- Logins ----------------
@@ -184,7 +318,7 @@ const melaDate = () => isoDate(new Date(new Date().getFullYear() + (new Date().g
 
 // A fresh start: no schools or people, only the VINC Lab admin (set up by applyAdminDefaults).
 function seed() {
-  return { version: VERSION, createdAt: Date.now(), schools: [], users: [{ id: 'u_admin', role: 'admin', name: 'Admin', title: 'VINC Lab admin', email: 'info@vinc-lab.com', createdAt: Date.now() }], progress: {}, log: [] };
+  return { version: VERSION, createdAt: Date.now() + Math.random(), gone: [], schools: [], users: [{ id: 'u_admin', role: 'admin', name: 'Admin', title: 'VINC Lab admin', email: 'info@vinc-lab.com', createdAt: Date.now() }], progress: {}, log: [] };
 }
 
 export function studioName(school) {
@@ -336,6 +470,7 @@ export function deleteUser(id, { withParents = true } = {}) {
   }
   const ids = new Set(gone.map(x => x.id));
   d.users = d.users.filter(x => !ids.has(x.id));
+  d.gone = [...(d.gone || []), ...ids].slice(-3000);
   save();
   return gone;
 }
@@ -348,6 +483,7 @@ export function deleteSchool(id) {
   d.users = d.users.filter(u => !users.includes(u));
   d.log = d.log.filter(l => l.schoolId !== id);
   d.schools = d.schools.filter(s => s.id !== id);
+  d.gone = [...(d.gone || []), id, ...users.map(u => u.id)].slice(-3000);
   save();
   return users.length;
 }
