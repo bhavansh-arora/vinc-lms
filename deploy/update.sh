@@ -109,6 +109,8 @@ main() {
     printf '\n%sDry run finished - nothing was changed.%s\n' "$C_BOLD" "$C_RESET"
     return 0
   fi
+  # The app's own database container (if used): pick up PostgreSQL 18 bug-fix releases.
+  if grep -q 'own database' "$APP_DIR/docker-compose.override.yml" 2>/dev/null; then dc pull -q db >/dev/null 2>&1 || true; fi
   dc up -d --build --remove-orphans || die "Rebuilding the container failed. To go back: sudo git -C $APP_DIR reset --hard $old && cd $APP_DIR && sudo docker compose up -d --build"
   docker image prune -f --filter label=org.vinclab.app=vinclab >/dev/null 2>&1 || true
 

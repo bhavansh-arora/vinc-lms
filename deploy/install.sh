@@ -34,6 +34,9 @@ DB_HOST_OPT=""
 DB_PORT_OPT=""
 DB_NAME="vinc_lms"
 DB_USER="vinc_lms"
+DB_KIND=""                 # own: vinc-lms runs its own Postgres container (default); shared: an existing one
+DB_CONTAINER_OWN="vinclab-db"
+DB_VOLUME="vinclab-pgdata"
 DB_PASSWORD="${VINCLAB_DB_PASSWORD:-}"
 PROXY_NETWORK_OPT=""
 DB_NETWORK_OPT=""
@@ -177,7 +180,10 @@ Code
                            Private repo: set GITHUB_TOKEN or paste a token when asked.
 
 Database (PostgreSQL)
-  --db-password PASS       Password of the vinc_lms database user (asked if not given)
+  --db own|shared          own (default): vinc-lms gets its own Postgres 18 container
+                           ('vinclab-db') on a private network, with a generated password.
+                           shared: use a database in an existing Postgres container.
+  --db-password PASS       shared only: password of the vinc_lms database user (asked if not given)
   --db-host HOST           Database host (default: found automatically)
   --db-port N              Database port (default: found automatically, else 5432)
   --db-network NAME        Docker network of the Postgres container (docker mode)
@@ -206,7 +212,7 @@ parse_args() {
     case $opt in --*=*) val=${opt#*=}; opt=${opt%%=*} ;; esac
     case $opt in
       --domain|--email|--admin-password|--repo|--branch|--port|--mode|--db-password|--db-host|--db-port|\
-      --db-network|--proxy-network|--traefik-entrypoint|--traefik-certresolver)
+      --db-network|--proxy-network|--traefik-entrypoint|--traefik-certresolver|--db)
         if [ -z "$val" ]; then
           [ $# -ge 2 ] || die "Option $opt needs a value (see --help)."
           val=$2; shift
@@ -220,6 +226,7 @@ parse_args() {
           --port) PORT=$val; PORT_SET=1 ;;
           --mode) MODE_OPT=$val ;;
           --db-password) DB_PASSWORD=$val ;;
+          --db) DB_KIND=$val ;;
           --db-host) DB_HOST_OPT=$val ;;
           --db-port) DB_PORT_OPT=$val ;;
           --db-network) DB_NETWORK_OPT=$val ;;
@@ -243,6 +250,9 @@ parse_args() {
   [ -z "$DB_PORT_OPT" ] || valid_port "$DB_PORT_OPT" || die "Not a valid port: $DB_PORT_OPT"
   [[ $BRANCH =~ ^[A-Za-z0-9._/-]+$ ]] || die "Not a valid branch name: $BRANCH"
   case $MODE_OPT in auto|host|docker) ;; *) die "--mode must be host or docker" ;; esac
+  # Pointing at an existing database (--db-host/--db-network) means shared; otherwise own.
+  if [ -z "$DB_KIND" ]; then if [ -n "$DB_HOST_OPT$DB_NETWORK_OPT" ]; then DB_KIND=shared; else DB_KIND=own; fi; fi
+  case $DB_KIND in own|shared) ;; *) die "--db must be own or shared" ;; esac
   local n
   for n in "$DB_HOST_OPT" "$DB_NETWORK_OPT" "$PROXY_NETWORK_OPT" "$TRAEFIK_ENTRYPOINT_OPT" "$TRAEFIK_RESOLVER_OPT"; do
     [ -z "$n" ] || [[ $n =~ ^[A-Za-z0-9._-]+$ ]] || die "Not a valid name: $n"
@@ -627,6 +637,33 @@ decide_setup() {
     *) ok "Ports 80/443 are served by: $PROXY_PROGRAMS"; info "Proxy type: $PROXY_KIND" ;;
   esac
 
+  if [ "$DB_KIND" = own ]; then
+    if [ "$MODE_OPT" != auto ]; then MODE=$MODE_OPT
+    elif [ "$PROXY_WHERE" = container ] && [ "$PROXY_NETMODE" != host ]; then MODE=docker
+    else MODE=host; fi
+    DB_HOST=db; DB_PORT=5432
+    ok "Database: its own PostgreSQL 18 container '$DB_CONTAINER_OWN' on a private network (separate from every other project)"
+    if [ "$MODE" = host ]; then
+      ok "Mode: host - the app listens on 127.0.0.1:$PORT only, for the web server on this server"
+      local conflict
+      if conflict=$(port_conflict); then
+        fail "Port $PORT is already used by another program: $conflict"
+        die "Choose a free port with --port (for example --port 3110)."
+      fi
+    else
+      if [ -n "$PROXY_NETWORK_OPT" ]; then PROXY_NETWORK=$PROXY_NETWORK_OPT
+      elif [ -n "$PROXY_CONTAINER" ] && [ -n "$DOCKER_BIN" ]; then
+        PROXY_NETWORK=$(traefik_docker_network)
+        [ -n "$PROXY_NETWORK" ] || PROXY_NETWORK=$(container_networks "$PROXY_CONTAINER" | pick_network)
+      fi
+      ok "Mode: docker - the app is reached through the proxy's Docker network (no ports opened on the server)"
+      if [ -n "$PROXY_NETWORK" ]; then ok "Joining the proxy's network: $PROXY_NETWORK"
+      else warn "Could not find a Docker network for the proxy container ${PROXY_CONTAINER:-}; give one with --proxy-network."; fi
+    fi
+    DB_URL_HOSTPORT="$DB_HOST:$DB_PORT"
+    return 0
+  fi
+
   detect_db
   if [ -n "$DB_CONTAINER" ]; then
     ok "Postgres container: $DB_CONTAINER ($DB_IMAGE)${DB_PUBLISHED_PORT:+, published on host port $DB_PUBLISHED_PORT}"
@@ -785,6 +822,7 @@ BACKUP_DIR=/app/backups
 DATABASE_URL='$url'
 # Used only when the database is empty (first start). Change the password in the app afterwards.
 ADMIN_PASSWORD='$ADMIN_PASSWORD'
+$(if [ "$DB_KIND" = own ]; then printf "# Password of the app's own database container (%s). To change it, change it here AND in\n# DATABASE_URL above, then run: sudo bash %s/deploy/install.sh\nVINCLAB_DB_PASSWORD='%s'" "$DB_CONTAINER_OWN" "$APP_DIR" "$pw"; fi)
 EOF
 }
 
@@ -849,6 +887,29 @@ setup_settings() {
   ok "Backup folder: $BACKUP_DIR"
 
   local pw="" url cur out="" attempt
+  if [ "$DB_KIND" = own ]; then
+    if [ -f "$ENV_FILE" ]; then
+      run chmod 600 "$ENV_FILE"
+      if [ -z "$(kv_get "$ENV_FILE" VINCLAB_DB_PASSWORD)" ]; then
+        fail "$ENV_FILE is set up for a shared database (it has no VINCLAB_DB_PASSWORD)."
+        info "Run the installer with --db shared to keep using it, or move $ENV_FILE away to switch to"
+        info "an own database (a new, empty one; nothing is copied over)."
+        dry || die "Not switching databases without being asked."
+      fi
+      ok "$ENV_FILE already exists; keeping its passwords"
+      if [ "$PORT_SET" -eq 1 ] && [ "$(kv_get "$ENV_FILE" PORT)" != "$PORT" ]; then
+        run sed -i "s/^[[:space:]]*PORT[[:space:]]*=.*/PORT=$PORT/" "$ENV_FILE"
+        ok "Changed PORT to $PORT"
+      fi
+    else
+      pw=$(od -An -tx1 -N24 /dev/urandom | tr -d ' \n')
+      write_env_file "$pw"
+      ENV_CREATED=1
+      ok "Wrote $ENV_FILE with a new random database password (readable by root only)"
+    fi
+    info "The database container starts together with the app in the next step."
+    return 0
+  fi
   if [ -f "$ENV_FILE" ]; then
     ok "$ENV_FILE already exists; keeping its passwords"
     run chmod 600 "$ENV_FILE"
@@ -906,7 +967,7 @@ setup_settings() {
 # ----------------------------------------------------------------------------- step 6: compose
 write_override() {
   local nets=() n labels="" envs="" ep res
-  if [ "$MODE" = host ] && [ "${DB_VIA_NETWORK:-0}" = 1 ]; then
+  if [ "$DB_KIND" != own ] && [ "$MODE" = host ] && [ "${DB_VIA_NETWORK:-0}" = 1 ]; then
     write_file "$OVERRIDE_FILE" 644 root:root <<EOF
 # Generated by deploy/install.sh (mode: host, database over Docker network) - re-running the
 # installer rewrites this file. The app joins the Postgres container's network ($DB_NETWORK) to
@@ -925,7 +986,7 @@ networks:
 EOF
     return 0
   fi
-  if [ "$MODE" = host ]; then
+  if [ "$DB_KIND" != own ] && [ "$MODE" = host ]; then
     write_file "$OVERRIDE_FILE" 644 root:root <<EOF
 # Generated by deploy/install.sh (mode: host) - re-running the installer rewrites this file.
 # The app shares the server's network and listens on 127.0.0.1:$PORT only;
@@ -940,9 +1001,9 @@ EOF
   fi
 
   if [ -n "$PROXY_NETWORK" ]; then nets+=("$PROXY_NETWORK"); fi
-  if [ -n "$DB_NETWORK" ] && [ "$DB_NETWORK" != "$PROXY_NETWORK" ]; then nets+=("$DB_NETWORK"); fi
+  if [ "$DB_KIND" != own ] && [ -n "$DB_NETWORK" ] && [ "$DB_NETWORK" != "$PROXY_NETWORK" ]; then nets+=("$DB_NETWORK"); fi
 
-  case $PROXY_KIND in
+  if [ "$MODE" = docker ]; then case $PROXY_KIND in
     traefik)
       read -r ep res <<<"$(traefik_detect)"
       TRAEFIK_EP=$ep; TRAEFIK_RES=${res:-}
@@ -967,7 +1028,9 @@ EOF
       envs+="      VIRTUAL_PORT: \"$PORT\""$'\n'
       envs+="      LETSENCRYPT_HOST: \"$DOMAIN\""$'\n'
       envs+="      LETSENCRYPT_EMAIL: \"$EMAIL\""$'\n' ;;
-  esac
+  esac; fi
+
+  if [ "$DB_KIND" = own ]; then write_override_own "$labels" "$envs" "${nets[@]}"; return 0; fi
 
   {
     printf '# Generated by deploy/install.sh (mode: docker, proxy: %s) - re-running the installer rewrites this file.\n' "$PROXY_KIND"
@@ -982,6 +1045,77 @@ EOF
       for n in "${nets[@]}"; do printf '  %s:\n    external: true\n' "$n"; done
     fi
   } | write_file "$OVERRIDE_FILE" 644 root:root
+}
+
+# The app plus its own Postgres container. The database is only on an internal network that
+# nothing else can join or reach (not even the internet); its data lives in a named volume.
+write_override_own() {
+  local labels=$1 envs=$2 n; shift 2
+  local ext=("$@")
+  {
+    printf '# Generated by deploy/install.sh (mode: %s, own database) - re-running the installer rewrites this file.\n' "$MODE"
+    printf '# The database container (%s) is reachable only by the app, on the internal network vinclab-db.\n' "$DB_CONTAINER_OWN"
+    printf 'services:\n  %s:\n' "$SERVICE"
+    printf '    environment:\n      HOST: 0.0.0.0\n%s' "$envs"
+    if [ -n "$labels" ]; then printf '    labels:\n%s' "$labels"; fi
+    if [ "$MODE" = host ]; then printf '    ports:\n      - "127.0.0.1:%s:%s"\n' "$PORT" "$PORT"; fi
+    printf '    depends_on:\n      db:\n        condition: service_healthy\n'
+    printf '    networks:\n      - vinclab-db\n'
+    if [ "$MODE" = host ] || [ ${#ext[@]} -eq 0 ]; then printf '      - default\n'; fi
+    for n in "${ext[@]}"; do printf '      - %s\n' "$n"; done
+    cat <<EOF
+  db:
+    image: postgres:18-alpine
+    container_name: $DB_CONTAINER_OWN
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: $DB_USER
+      POSTGRES_DB: $DB_NAME
+      POSTGRES_PASSWORD: \${VINCLAB_DB_PASSWORD:?VINCLAB_DB_PASSWORD missing in .env}
+    volumes:
+      - $DB_VOLUME:/var/lib/postgresql
+    networks:
+      - vinclab-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $DB_USER -d $DB_NAME"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+networks:
+  vinclab-db:
+    internal: true
+EOF
+    if [ "$MODE" = host ] || [ ${#ext[@]} -eq 0 ]; then printf '  default:\n'; fi
+    for n in "${ext[@]}"; do printf '  %s:\n    external: true\n' "$n"; done
+    printf 'volumes:\n  %s:\n    name: %s\n' "$DB_VOLUME" "$DB_VOLUME"
+  } | write_file "$OVERRIDE_FILE" 644 root:root
+}
+
+# Start the app's own database and make its password match .env. The password is set every time
+# (over the container's local socket), so .env is always the source of truth: this also covers
+# a reinstall that kept the data volume but wrote a new .env.
+start_own_db() {
+  local pw i status=""
+  pw=$(kv_get "$ENV_FILE" VINCLAB_DB_PASSWORD)
+  [ -n "$pw" ] || die "VINCLAB_DB_PASSWORD is missing in $ENV_FILE."
+  quiet dc up -d db || die "Starting the database container failed."
+  info "Waiting for the database container..."
+  for ((i = 1; i <= 45; i++)); do
+    status=$("$DOCKER_BIN" inspect -f '{{.State.Health.Status}}' "$DB_CONTAINER_OWN" 2>/dev/null || true)
+    [ "$status" = healthy ] && break
+    sleep 2
+  done
+  [ "$status" = healthy ] || { dc logs --tail 30 db 2>&1 | sed 's/^/      /' >&2 || true; die "The database container did not become ready."; }
+  # shellcheck disable=SC2016  # :'pw' is a psql variable, not shell
+  printf '%s\n' "ALTER ROLE $DB_USER PASSWORD :'pw';" \
+    | dc exec -T db psql -q -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" -v pw="$pw" >>"$LOG_FILE" 2>&1 \
+    || die "Could not set the database password (see $LOG_FILE)."
+  ok "Database container '$DB_CONTAINER_OWN' is ready (data in Docker volume '$DB_VOLUME')"
 }
 
 app_health() {
@@ -1000,6 +1134,7 @@ start_app() {
   quiet dc config -q || die "docker compose rejected the configuration (see above)."
   info "Building the image (the first build takes a minute or two)..."
   quiet dc build --pull || die "Building the app image failed."
+  if [ "$DB_KIND" = own ]; then start_own_db; fi
   quiet dc up -d --remove-orphans || die "Starting the container failed."
   # Remove only our own old, untagged images (never other projects' images).
   "$DOCKER_BIN" image prune -f --filter label=org.vinclab.app=vinclab >>"$LOG_FILE" 2>&1 || true
@@ -1501,6 +1636,7 @@ write_state() {
   write_file "$STATE_FILE" 600 root:root <<EOF
 # Written by deploy/install.sh; read by deploy/uninstall.sh.
 MODE=$MODE
+DB_KIND=$DB_KIND
 PROXY_KIND=$PROXY_KIND
 PROXY_WHERE=$PROXY_WHERE
 DOMAIN=$DOMAIN
@@ -1539,7 +1675,7 @@ summary() {
   printf '  %s!%s Change the admin password right after your first login.\n' "$C_YELLOW" "$C_RESET"
   cat <<EOF
 
-  Data:      PostgreSQL database '$DB_NAME' ($DB_URL_HOSTPORT)
+  Data:      $(if [ "$DB_KIND" = own ]; then printf "own PostgreSQL 18 container '%s' (data in Docker volume '%s')" "$DB_CONTAINER_OWN" "$DB_VOLUME"; else printf "PostgreSQL database '%s' (%s)" "$DB_NAME" "$DB_URL_HOSTPORT"; fi)
   Backups:   $BACKUP_DIR/  (nightly at 02:30, newest 14 kept)
   Settings:  $ENV_FILE
   Update:    sudo bash $APP_DIR/deploy/update.sh

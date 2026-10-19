@@ -8,42 +8,40 @@ handles the other sites.
 You need: SSH access to the VPS as a user who can run `sudo`, and access to the DNS settings
 for `vinc-lab.com`. It takes about 15 minutes.
 
-## 1. Create the database (once)
+## 1. The database
 
-The database lives in the existing PostgreSQL container. Creating it does not change the other
-project's data.
+By default the installer gives VINC Lab **its own PostgreSQL 18 container** (`vinclab-db`), so
+nothing is shared with the other projects:
 
-1. Find the PostgreSQL container's name and its admin user:
+- it sits on a private Docker network that only the VINC Lab app can reach (no other container,
+  no port on the server, no internet access);
+- its password is generated automatically and kept in `/opt/vinclab/.env`;
+- its data lives in the Docker volume `vinclab-pgdata`, which survives updates, restarts and even
+  an uninstall.
 
-   ```sh
-   sudo docker ps --format '{{.Names}}  {{.Image}}  {{.Ports}}' | grep 5432
-   sudo docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' CONTAINER-NAME | grep POSTGRES_USER
-   ```
+**There is nothing to do for this step.** The installer creates and starts it.
 
-   If no `POSTGRES_USER` line shows up, the admin user is `postgres`.
+<details><summary>Using a database in an existing PostgreSQL container instead (optional)</summary>
 
-2. Open the database console (replace both names):
+Add `--db shared` to the install command. First create the database inside that container
+(replace the container name and admin user, shown by
+`sudo docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' CONTAINER | grep POSTGRES_USER`):
 
-   ```sh
-   sudo docker exec -it CONTAINER-NAME psql -U ADMIN-USER -d postgres
-   ```
+```sh
+sudo docker exec -it CONTAINER psql -U ADMIN-USER -d postgres
+```
+```sql
+CREATE ROLE vinc_lms LOGIN PASSWORD 'your-strong-password';
+CREATE DATABASE vinc_lms OWNER vinc_lms;
+REVOKE ALL ON DATABASE vinc_lms FROM PUBLIC;
+\q
+```
 
-3. Paste these lines. Pick your own strong password and write it down, because the installer will
-   ask for it.
-
-   ```sql
-   CREATE ROLE vinc_lms LOGIN PASSWORD 'your-strong-password';
-   CREATE DATABASE vinc_lms OWNER vinc_lms;
-   REVOKE ALL ON DATABASE vinc_lms FROM PUBLIC;
-   \q
-   ```
-
-   `vinc_lms` cannot read the other project's tables. By default PostgreSQL still lets any role
-   *connect* to every database (without seeing its data). To close that too, the other project's
-   database can be locked to its own users with `REVOKE CONNECT ON DATABASE crm FROM PUBLIC;`
-   (use its real database name). Only do this if the other project connects as that database's
-   owner, which is the usual Docker setup (`POSTGRES_USER` owns `POSTGRES_DB`); if it uses other
-   roles, grant them `CONNECT` first. Whoever looks after that project should make this call.
+If that PostgreSQL is not published on the server (`docker ps` shows only `5432/tcp`), the app
+joins its Docker network and reaches it by container name. That gives the app network access to
+the other containers on that network (not to their data), which is why the own container is the
+default.
+</details>
 
 ## 2. Point the domain at the server
 
@@ -77,7 +75,6 @@ sudo bash ~/vinc-lms/deploy/install.sh --domain lms.vinc-lab.com
 
 The installer asks for:
 
-- the **database password** from step 1, and
 - a **GitHub token**, only if the repository is private. The token is stored privately on the
   server so that updates work later.
 
@@ -186,12 +183,12 @@ All of these run from `/opt/vinclab`:
 wrong, or has not spread yet. Check it with `dig +short lms.vinc-lab.com`. It must show the VPS's
 IP. The installer skips the certificate until the record is right. Run it again once DNS is fixed.
 
-**"The database rejected the password."** Use the password from step 1. To change the saved one,
+**"The database rejected the password."** (`--db shared` only) Use the password you gave the database in step 1. To change the saved one,
 edit the `DATABASE_URL` line in `/opt/vinclab/.env`, or delete the file and run the installer
 again. If the password contains special characters, it is easiest to delete the file and let the
 installer write it.
 
-**"The database or its user does not exist yet."** Do step 1 first.
+**"The database or its user does not exist yet."** (`--db shared` only) Create it as shown in step 1.
 
 **"Could not reach Postgres."** PostgreSQL is published only on the server's own address
 (`127.0.0.1:5432`), so containers cannot reach it through `host.docker.internal`, which points to
@@ -227,5 +224,5 @@ hosting provider (this applies to all sites on the server).
 | `/opt/vinclab/.env` | Settings and secrets (database URL, first admin password) |
 | `/opt/vinclab/docker-compose.override.yml` | Networking and proxy settings, written by the installer |
 | `/opt/vinclab/backups/` | Nightly backups |
-| PostgreSQL database `vinc_lms` | All app data |
+| Container `vinclab-db`, volume `vinclab-pgdata` | All app data (own database; with `--db shared`, the `vinc_lms` database in that container) |
 | `/var/log/vinclab-install.log` | Detailed installer log |

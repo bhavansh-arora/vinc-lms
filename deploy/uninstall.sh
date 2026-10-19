@@ -193,6 +193,18 @@ main() {
   fi
 
   # 6. Database (manual, on purpose)
+  if [ "$(kv_get "$STATE_FILE" DB_KIND 2>/dev/null)" = own ] || docker volume inspect vinclab-pgdata >/dev/null 2>&1; then
+    cat <<EOF
+
+  The app's own database container was removed, but its data was ${C_BOLD}not${C_RESET} deleted: it stays in
+  the Docker volume 'vinclab-pgdata', and installing again picks it up. To delete it for good
+  (this cannot be undone):
+    sudo docker volume rm vinclab-pgdata
+
+EOF
+    dry && printf '%sDry run finished - nothing was changed.%s\n' "$C_BOLD" "$C_RESET"
+    return 0
+  fi
   local pg
   pg=$(docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | awk '/->5432\/tcp/ {print $1; exit}' || true)
   cat <<EOF
