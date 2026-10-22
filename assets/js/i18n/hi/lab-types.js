@@ -171,7 +171,7 @@ export default {
   'Build the circuit!': 'सर्किट बनाओ!',
 
   /* ---------------- design ---------------- */
-  'Clean': 'सादा',
+  'Clean': 'साफ़',
   'Classic': 'क्लासिक',
   'Fun': 'मज़ेदार',
   'Loud': 'मोटा',

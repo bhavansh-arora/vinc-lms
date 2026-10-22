@@ -97,14 +97,15 @@ export default {
   'You put all {n} steps in order. Doing things in the right order is what makes a process work!': 'तुमने सभी {n} चरण सही क्रम में लगा दिए। सही क्रम में काम करने से ही कोई प्रक्रिया ठीक से चलती है!',
 
   /* ---------- layers ---------- */
-  'bin': 'डिब्बा',
-  'pot': 'गमला',
+  // Container names are only used before a postposition (में, पर, के), so they are in the oblique form.
+  'bin': 'डिब्बे',
+  'pot': 'गमले',
   'bottle': 'बोतल',
   'trench': 'खाई',
   'tray': 'ट्रे',
   'bucket': 'बाल्टी',
   'tank': 'टंकी',
-  'pit': 'गड्ढा',
+  'pit': 'गड्ढे',
   'Layers to add': 'डालने के लिए परतें',
   'Pick the next layer': 'अगली परत चुनो',
   'Start at the <b>bottom</b>. Drag a card into the {kind}, or tap a card and then tap the {kind}.': '<b>सबसे नीचे</b> से शुरू करो। कार्ड को खींचकर {kind} में डालो, या पहले कार्ड पर और फिर {kind} पर टैप करो।',
@@ -130,7 +131,7 @@ export default {
   'The water soaked down through every layer and came out clean.': 'पानी हर परत से रिसकर नीचे गया और साफ़ होकर निकला।',
   'Air pump on': 'हवा का पंप चालू',
   'Bubbles carry air (oxygen) down to the roots.': 'बुलबुले हवा (ऑक्सीजन) को नीचे जड़ों तक ले जाते हैं।',
-  'Build the {kind} layer by layer, from the bottom up.': 'नीचे से ऊपर की ओर, परत-दर-परत {kind} तैयार करो।',
+  'Build the {kind} layer by layer, from the bottom up.': '{kind} में नीचे से ऊपर तक, परत-दर-परत चीज़ें डालो।',
 
   /* ---------- grow ---------- */
   'tomato plant': 'टमाटर का पौधा',

@@ -974,3 +974,6 @@ code.code { font: 600 1em var(--mono); padding: .05em .4em; border-radius: 6px; 
 /* Hindi: small "mono" labels (eyebrows, chips, scores) use the Devanagari font first, so word spaces are not
    the wide monospace ones (same as landing.css). */
 html[lang="hi"] { --mono: "Noto Sans Devanagari", "DM Mono", ui-monospace, monospace; }
+
+/* Hindi, staff pages: the role tabs in "Add a person" (शिक्षक · विद्यार्थी · अभिभावक) fit on one line on phones. */
+@media (max-width: 480px) { html[lang="hi"] .role-tabs button { padding-inline: .6em; gap: 4px; } }
