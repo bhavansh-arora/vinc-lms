@@ -13,6 +13,8 @@ const FROZEN = new Set(['amount', 'anim', 'answer', 'art', 'bin', 'board', 'book
   'container', 'dir', 'emoji', 'fix', 'form', 'FORM', 'icon', 'id', 'key', 'kind', 'medium', 'meter', 'mode', 'needs', 'next', 'output',
   'palette', 'parts', 'place', 'plant', 'preset', 'rule', 'scene', 'sprite', 'start', 'texture', 'tint', 'to', 'tool', 'truth', 'type',
   'vessel', 'who', 'lo', 'pages']);
+// Fields that are always display text, even when a value is one lowercase word (units like 'plants').
+const TEXT_KEYS = new Set(['unit', 'label', 'title', 'name', 'text', 'cols', 't']);
 const looksLikeCode = s => /^[a-z][\w-]*$/.test(s) || /^#[0-9a-f]{3,8}$/i.test(s) || /^https?:/.test(s) || /^[\p{Extended_Pictographic}‍️\s]+$/u.test(s);
 const hasLatinWords = s => /[A-Za-z]{3,}/.test(s.replace(/VINC Lab|Kaushal Bodh|NCERT|CBSE|Scratch|Arduino|LED|QR|AI|UPI|URL|https?:\S+/g, ''));
 
@@ -47,7 +49,7 @@ for (const [name, en, hi] of pairs) {
     }
     if (typeof e === 'string') {
       if (typeof h !== 'string') return out.push(`${path}: should be text`);
-      if (FROZEN.has(key) || looksLikeCode(e)) { if (e !== h) out.push(`${path}: must stay "${e}" (code value), found "${h}"`); return; }
+      if (FROZEN.has(key) || (looksLikeCode(e) && !TEXT_KEYS.has(key))) { if (e !== h) out.push(`${path}: must stay "${e}" (code value), found "${h}"`); return; }
       strings++;
       if (e === h && hasLatinWords(e)) { same++; if (sameList.length < 8) sameList.push(`${path}: "${e.slice(0, 60)}"`); }
       return;

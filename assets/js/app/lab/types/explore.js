@@ -5,6 +5,7 @@
 // Extra config (optional): hotspot.at: '<anchor name>' instead of x/y (see ANCHORS), hotspot.hint,
 // cfg.identify: true|false (ask "find the …" one by one; default true for bicycle/workshop).
 import { esc, sparkle, onResize } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Explore and find', needs: ['gsap'] };
 
@@ -33,7 +34,8 @@ export const ANCHORS = {
   market: { sky: [50, 6], bunting: [50, 12], 'stall-1': [18, 52], 'stall-2': [50, 50], 'stall-3': [82, 52], scale: [56, 47], 'price-board': [42, 44], crates: [50, 58], basket: [28, 84], cart: [72, 80], sacks: [8, 78], ground: [50, 94] },
   bathroom: { window: [12, 14], tap: [22, 40], basin: [22, 50], mirror: [22, 24], shower: [84, 26], toilet: [70, 60], bucket: [28, 74], mug: [36, 78], towel: [50, 30], soap: [32, 46], geyser: [56, 14], drain: [50, 90], pipe: [46, 82], floor: [60, 94] },
 };
-const NOTEBOOK = { garden: 'Garden notebook', campus: 'Campus notebook', kitchen: 'Kitchen notes', farm: 'Farm notebook', street: 'Street notes', museum: 'Museum notes', home: 'Home notes', park: 'Park notebook', pond: 'Pond notebook', bicycle: 'Parts named', workshop: 'Tools named', market: 'Market notes', bathroom: 'Spotted' };
+const NOTEBOOK = { garden: t('Garden notebook'), campus: t('Campus notebook'), kitchen: t('Kitchen notes'), farm: t('Farm notebook'), street: t('Street notes'), museum: t('Museum notes'), home: t('Home notes'), park: t('Park notebook'), pond: t('Pond notebook'), bicycle: t('Parts named'), workshop: t('Tools named'), market: t('Market notes'), bathroom: t('Spotted') };
+const SCENE_NAME = { garden: t('garden'), campus: t('campus'), kitchen: t('kitchen'), farm: t('farm'), street: t('street'), museum: t('museum'), home: t('home'), park: t('park'), pond: t('pond'), bicycle: t('bicycle'), workshop: t('workshop'), market: t('market'), bathroom: t('bathroom') };
 
 /* ================================================================================================
    Scene art. Every scene is drawn in a 1000 x 625 box as layers: back (sky/wall), far, mid, near.
@@ -458,7 +460,7 @@ export function mount(stage, cfg, api) {
     if (!Number.isFinite(+x) || !Number.isFinite(+y)) return null;
     return { ...h, i, x: clamp(+x, 2, 98) * W / 100, y: clamp(+y, 3, 97) * H / 100, s: clamp(+h.size || 1, .4, 2.5), found: false };
   }).filter(Boolean).map((s, i) => ({ ...s, i }));
-  if (!spots.length) { stage.innerHTML = '<div class="lab-err"><p>This lab has nothing to find yet.</p></div>'; return { destroy() {} }; }
+  if (!spots.length) { stage.innerHTML = `<div class="lab-err"><p>${t('This lab has nothing to find yet.')}</p></div>`; return { destroy() {} }; }
   const need = clamp(Math.round(cfg.find || spots.length), 1, spots.length);
   const identify = cfg.identify ?? diagram;
   const k = kit(P, 7 + sceneName.length * 31);
@@ -481,11 +483,11 @@ export function mount(stage, cfg, api) {
     const size = ART * s.s;
     const cls = `xp-hs${s.hidden ? ' is-hidden' : ''}${s.found ? ' is-found' : ''}`;
     if (diagram) {
-      return `<g class="${cls} xp-mk" data-i="${s.i}" transform="translate(${r1(s.x)} ${r1(s.y)})"${copy ? '' : ` role="button" tabindex="${tool === 'tap' && !s.hidden ? 0 : -1}" aria-label="Part ${s.i + 1}"`}>
+      return `<g class="${cls} xp-mk" data-i="${s.i}" transform="translate(${r1(s.x)} ${r1(s.y)})"${copy ? '' : ` role="button" tabindex="${tool === 'tap' && !s.hidden ? 0 : -1}" aria-label="${t('Part {n}', { n: s.i + 1 })}"`}>
         <circle class="xp-mk-halo" r="20"/><circle class="xp-mk-dot" r="15"/><text class="xp-mk-n" y="1" text-anchor="middle" dominant-baseline="central">${s.i + 1}</text>
         <path class="xp-mk-ok" d="M-7 0l5 5 9-10" /><circle class="xp-hit" r="${Math.max(30, 34 * s.s)}"/></g>`;
     }
-    return `<g class="${cls}" data-i="${s.i}" transform="translate(${r1(s.x)} ${r1(s.y)})"${copy ? '' : ` role="button" tabindex="${tool === 'tap' ? 0 : -1}" aria-label="${s.found ? esc(s.label) : 'Something to find'}"`}>
+    return `<g class="${cls}" data-i="${s.i}" transform="translate(${r1(s.x)} ${r1(s.y)})"${copy ? '' : ` role="button" tabindex="${tool === 'tap' ? 0 : -1}" aria-label="${s.found ? esc(s.label) : t('Something to find')}"`}>
       ${copy && s.hidden ? `<circle class="xp-reveal" r="${size * .62}" fill="url(#${P}-glow)"/>` : ''}
       <ellipse class="xp-hs-sh" cx="0" cy="${r1(size * .44)}" rx="${r1(size * .34)}" ry="${r1(size * .08)}" fill="url(#${P}-sh)"/>
       <g class="xp-hs-art" style="animation-delay:${-r1((s.i * .37) % 3)}s">${svgArt(s, size)}</g>
@@ -517,21 +519,21 @@ export function mount(stage, cfg, api) {
       <rect class="xp-grab" x="${-VW / 2}" y="${-VH / 2}" width="${VW}" height="${VH}" fill="transparent"/></g>` : '';
 
   const toolText = identify
-    ? { magnifier: ['🔍', 'Some parts hide! Use the magnifier, then tap the numbered dot.'], camera: ['📷', 'Frame the numbered dot of the part, then press the shutter.'], tap: ['👆', 'Tap the numbered dot on the part I name.'] }[tool]
-    : { magnifier: ['🔍', 'Drag the magnifier. Hold it still over something to look closer.'], camera: ['📷', 'Frame something in the viewfinder, then press the shutter.'], tap: ['👆', 'Tap anything you spot in the scene.'] }[tool];
+    ? { magnifier: ['🔍', t('Some parts hide! Use the magnifier, then tap the numbered dot.')], camera: ['📷', t('Frame the numbered dot of the part, then press the shutter.')], tap: ['👆', t('Tap the numbered dot on the part I name.')] }[tool]
+    : { magnifier: ['🔍', t('Drag the magnifier. Hold it still over something to look closer.')], camera: ['📷', t('Frame something in the viewfinder, then press the shutter.')], tap: ['👆', t('Tap anything you spot in the scene.')] }[tool];
   const root = document.createElement('div');
   root.className = `lab-explore xp-scene-${sceneName} xp-t-${tool}${diagram ? ' xp-diagram' : ''}`;
   root.innerHTML = `
     <div class="xp-bar">
       <div class="xp-chip xp-toolchip"><span aria-hidden="true">${toolText[0]}</span><span>${esc(toolText[1])}</span></div>
-      ${identify ? `<div class="xp-chip xp-target" aria-live="polite"><small>Find the</small><b></b></div>` : ''}
-      <div class="xp-chip xp-count" aria-live="polite"><b>0</b><span>/ ${need}</span><small>${identify ? 'named' : 'found'}</small></div>
-      <button type="button" class="xp-hint"><span aria-hidden="true">💡</span> Hint</button>
+      ${identify ? `<div class="xp-chip xp-target" aria-live="polite"><small>${t('Find the')}</small><b></b></div>` : ''}
+      <div class="xp-chip xp-count" aria-live="polite"><b>0</b><span>/ ${need}</span><small>${identify ? t('named') : t('found')}</small></div>
+      <button type="button" class="xp-hint"><span aria-hidden="true">💡</span> ${t('Hint')}</button>
     </div>
     <div class="xp-main">
       <div class="xp-viewwrap">
         <div class="xp-view"><div class="xp-scene">
-          <svg class="xp-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(cfg.title || 'Scene')}: ${esc(sceneName)} scene" tabindex="0">
+          <svg class="xp-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('{title}: {scene} scene', { title: esc(cfg.title || t('Scene')), scene: esc(SCENE_NAME[sceneName]) })}" tabindex="0">
             <defs>${COMMON_DEFS(P)}${S.defs || ''}</defs>
             <g class="xp-world">${world(false)}</g>
             <rect width="${W}" height="${H}" fill="url(#${P}-vig)" pointer-events="none"/><rect class="xp-night" width="${W}" height="${H}" pointer-events="none"/>
@@ -539,12 +541,12 @@ export function mount(stage, cfg, api) {
             <rect class="xp-flash" width="${W}" height="${H}" fill="#fff" opacity="0" pointer-events="none"/>
           </svg>
         </div></div>
-        ${tool === 'camera' ? `<button type="button" class="xp-shutter" aria-label="Take a photo"><span></span></button>` : ''}
+        ${tool === 'camera' ? `<button type="button" class="xp-shutter" aria-label="${t('Take a photo')}"><span></span></button>` : ''}
         <div class="xp-card" hidden role="status"></div>
-        <div class="xp-swipe" aria-hidden="true">⟵ swipe to look around ⟶</div>
+        <div class="xp-swipe" aria-hidden="true">${t('⟵ swipe to look around ⟶')}</div>
       </div>
-      <aside class="xp-book${tool === 'camera' ? ' is-album' : ''}" aria-label="${esc(tool === 'camera' ? 'Photo album' : NOTEBOOK[sceneName])}">
-        <h3 class="xp-book-h">${esc(tool === 'camera' ? 'Photo album' : NOTEBOOK[sceneName])}</h3>
+      <aside class="xp-book${tool === 'camera' ? ' is-album' : ''}" aria-label="${esc(tool === 'camera' ? t('Photo album') : NOTEBOOK[sceneName])}">
+        <h3 class="xp-book-h">${esc(tool === 'camera' ? t('Photo album') : NOTEBOOK[sceneName])}</h3>
         <ol class="xp-slots">${Array.from({ length: need }, (_, i) => `<li class="xp-slot"><span class="xp-slot-n">${i + 1}</span><span class="xp-slot-q" aria-hidden="true">?</span></li>`).join('')}</ol>
       </aside>
     </div>`;
@@ -686,7 +688,7 @@ export function mount(stage, cfg, api) {
       if (g) { e.preventDefault(); attempt(spots[+g.dataset.i]); return; }
       if (toolEl) {
         e.preventDefault();
-        if (tool === 'camera') snap(); else { const { x, y } = toolPos(); const s = spotUnder(x, y, 50); if (s) attempt(s); else { ripple(x, y, '#FFE7A0'); api.say('Nothing new right under the lens. Keep looking!', 'hint'); } }
+        if (tool === 'camera') snap(); else { const { x, y } = toolPos(); const s = spotUnder(x, y, 50); if (s) attempt(s); else { ripple(x, y, '#FFE7A0'); api.say(t('Nothing new right under the lens. Keep looking!'), 'hint'); } }
       }
     }
   });
@@ -695,14 +697,14 @@ export function mount(stage, cfg, api) {
   /* ---------- finding ---------- */
   function attempt(s) {
     if (done || busy || !s) return;
-    if (s.found) { api.say(`You already found the ${s.label}.`); return; }
+    if (s.found) { api.say(t('You already found the {label}.', { label: s.label })); return; }
     if (identify && target && s !== target) {
       api.mistake();
       const el = mainSpot(s.i);
       el?.classList.add('is-wrong');
       if (el && !api.reduced) gsap.fromTo(el.querySelector('.xp-mk-dot') || el, { x: 0 }, { x: 0, duration: .45, keyframes: { x: [0, -6, 6, -4, 3, 0] } });
       later(() => el?.classList.remove('is-wrong'), 700);
-      api.say(`Not that one: that is the ${s.label}. ${target.hint || `Look again for the ${target.label}.`}`, 'bad');
+      api.say(`${t('Not that one: that is the {label}.', { label: s.label })} ${target.hint || t('Look again for the {label}.', { label: target.label })}`, 'bad');
       return;
     }
     found(s);
@@ -800,7 +802,7 @@ export function mount(stage, cfg, api) {
   /* ---------- fact card (tap it, or wait, to close) ---------- */
   let cardT = 0;
   function showCard(s) {
-    card.innerHTML = `<button type="button" class="xp-card-x" aria-label="Close">×</button><div class="xp-card-art">${api.art(s)}</div><div class="xp-card-t"><b>${esc(s.label)}</b>${s.fact ? `<p>${esc(s.fact)}</p>` : ''}</div>`;
+    card.innerHTML = `<button type="button" class="xp-card-x" aria-label="${t('Close')}">×</button><div class="xp-card-art">${api.art(s)}</div><div class="xp-card-t"><b>${esc(s.label)}</b>${s.fact ? `<p>${esc(s.fact)}</p>` : ''}</div>`;
     card.hidden = false;
     card.onclick = hideCard;
     clearTimeout(cardT); cardT = later(hideCard, Math.max(5000, (s.fact || '').length * 70));
@@ -825,14 +827,14 @@ export function mount(stage, cfg, api) {
     const flash = $('.xp-flash');
     gsap.fromTo(flash, { opacity: .95 }, { opacity: 0, duration: api.reduced ? .05 : .45, ease: 'power2.out' });
     if (!api.reduced) gsap.fromTo($('.xp-shutter span'), { scale: .7 }, { scale: 1, duration: .4, ease: 'back.out(3)' });
-    const photo = makePolaroid(x, y, ww, hh, s ? s.label : 'Hmm…');
+    const photo = makePolaroid(x, y, ww, hh, s ? s.label : t('Hmm…'));
     if (identify && s && target && s !== target) { // snapped the wrong part
       dropPhoto(photo, false);
       busy = false; attempt(s); return;
     }
     if (!s) {
       dropPhoto(photo, false);
-      api.say(inFrame.length === 0 && unfound().length ? 'Nothing new in that photo. Frame something you have not found yet, right in the middle.' : 'Nice photo, but you already have that one!', 'hint');
+      api.say(t(inFrame.length === 0 && unfound().length ? 'Nothing new in that photo. Frame something you have not found yet, right in the middle.' : 'Nice photo, but you already have that one!'), 'hint');
       busy = false; return;
     }
     busy = false;
@@ -890,7 +892,7 @@ export function mount(stage, cfg, api) {
     if (narrow) view.scrollTo({ left: s.x / W * view.scrollWidth - view.clientWidth / 2, behavior: api.reduced ? 'auto' : 'smooth' });
     const where = s.y < H * .35 ? 'up high' : s.y > H * .7 ? 'down low' : 'in the middle';
     const side = s.x < W * .35 ? 'on the left' : s.x > W * .65 ? 'on the right' : 'near the centre';
-    api.say(`${identify ? `The ${s.label} is` : 'Look'} ${where}, ${side}.${s.hidden && tool !== 'tap' ? ` It is well hidden: use the ${tool === 'camera' ? 'camera zoom' : 'magnifier'}!` : ''}`, 'hint');
+    api.say(`${t(identify ? 'The {label} is {where}, {side}.' : 'Look {where}, {side}.', { label: s.label, where: t(where), side: t(side) })}${s.hidden && tool !== 'tap' ? ` ${t(tool === 'camera' ? 'It is well hidden: use the camera zoom!' : 'It is well hidden: use the magnifier!')}` : ''}`, 'hint');
     if (!identify && tool === 'magnifier' && s.hidden) placeTool(s.x + (Math.random() > .5 ? 120 : -120), s.y);
   });
   if (!api.reduced) {
@@ -916,20 +918,20 @@ export function mount(stage, cfg, api) {
     done = true;
     target = null;
     $('.xp-target')?.classList.add('is-done');
-    if ($('.xp-target b')) $('.xp-target b').textContent = 'All done!';
+    if ($('.xp-target b')) $('.xp-target b').textContent = t('All done!');
     const book = $('.xp-book');
     book.classList.add('is-complete');
     later(() => {
-      const st = document.createElement('div'); st.className = 'xp-stamp'; st.textContent = tool === 'camera' ? 'Album full!' : identify ? 'All named!' : 'Complete!';
+      const st = document.createElement('div'); st.className = 'xp-stamp'; st.textContent = t(tool === 'camera' ? 'Album full!' : identify ? 'All named!' : 'Complete!');
       book.append(st);
       if (!api.reduced) gsap.fromTo(st, { scale: 2.4, opacity: 0, rotation: -30 }, { scale: 1, opacity: 1, rotation: -12, duration: .5, ease: 'back.out(2)' });
       api.sound('drop');
     }, 900);
-    later(() => api.complete({ message: cfg.win || (identify ? `You named all ${need} parts!` : `You found all ${need}! Your ${tool === 'camera' ? 'album' : 'notebook'} is full.`) }), 2200);
+    later(() => api.complete({ message: cfg.win || t(identify ? 'You named all {n} parts!' : tool === 'camera' ? 'You found all {n}! Your album is full.' : 'You found all {n}! Your notebook is full.', { n: need }) }), 2200);
   }
 
   /* ---------- intro ---------- */
-  api.say(identify ? `Find each part I name. ${toolText[1]}` : `${toolText[1]} Find ${need} things.`);
+  api.say(identify ? `${t('Find each part I name.')} ${toolText[1]}` : `${toolText[1]} ${t('Find {n} things.', { n: need })}`);
   if (!api.reduced) {
     const tl = gsap.timeline({ delay: .15 });
     tl.from(root.querySelectorAll('.xp-world .xp-far'), { y: 40, opacity: 0, duration: .8, ease: 'power3.out' })

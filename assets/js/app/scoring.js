@@ -1,15 +1,18 @@
 // Turns a student's progress on one project into the five CBSE assessment parts and a total.
 import { WEIGHTS, VIVA_RUBRIC, OBSERVATION_RUBRIC, projectById } from '../data/courses.js';
+import { t } from '../i18n.js';
 
 export const PORTFOLIO_TARGET = 4;
 
-export function band(score) {
+// The band's English name (for comparing and counting) and its label in the page's language (for showing).
+export function bandKey(score) {
   if (score == null) return '—';
   if (score >= 85) return 'Exemplary';
   if (score >= 70) return 'Proficient';
   if (score >= 50) return 'Developing';
   return 'Beginning';
 }
+export const band = score => (score == null ? '—' : t(bandKey(score)));
 
 const rubricPct = (marks, rubric) => {
   if (!marks) return null;

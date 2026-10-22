@@ -4,6 +4,7 @@
 // Config (SPEC §2.14): board 'simple' | 'breadboard' | 'arduino'; parts: palette (repeat a name for
 // more copies); goal: { text, needs, check: 'closed-loop' | 'sensor-trigger', output }.
 import { h, esc, sparkle, shake } from '../kit.js';
+import { t as tr } from '../../../i18n.js'; // `tr`: this file already uses `t` for terminals
 
 export const meta = { title: 'Circuit builder', needs: ['gsap'] };
 
@@ -11,15 +12,15 @@ const VB = 4.5; // battery pack: three 1.5 V cells
 const SC = t => (t === 'arduino' ? 1 : 1.22); // drawing scale of a part on the board
 // Terminals: [key, label, x, y, nx, ny, role]  role: pos | neg | sig  (wire colour)
 const PART = {
-  battery: { name: 'Battery pack', terms: [['n', '−', -78, 6, -1, 0, 'neg'], ['p', '+', 78, 6, 1, 0, 'pos']] },
-  switch: { name: 'Push switch', terms: [['a', '', -62, 26, -1, 0, 'sig'], ['b', '', 62, 26, 1, 0, 'sig']] },
+  battery: { name: tr('Battery pack'), terms: [['n', '−', -78, 6, -1, 0, 'neg'], ['p', '+', 78, 6, 1, 0, 'pos']] },
+  switch: { name: tr('Push switch'), terms: [['a', '', -62, 26, -1, 0, 'sig'], ['b', '', 62, 26, 1, 0, 'sig']] },
   led: { name: 'LED', terms: [['a', '+', -56, 30, -1, 0, 'sig'], ['k', '−', 56, 30, 1, 0, 'sig']] },
-  resistor: { name: 'Resistor 220 Ω', terms: [['a', '', -66, 0, -1, 0, 'sig'], ['b', '', 66, 0, 1, 0, 'sig']] },
-  buzzer: { name: 'Buzzer', terms: [['p', '+', -56, 30, -1, 0, 'sig'], ['n', '−', 56, 30, 1, 0, 'sig']] },
-  motor: { name: 'Motor + fan', terms: [['a', '', -62, 30, -1, 0, 'sig'], ['b', '', 62, 30, 1, 0, 'sig']] },
-  bulb: { name: 'Bulb', terms: [['a', '', -56, 32, -1, 0, 'sig'], ['b', '', 56, 32, 1, 0, 'sig']] },
-  pir: { name: 'PIR motion sensor', terms: [['vcc', 'VCC', -28, 50, 0, 1, 'pos'], ['out', 'OUT', 0, 50, 0, 1, 'sig'], ['gnd', 'GND', 28, 50, 0, 1, 'neg']] },
-  ldr: { name: 'LDR light sensor', terms: [['a', '', -50, 26, -1, 0, 'sig'], ['b', '', 50, 26, 1, 0, 'sig']] },
+  resistor: { name: tr('Resistor 220 Ω'), terms: [['a', '', -66, 0, -1, 0, 'sig'], ['b', '', 66, 0, 1, 0, 'sig']] },
+  buzzer: { name: tr('Buzzer'), terms: [['p', '+', -56, 30, -1, 0, 'sig'], ['n', '−', 56, 30, 1, 0, 'sig']] },
+  motor: { name: tr('Motor + fan'), terms: [['a', '', -62, 30, -1, 0, 'sig'], ['b', '', 62, 30, 1, 0, 'sig']] },
+  bulb: { name: tr('Bulb'), terms: [['a', '', -56, 32, -1, 0, 'sig'], ['b', '', 56, 32, 1, 0, 'sig']] },
+  pir: { name: tr('PIR motion sensor'), terms: [['vcc', 'VCC', -28, 50, 0, 1, 'pos'], ['out', 'OUT', 0, 50, 0, 1, 'sig'], ['gnd', 'GND', 28, 50, 0, 1, 'neg']] },
+  ldr: { name: tr('LDR light sensor'), terms: [['a', '', -50, 26, -1, 0, 'sig'], ['b', '', 50, 26, 1, 0, 'sig']] },
   arduino: { name: 'Arduino Uno', terms: [['gnd2', 'GND', -18, -92, 0, -1, 'neg'], ['d13', '13', 22, -92, 0, -1, 'sig'], ['d7', '7', 70, -92, 0, -1, 'sig'], ['d2', '2', 118, -92, 0, -1, 'sig'],
     ['v5', '5V', -66, 92, 0, 1, 'pos'], ['gnd', 'GND', -26, 92, 0, 1, 'neg'], ['a0', 'A0', 50, 92, 0, 1, 'sig']] },
 };
@@ -39,7 +40,7 @@ function art(type, id) {
       <rect x="-32" y="-26" width="64" height="58" rx="8" fill="#2B2B2B"/><rect x="-32" y="-26" width="64" height="58" rx="8" fill="url(#lc-sheen)"/>
       <rect x="-26" y="-20" width="52" height="46" rx="6" fill="#c9ced6"/>
       <g class="lc-cap"><circle cx="0" cy="3" r="17" fill="#8e1e1a"/><circle cx="0" cy="0" r="17" fill="url(#lc-capg)"/><ellipse cx="-5" cy="-6" rx="6" ry="3" fill="#fff" opacity=".45"/></g>
-      <rect class="lc-swtag" x="-24" y="38" width="48" height="18" rx="9"/><text class="lc-swtxt lc-small" x="0" y="51">OFF</text>`;
+      <rect class="lc-swtag" x="-24" y="38" width="48" height="18" rx="9"/><text class="lc-swtxt lc-small" x="0" y="51">${tr('OFF')}</text>`;
     case 'led': return `
       <circle class="lc-glow" cx="0" cy="-18" r="58" fill="url(#lc-ledglow)"/>
       <path d="M-8 6 V18 Q-8 30 -20 30 H-56" stroke="#a7aeb7" stroke-width="4" fill="none" stroke-linecap="round"/>
@@ -281,20 +282,20 @@ export function mount(stage, cfg, api) {
   parts.filter(p => p.type === 'switch').forEach(p => { sw[p.id] = false; });
 
   const root = h(`<div class="lab-circuit board-${board}">
-    <aside class="lc-palette" aria-label="Parts box"><p class="lc-h">Parts box</p><div class="lc-cards"></div><p class="lc-tip">Drag a part onto the board, or tap it and then tap an empty spot.</p></aside>
+    <aside class="lc-palette" aria-label="${tr('Parts box')}"><p class="lc-h">${tr('Parts box')}</p><div class="lc-cards"></div><p class="lc-tip">${tr('Drag a part onto the board, or tap it and then tap an empty spot.')}</p></aside>
     <div class="lc-main">
-      <div class="lc-boardwrap"><svg class="lc-board" role="application" aria-label="Circuit board"></svg></div>
+      <div class="lc-boardwrap"><svg class="lc-board" role="application" aria-label="${tr('Circuit board')}"></svg></div>
       <div class="lc-tools">
-        <button type="button" class="lc-btn lc-hint">💡 Hint</button>
-        <button type="button" class="lc-btn lc-clear">✂️ Clear wires</button>
-        ${sensor ? `<button type="button" class="lc-btn lc-test">${sensor === 'pir' ? '🐈 Send the cat' : '🌙 Make it night'}</button>` : ''}
+        <button type="button" class="lc-btn lc-hint">💡 ${tr('Hint')}</button>
+        <button type="button" class="lc-btn lc-clear">✂️ ${tr('Clear wires')}</button>
+        ${sensor ? `<button type="button" class="lc-btn lc-test">${sensor === 'pir' ? `🐈 ${tr('Send the cat')}` : `🌙 ${tr('Make it night')}`}</button>` : ''}
       </div>
     </div>
     <aside class="lc-side">
-      <div class="lc-goalcard"><p class="lc-h">Goal</p><p class="lc-goaltxt">${esc(goal.text || 'Build a closed circuit')}</p>
+      <div class="lc-goalcard"><p class="lc-h">${tr('Goal')}</p><p class="lc-goaltxt">${esc(goal.text || tr('Build a closed circuit'))}</p>
         <ul class="lc-needs">${goal.needs.map(n => `<li data-need="${n}"><span class="lc-tick" aria-hidden="true"></span>${esc(NEED_LABEL(n))}</li>`).join('')}</ul></div>
-      <div class="lc-status" aria-live="polite"><span class="lc-lamp"></span><span class="lc-stxt">Place the parts</span></div>
-      ${ardPart ? `<pre class="lc-code" aria-label="The program on the Arduino"></pre>` : ''}
+      <div class="lc-status" aria-live="polite"><span class="lc-lamp"></span><span class="lc-stxt">${tr('Place the parts')}</span></div>
+      ${ardPart ? `<pre class="lc-code" aria-label="${tr('The program on the Arduino')}"></pre>` : ''}
     </aside>
   </div>`);
   stage.append(root);
@@ -306,7 +307,7 @@ export function mount(stage, cfg, api) {
     const types = [...new Set(parts.filter(p => p.type !== 'arduino').map(p => p.type))];
     cards.innerHTML = types.map(t => {
       const left = parts.filter(p => p.type === t && p.slot == null).length;
-      return `<button type="button" class="lc-card${left ? '' : ' empty'}${sel === t ? ' sel' : ''}" data-type="${t}" ${left ? '' : 'disabled'} aria-label="${esc(PART[t].name)}${left > 1 ? `, ${left} left` : ''}">
+      return `<button type="button" class="lc-card${left ? '' : ' empty'}${sel === t ? ' sel' : ''}" data-type="${t}" ${left ? '' : 'disabled'} aria-label="${esc(left > 1 ? tr('{name}, {n} left', { name: PART[t].name, n: left }) : PART[t].name)}">
         <svg viewBox="-90 -70 180 140" aria-hidden="true">${art(t, 'pal')}</svg><span>${esc(PART[t].name)}</span>${left > 1 ? `<b>×${left}</b>` : ''}</button>`;
     }).join('');
   }
@@ -315,7 +316,7 @@ export function mount(stage, cfg, api) {
     startPaletteDrag(e, c);
   });
   cards.addEventListener('keydown', e => { const c = e.target.closest('.lc-card'); if (c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectType(c.dataset.type); } });
-  function selectType(t) { sel = sel === t ? null : t; api.sound('click'); renderPalette(); render(); if (sel) api.say(`Now tap an empty spot on the board for the ${PART[t].name}.`, 'hint'); }
+  function selectType(t) { sel = sel === t ? null : t; api.sound('click'); renderPalette(); render(); if (sel) api.say(tr('Now tap an empty spot on the board for the {name}.', { name: PART[t].name }), 'hint'); }
 
   function startPaletteDrag(e, card) {
     const type = card.dataset.type, x0 = e.clientX, y0 = e.clientY; let ghost = null, moved = false;
@@ -342,7 +343,7 @@ export function mount(stage, cfg, api) {
     const g = svg.querySelector(`.lc-part[data-id="${p.id}"] .lc-inner`);
     if (gsap && g && !api.reduced) gsap.from(g, { y: -40, scale: 1.15, opacity: 0, duration: .5, ease: 'back.out(2.2)' });
     if (goal.needs.includes(type)) { const li = root.querySelector(`[data-need="${type}"]`); if (li && gsap && !api.reduced) gsap.fromTo(li, { scale: 1.08 }, { scale: 1, duration: .4, ease: 'back.out(3)' }); }
-    if (type === 'led' && !said.has('led')) { said.add('led'); api.say('The LED has a long leg (+) and a short leg (−). Current can only go in through the + leg.', 'hint'); }
+    if (type === 'led' && !said.has('led')) { said.add('led'); api.say(tr('The LED has a long leg (+) and a short leg (−). Current can only go in through the + leg.'), 'hint'); }
     else if (type === 'arduino' || type === 'pir') { /* nothing */ }
     analyse(true);
   }
@@ -402,15 +403,15 @@ export function mount(stage, cfg, api) {
       <text x="40" y="62" class="lc-skytxt"></text></g>`;
     L.slots.forEach((sl, i) => {
       const occ = parts.some(p => p.slot === i);
-      s += `<g class="lc-slot${occ ? ' occ' : ''}${sel && !occ ? ' ready' : ''}" data-slot="${i}" transform="translate(${sl.x} ${sl.y})" ${occ ? '' : `tabindex="0" role="button" aria-label="Empty spot ${i + 1}"`}>
+      s += `<g class="lc-slot${occ ? ' occ' : ''}${sel && !occ ? ' ready' : ''}" data-slot="${i}" transform="translate(${sl.x} ${sl.y})" ${occ ? '' : `tabindex="0" role="button" aria-label="${tr('Empty spot {n}', { n: i + 1 })}"`}>
         <rect x="-96" y="-72" width="192" height="144" rx="20"/>${occ ? '' : '<path d="M-10 0 H10 M0 -10 V10" class="lc-plus"/>'}</g>`;
     });
     if (sensor === 'ldr') s += `<rect class="lc-nightveil" x="18" y="94" width="${L.w - 36}" height="${L.h - 112}" rx="18"/>`;
     for (const p of parts) if (p.slot != null) {
       const o = posOf(p);
       s += `<g class="lc-part lc-t-${p.type}${burnt.has(p.id) ? ' burnt' : ''}${p.type === 'switch' && sw[p.id] ? ' closed' : ''}" data-id="${p.id}" transform="translate(${o.x} ${o.y})">
-        <g class="lc-inner"><g transform="scale(${SC(p.type)})"><g class="lc-body" filter="url(#lc-drop)" ${p.type !== 'arduino' ? 'tabindex="0" role="button"' : ''} aria-label="${esc(PART[p.type].name)}${p.type === 'switch' ? ', tap to switch on or off' : ''}">${art(p.type, p.id)}</g></g>
-        ${p.type !== 'arduino' ? `<g class="lc-x" role="button" aria-label="Remove ${esc(PART[p.type].name)}" transform="translate(96 -70)"><circle r="15"/><path d="M-5 -5 L5 5 M5 -5 L-5 5"/></g>` : ''}</g></g>`;
+        <g class="lc-inner"><g transform="scale(${SC(p.type)})"><g class="lc-body" filter="url(#lc-drop)" ${p.type !== 'arduino' ? 'tabindex="0" role="button"' : ''} aria-label="${esc(p.type === 'switch' ? tr('{name}, tap to switch on or off', { name: PART[p.type].name }) : PART[p.type].name)}">${art(p.type, p.id)}</g></g>
+        ${p.type !== 'arduino' ? `<g class="lc-x" role="button" aria-label="${esc(tr('Remove {name}', { name: PART[p.type].name }))}" transform="translate(96 -70)"><circle r="15"/><path d="M-5 -5 L5 5 M5 -5 L-5 5"/></g>` : ''}</g></g>`;
     }
     s += '<g class="lc-wires">';
     for (const w of wires) {
@@ -420,7 +421,7 @@ export function mount(stage, cfg, api) {
     s += '<path class="lc-temp" d=""/></g><g class="lc-terms">';
     for (const p of parts) if (p.slot != null) for (const t of PART[p.type].terms) {
       const key = `${p.id}:${t[0]}`, q = termPos(key);
-      s += `<g class="lc-term${selTerm === key ? ' sel' : ''}" data-term="${key}" transform="translate(${q.x} ${q.y})" tabindex="0" role="button" aria-label="${esc(PART[p.type].name)} ${esc(t[1] || 'leg')} terminal">
+      s += `<g class="lc-term${selTerm === key ? ' sel' : ''}" data-term="${key}" transform="translate(${q.x} ${q.y})" tabindex="0" role="button" aria-label="${esc(tr('{name} {leg} terminal', { name: PART[p.type].name, leg: t[1] || tr('leg') }))}">
         <circle class="lc-hit" r="30"/><circle class="lc-pad" r="9"/><circle class="lc-padin" r="4"/>${t[1] && p.type === 'arduino' ? `<text class="lc-tl" y="${t[5] < 0 ? -16 : 26}">${esc(t[1])}</text>` : ''}${t[1] && (p.type === 'pir') ? `<text class="lc-tl" y="26">${esc(t[1])}</text>` : ''}${t[1] && p.type === 'battery' ? `<text class="lc-tl lc-big" y="-16">${esc(t[1])}</text>` : ''}</g>`;
     }
     s += '</g>';
@@ -443,7 +444,7 @@ export function mount(stage, cfg, api) {
       if (p.type === 'bulb') { const b = Math.min(1, i / .25); g.classList.toggle('on', b > .15); g.style.setProperty('--b', b.toFixed(2)); }
       if (p.type === 'motor') { const on = i > .05; g.classList.toggle('on', on); g.style.setProperty('--spin', `${Math.max(.08, .6 - i)}s`); g.classList.toggle('rev', (I[p.id] || 0) < 0); }
       if (p.type === 'buzzer') g.classList.toggle('on', i > .005);
-      if (p.type === 'switch') { g.classList.toggle('closed', !!sw[p.id]); const t = g.querySelector('.lc-swtxt'); if (t) t.textContent = sw[p.id] ? 'ON' : 'OFF'; }
+      if (p.type === 'switch') { g.classList.toggle('closed', !!sw[p.id]); const t = g.querySelector('.lc-swtxt'); if (t) t.textContent = sw[p.id] ? tr('ON') : tr('OFF'); }
       if (p.type === 'pir') { g.classList.toggle('powered', !!sim.pir[p.id]?.powered); g.classList.toggle('firing', !!sim.pir[p.id]?.firing); }
       if (p.type === 'ldr') g.classList.toggle('dark', env.dark);
       if (p.type === 'arduino') g.classList.toggle('d13', sim.ard.d13);
@@ -456,7 +457,7 @@ export function mount(stage, cfg, api) {
       el.style.setProperty('--flow', `${Math.max(.25, Math.min(2.4, .9 - Math.log10(Math.abs(i) + 1e-6) * .35 - .9)).toFixed(2)}s`);
     }
     buzz(placed().some(p => p.type === 'buzzer' && Math.abs(I[p.id] || 0) > .005));
-    if (sim.short && !said.has(`short${wires.length}`)) { said.add(`short${wires.length}`); api.mistake(); api.say('Short circuit! The wire joins + straight to − with nothing in between, so a huge current flows and the battery gets hot. Remove that wire.', 'bad'); const b = svg.querySelector(`.lc-part[data-id="${sim.short}"]`); if (b) { shake(api, b); puff(posOf(parts.find(p => p.id === sim.short)), '#9a9a9a'); } }
+    if (sim.short && !said.has(`short${wires.length}`)) { said.add(`short${wires.length}`); api.mistake(); api.say(tr('Short circuit! The wire joins + straight to − with nothing in between, so a huge current flows and the battery gets hot. Remove that wire.'), 'bad'); const b = svg.querySelector(`.lc-part[data-id="${sim.short}"]`); if (b) { shake(api, b); puff(posOf(parts.find(p => p.id === sim.short)), '#9a9a9a'); } }
     updateCode();
     updateNeeds();
   }
@@ -466,7 +467,7 @@ export function mount(stage, cfg, api) {
     const g = svg.querySelector(`.lc-part[data-id="${p.id}"]`);
     if (g) { g.classList.add('flash'); setTimeout(() => { g.classList.remove('flash', 'on'); g.classList.add('burnt'); }, 180); }
     puff({ x: o.x, y: o.y - 30 }, '#8a8a8a');
-    api.say('Pop! Too much current burnt out the LED. An LED always needs a resistor in its loop to limit the current. Tap the burnt LED for a new one.', 'bad');
+    api.say(tr('Pop! Too much current burnt out the LED. An LED always needs a resistor in its loop to limit the current. Tap the burnt LED for a new one.'), 'bad');
     setTimeout(() => applySim(), 250);
   }
   function puff(o, col) {
@@ -502,9 +503,9 @@ export function mount(stage, cfg, api) {
   function updateCode() {
     const pre = $('.lc-code'); if (!pre) return;
     const mode = sensor || 'on', hi = sim?.ard.d13;
-    const lines = mode === 'pir' ? ['void loop() {', '  if (digitalRead(2) == HIGH) {   // motion!', '    digitalWrite(13, HIGH);   // LED on', '  } else {', '    digitalWrite(13, LOW);    // LED off', '  }', '}']
-      : mode === 'ldr' ? ['// LDR from A0 to GND', 'void setup() { pinMode(A0, INPUT_PULLUP); }', 'void loop() {', '  if (analogRead(A0) > 500) {  // dark!', '    digitalWrite(13, HIGH);', '  } else {', '    digitalWrite(13, LOW);', '  }', '}']
-        : ['void loop() {', '  digitalWrite(13, HIGH);   // pins 13 and 7 on', '}'];
+    const lines = mode === 'pir' ? ['void loop() {', `  if (digitalRead(2) == HIGH) {   // ${tr('motion!')}`, `    digitalWrite(13, HIGH);   // ${tr('LED on')}`, '  } else {', `    digitalWrite(13, LOW);    // ${tr('LED off')}`, '  }', '}']
+      : mode === 'ldr' ? [`// ${tr('LDR from A0 to GND')}`, 'void setup() { pinMode(A0, INPUT_PULLUP); }', 'void loop() {', `  if (analogRead(A0) > 500) {  // ${tr('dark!')}`, '    digitalWrite(13, HIGH);', '  } else {', '    digitalWrite(13, LOW);', '  }', '}']
+        : ['void loop() {', `  digitalWrite(13, HIGH);   // ${tr('pins 13 and 7 on')}`, '}'];
     const active = mode === 'on' ? [1] : mode === 'pir' ? (hi ? [1, 2] : [3, 4]) : (hi ? [3, 4] : [5, 6]);
     pre.innerHTML = lines.map((l, i) => `<span class="${active.includes(i) ? 'act' : ''}">${esc(l)}</span>`).join('\n');
   }
@@ -543,37 +544,37 @@ export function mount(stage, cfg, api) {
   }
   function hint(c = staticCheck()) {
     const miss = goal.needs.find(n => !placed().some(p => p.type === n));
-    if (c.why === 'parts' && miss) return `First put the ${NEED_LABEL(miss)} on the board.`;
-    if (c.why === 'short') return 'There is a short circuit: + is joined to − with no part in between. Take that wire away.';
+    if (c.why === 'parts' && miss) return tr('First put the {name} on the board.', { name: NEED_LABEL(miss) });
+    if (c.why === 'short') return tr('There is a short circuit: + is joined to − with no part in between. Take that wire away.');
     const s = c.s || sim;
-    const bl = placed().find(p => burnt.has(p.id)); if (bl) return 'Tap the burnt LED to get a fresh one, and add a resistor to its loop this time.';
+    const bl = placed().find(p => burnt.has(p.id)); if (bl) return tr('Tap the burnt LED to get a fresh one, and add a resistor to its loop this time.');
     const rev = placed().find(p => (p.type === 'led' || p.type === 'buzzer') && s?.diodeRev?.[p.id]);
-    if (rev) return `The ${NEED_LABEL(rev.type)} is the wrong way round. Its + leg must connect towards the + of the ${ardPart ? 'Arduino pin' : 'battery'}. Swap its two wires.`;
+    if (rev) return tr(ardPart ? 'The {name} is the wrong way round. Its + leg must connect towards the + of the Arduino pin. Swap its two wires.' : 'The {name} is the wrong way round. Its + leg must connect towards the + of the battery. Swap its two wires.', { name: NEED_LABEL(rev.type) });
     const loose = placed().find(p => goal.needs.includes(p.type) && p.type !== 'arduino' && PART[p.type].terms.some(t => !wires.some(w => w.a === `${p.id}:${t[0]}` || w.b === `${p.id}:${t[0]}`)));
-    if (loose) return `The ${NEED_LABEL(loose.type)} still has a loose terminal. Drag a wire from it to the next part.`;
-    if (c.why === 'unused') return `The ${NEED_LABEL(c.part)} is on the board but no current flows through it. Put it in the same loop.`;
-    if (c.why === 'always') return goal.check === 'sensor-trigger' ? 'The output is on even before the sensor is triggered. Let the sensor (through the Arduino) control it.' : 'The output stays on even when the switch is off. Put the switch in the same loop, one after the other.';
+    if (loose) return tr('The {name} still has a loose terminal. Drag a wire from it to the next part.', { name: NEED_LABEL(loose.type) });
+    if (c.why === 'unused') return tr('The {name} is on the board but no current flows through it. Put it in the same loop.', { name: NEED_LABEL(c.part) });
+    if (c.why === 'always') return goal.check === 'sensor-trigger' ? tr('The output is on even before the sensor is triggered. Let the sensor (through the Arduino) control it.') : tr('The output stays on even when the switch is off. Put the switch in the same loop, one after the other.');
     if (goal.check === 'sensor-trigger') {
-      if (sensor === 'pir') return ardPart ? 'Wire the PIR: VCC to 5V, GND to GND and OUT to pin 2. Then pin 13 → resistor → LED + leg, and the LED − leg to GND.' : 'Power the PIR from the battery (VCC to +, GND to −), then run its OUT through the resistor and the LED back to −.';
-      return 'Wire the LDR from A0 to GND. Then pin 13 → resistor → LED + leg, and the LED − leg to GND.';
+      if (sensor === 'pir') return ardPart ? tr('Wire the PIR: VCC to 5V, GND to GND and OUT to pin 2. Then pin 13 → resistor → LED + leg, and the LED − leg to GND.') : tr('Power the PIR from the battery (VCC to +, GND to −), then run its OUT through the resistor and the LED back to −.');
+      return tr('Wire the LDR from A0 to GND. Then pin 13 → resistor → LED + leg, and the LED − leg to GND.');
     }
-    return ardPart ? 'Make one loop: pin 13 → resistor → LED + leg, then LED − leg → GND.' : 'Make one closed loop: battery + → switch → resistor → LED + leg, then LED − leg → battery −.';
+    return ardPart ? tr('Make one loop: pin 13 → resistor → LED + leg, then LED − leg → GND.') : tr('Make one closed loop: battery + → switch → resistor → LED + leg, then LED − leg → battery −.');
   }
   function analyse(changed) {
     if (done) return;
     const c = staticCheck();
-    let st = 'Place the parts', cls = '';
-    if (sim?.short || c.why === 'short') { st = 'Short circuit!'; cls = 'bad'; }
-    else if (c.why === 'parts') st = 'Place the parts';
-    else if (c.why === 'short') { st = 'Short circuit!'; cls = 'bad'; }
-    else if (c.ok && goal.check === 'sensor-trigger') { st = sensor === 'pir' ? 'Ready! Send the cat past' : 'Ready! Make it night'; cls = 'ready'; }
-    else if (c.ok && c.needSwitch) { st = 'Loop closed. Press the switch!'; cls = 'ready'; }
-    else if (c.ok) { st = 'Current is flowing!'; cls = 'good'; }
-    else st = wires.length ? 'Loop not finished' : 'Draw wires between terminals';
+    let st = tr('Place the parts'), cls = '';
+    if (sim?.short || c.why === 'short') { st = tr('Short circuit!'); cls = 'bad'; }
+    else if (c.why === 'parts') st = tr('Place the parts');
+    else if (c.why === 'short') { st = tr('Short circuit!'); cls = 'bad'; }
+    else if (c.ok && goal.check === 'sensor-trigger') { st = sensor === 'pir' ? tr('Ready! Send the cat past') : tr('Ready! Make it night'); cls = 'ready'; }
+    else if (c.ok && c.needSwitch) { st = tr('Loop closed. Press the switch!'); cls = 'ready'; }
+    else if (c.ok) { st = tr('Current is flowing!'); cls = 'good'; }
+    else st = wires.length ? tr('Loop not finished') : tr('Draw wires between terminals');
     const se = $('.lc-status'); se.className = `lc-status ${cls}`; $('.lc-stxt').textContent = st;
     if (changed && st !== lastStatus) {
-      if (cls === 'ready' && goal.check === 'sensor-trigger') api.say(sensor === 'pir' ? 'Your wiring looks ready. Tap "Send the cat" to test it!' : 'Your wiring looks ready. Tap "Make it night" to test it!', 'good');
-      else if (cls === 'ready') api.say('The loop is complete. Tap the switch to turn it on!', 'hint');
+      if (cls === 'ready' && goal.check === 'sensor-trigger') api.say(sensor === 'pir' ? tr('Your wiring looks ready. Tap "Send the cat" to test it!') : tr('Your wiring looks ready. Tap "Make it night" to test it!'), 'good');
+      else if (cls === 'ready') api.say(tr('The loop is complete. Tap the switch to turn it on!'), 'hint');
     }
     lastStatus = st;
     if (goal.check !== 'sensor-trigger' && c.ok && !c.needSwitch) win();
@@ -582,9 +583,9 @@ export function mount(stage, cfg, api) {
     if (done) return; done = true;
     const p = outParts().find(q => !burnt.has(q.id)) || outParts()[0];
     const g = p && svg.querySelector(`.lc-part[data-id="${p.id}"] .lc-body`);
-    api.say(msg || (output === 'led' ? 'It glows! Current flows from +, through every part, and back to −.' : output === 'buzzer' ? 'Bzzzz! The closed loop lets current flow through the buzzer.' : output === 'motor' ? 'Whirr! The motor spins because current flows round the loop.' : 'It lights up! The loop is closed.'), 'good');
+    api.say(msg || (output === 'led' ? tr('It glows! Current flows from +, through every part, and back to −.') : output === 'buzzer' ? tr('Bzzzz! The closed loop lets current flow through the buzzer.') : output === 'motor' ? tr('Whirr! The motor spins because current flows round the loop.') : tr('It lights up! The loop is closed.')), 'good');
     if (g) sparkle(api, g);
-    $('.lc-status').className = 'lc-status good'; $('.lc-stxt').textContent = 'You did it!';
+    $('.lc-status').className = 'lc-status good'; $('.lc-stxt').textContent = tr('You did it!');
     timers.push(setTimeout(() => api.complete(), api.reduced ? 600 : 2600));
   }
 
@@ -625,7 +626,7 @@ export function mount(stage, cfg, api) {
     render();
     const el = svg.querySelector(`.lc-wire[data-w="w${wid}"] .lc-wcol`);
     if (gsap && el && !api.reduced && window.DrawSVGPlugin) gsap.from(svg.querySelectorAll(`.lc-wire[data-w="w${wid}"] path:not(.lc-dots)`), { drawSVG: '0%', duration: .35, ease: 'power2.out' });
-    if (wires.length === 1 && !said.has('wire') && !sim?.short) { said.add('wire'); api.say('Nice wire! Tap a wire to remove it. Keep joining parts until the loop is closed.', 'info'); }
+    if (wires.length === 1 && !said.has('wire') && !sim?.short) { said.add('wire'); api.say(tr('Nice wire! Tap a wire to remove it. Keep joining parts until the loop is closed.'), 'info'); }
     analyse(true); return true;
   }
   function startWire(e, key) {
@@ -654,7 +655,7 @@ export function mount(stage, cfg, api) {
   }
   function tapPart(p) {
     if (p.type === 'switch') { sw[p.id] = !sw[p.id]; api.sound('click'); const cap = svg.querySelector(`.lc-part[data-id="${p.id}"] .lc-cap`); applySim(); if (gsap && cap && !api.reduced) gsap.fromTo(cap, { y: 0 }, { y: sw[p.id] ? 3 : 0, duration: .15 }); analyse(true); return; }
-    if (burnt.has(p.id)) { burnt.delete(p.id); api.sound('pop'); api.say('Here is a fresh LED. Add a resistor to its loop so it does not burn out.', 'hint'); render(); analyse(true); return; }
+    if (burnt.has(p.id)) { burnt.delete(p.id); api.sound('pop'); api.say(tr('Here is a fresh LED. Add a resistor to its loop so it does not burn out.'), 'hint'); render(); analyse(true); return; }
     const g = svg.querySelector(`.lc-part[data-id="${p.id}"]`);
     svg.querySelectorAll('.lc-part.picked').forEach(x => { if (x !== g) x.classList.remove('picked'); });
     g?.classList.toggle('picked'); api.sound('click');
@@ -692,7 +693,7 @@ export function mount(stage, cfg, api) {
     const tl = curTl = gsap.timeline();
     if (sensor === 'pir') {
       const cat = svg.querySelector('.lc-catlayer'), pirs = placed().filter(p => p.type === 'pir').map(p => posOf(p).x);
-      api.say('Here comes the cat…', 'info');
+      api.say(tr('Here comes the cat…'), 'info');
       const state = { x: -160 };
       cat.classList.add('walking');
       await new Promise(res => tl.to(state, { x: L.w + 160, duration: api.reduced ? 1.6 : 6, ease: 'none', onUpdate: () => {
@@ -702,16 +703,16 @@ export function mount(stage, cfg, api) {
       }, onComplete: res }));
       cat.classList.remove('walking'); env.motion = false; applySim();
     } else {
-      api.say('The sun is setting…', 'info');
+      api.say(tr('The sun is setting…'), 'info');
       const sky = svg.querySelector('.lc-sky'), st = { n: 0 };
       await new Promise(res => tl.to(st, { n: 1, duration: api.reduced ? .8 : 2.6, ease: 'power1.inOut', onUpdate: () => { root.style.setProperty('--night', st.n.toFixed(3)); const d = st.n > .5; if (d !== env.dark) { env.dark = d; applySim(); } } }).to({}, { duration: api.reduced ? .4 : 1.6, onComplete: res }));
       sky?.classList.add('night');
     }
     const ok = staticCheck();
     testing = false; root.classList.remove('testing'); $('.lc-test').disabled = false;
-    if (ok.ok) win(sensor === 'pir' ? 'The cat walked past, the PIR saw it, and your LED switched on by itself, then off again. Smart!' : 'Night fell, the LDR\'s resistance went up, and the Arduino switched the light on all by itself!');
+    if (ok.ok) win(sensor === 'pir' ? tr('The cat walked past, the PIR saw it, and your LED switched on by itself, then off again. Smart!') : tr('Night fell, the LDR\'s resistance went up, and the Arduino switched the light on all by itself!'));
     else {
-      api.mistake(); api.say(`${sensor === 'pir' ? 'Nothing happened when the cat passed.' : 'The light did not come on at night.'} ${hint(ok)}`, 'hint');
+      api.mistake(); api.say(`${sensor === 'pir' ? tr('Nothing happened when the cat passed.') : tr('The light did not come on at night.')} ${hint(ok)}`, 'hint');
       if (sensor === 'ldr') timers.push(setTimeout(() => { if (done) return; root.style.setProperty('--night', '0'); env.dark = false; applySim(); }, 1200));
     }
   }
@@ -720,7 +721,7 @@ export function mount(stage, cfg, api) {
   renderPalette(); render(); analyse(false);
   const ro = new ResizeObserver(() => { const wnow = svg.parentElement.clientWidth >= 620; if (wnow !== wide) render(); });
   ro.observe(svg.parentElement);
-  api.say(cfg.mission || goal.text || 'Build the circuit!');
+  api.say(cfg.mission || goal.text || tr('Build the circuit!'));
   return {
     destroy() {
       ro.disconnect(); timers.forEach(clearTimeout); buzz(false);

@@ -2,20 +2,24 @@
 // SVG canvas with background colours and patterns, editable text (double-tap), stickers with
 // drag / scale / rotate handles, layer order, delete, a live checklist and PNG export.
 import { esc, sparkle, onResize } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Design studio', needs: ['gsap'] };
 
 const SIZES = { poster: [600, 800], label: [720, 440], card: [720, 480], menu: [600, 840], badge: [620, 620], banner: [960, 380] };
-// Web-safe font stacks only, so the exported PNG looks exactly like the editor.
+// Web-safe font stacks only, so the exported PNG looks exactly like the editor
+// (Noto Sans Devanagari, before the generic family, draws Hindi text).
 const FONTS = [
-  { id: 'sans', name: 'Clean', css: 'Arial, Helvetica, sans-serif', weight: 700 },
-  { id: 'serif', name: 'Classic', css: "Georgia, 'Times New Roman', serif", weight: 700 },
-  { id: 'fun', name: 'Fun', css: "'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', 'Marker Felt', cursive", weight: 700 },
-  { id: 'loud', name: 'Loud', css: "Impact, 'Arial Black', 'Helvetica Neue', sans-serif", weight: 400 },
+  { id: 'sans', name: t('Clean'), css: "Arial, Helvetica, 'Noto Sans Devanagari', sans-serif", weight: 700 },
+  { id: 'serif', name: t('Classic'), css: "Georgia, 'Times New Roman', 'Noto Serif Devanagari', 'Noto Sans Devanagari', serif", weight: 700 },
+  { id: 'fun', name: t('Fun'), css: "'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', 'Marker Felt', 'Noto Sans Devanagari', cursive", weight: 700 },
+  { id: 'loud', name: t('Loud'), css: "Impact, 'Arial Black', 'Helvetica Neue', 'Noto Sans Devanagari', sans-serif", weight: 400 },
 ];
-const STYLES = [{ id: 'plain', name: 'Plain' }, { id: 'outline', name: 'Outline' }, { id: 'pill', name: 'Ribbon' }];
+const STYLES = [{ id: 'plain', name: t('Plain') }, { id: 'outline', name: t('Outline') }, { id: 'pill', name: t('Ribbon') }];
 const PATTERNS = ['none', 'dots', 'stripes', 'rays', 'frame', 'confetti'];
-const PAT_NAME = { none: 'Plain', dots: 'Dots', stripes: 'Stripes', rays: 'Sunburst', frame: 'Frame', confetti: 'Confetti' };
+const PAT_NAME = { none: t('Plain'), dots: t('Dots'), stripes: t('Stripes'), rays: t('Sunburst'), frame: t('Frame'), confetti: t('Confetti') };
+// The canvas kind as a word for sentences ("Your poster starts here").
+const SHAPE_NAME = { poster: t('poster'), label: t('label'), card: t('card'), menu: t('menu'), badge: t('badge'), banner: t('banner') };
 const EXTRA = ['#FFFFFF', '#2B1A10', '#F6DFB5', '#CFE6E1', '#F3D3C5', '#DCE8CC', '#F2C21E', '#2A6FB0'];
 const EMOJI_FONT = "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif";
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -33,14 +37,14 @@ const isDark = c => lum(c) < .36;
 export function mount(stage, cfg, api) {
   const { gsap, Draggable } = api;
   const P = `dz${++UID}`;
-  const shape = SIZES[cfg.canvas] ? cfg.canvas : 'poster';
+  const shape = SIZES[cfg.canvas] ? cfg.canvas : 'poster', shapeName = SHAPE_NAME[shape];
   const [CW, CH] = Array.isArray(cfg.size) && cfg.size.length === 2 ? cfg.size.map(n => clamp(+n || 600, 200, 1600)) : SIZES[shape];
   const palette = (cfg.palette?.length ? cfg.palette : ['#1F6F66', '#D98A1C', '#8C3557', '#4C7424', '#C2502A', '#FFF9EF']).slice(0, 10);
   const swatches = [...new Set([...palette, ...EXTRA].map(c => c.toUpperCase()))].slice(0, 14);
   const textColors = [...new Set(['#2B1A10', '#FFFFFF', ...palette.map(c => c.toUpperCase()), '#C2342A', '#F2C21E'])].slice(0, 10);
   const stickers = (cfg.stickers || []).slice(0, 24);
   const fields = cfg.fields || [];
-  const checklist = cfg.checklist?.length ? cfg.checklist : [{ text: 'Add a title', rule: 'text:1' }, { text: 'Add 2 pictures', rule: 'stickers:2' }, { text: 'Choose a background', rule: 'background' }];
+  const checklist = cfg.checklist?.length ? cfg.checklist : [{ text: t('Add a title'), rule: 'text:1' }, { text: t('Add 2 pictures'), rule: 'stickers:2' }, { text: t('Choose a background'), rule: 'background' }];
   const st = { bg: '#FFFFFF', bgChosen: false, pattern: 'none', els: [], sel: null, fields: Object.fromEntries(fields.map(f => [f.key, ''])) };
   let nid = 0, done = false, saving = false, allOk = false;
   const okState = checklist.map(() => false);
@@ -49,21 +53,21 @@ export function mount(stage, cfg, api) {
   const later = (fn, ms) => { const t = setTimeout(fn, api.reduced ? 0 : ms); timers.push(t); return t; };
 
   /* ---------- markup ---------- */
-  const tabs = [['bg', '🎨', 'Background'], ['text', '🔤', 'Text'], ['stk', '⭐', 'Stickers'], ...(fields.length ? [['fld', '📝', 'Details']] : [])];
+  const tabs = [['bg', '🎨', t('Background')], ['text', '🔤', t('Text')], ['stk', '⭐', t('Stickers')], ...(fields.length ? [['fld', '📝', t('Details')]] : [])];
   const clipShape = shape === 'badge' ? `<circle cx="${CW / 2}" cy="${CH / 2}" r="${Math.min(CW, CH) / 2}"/>` : `<rect width="${CW}" height="${CH}" rx="${shape === 'label' ? 44 : shape === 'card' ? 26 : shape === 'badge' ? 0 : 6}"/>`;
   const root = document.createElement('div');
   root.className = `lab-design dz-${shape}`;
   root.innerHTML = `
     <div class="dz-work">
-      <div class="dz-tools" role="toolbar" aria-label="Change the selected item"><p class="dz-tools-empty">Tap something on your ${esc(shape)} to change it. Double-tap text to edit it.</p></div>
+      <div class="dz-tools" role="toolbar" aria-label="${t('Change the selected item')}"><p class="dz-tools-empty">${esc(t('Tap something on your {shape} to change it. Double-tap text to edit it.', { shape: shapeName }))}</p></div>
       <div class="dz-canvaswrap">
         <div class="dz-canvasbox">
-          <svg class="dz-svg" viewBox="0 0 ${CW} ${CH}" role="img" aria-label="Your ${esc(shape)} design">
+          <svg class="dz-svg" viewBox="0 0 ${CW} ${CH}" role="img" aria-label="${esc(t('Your {shape} design', { shape: shapeName }))}">
             <defs><clipPath id="${P}-clip">${clipShape}</clipPath><filter id="${P}-sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity=".25"/></filter></defs>
             <g clip-path="url(#${P}-clip)"><g class="dz-bg"></g><g class="dz-els"></g></g>
             <g class="dz-ui"><g class="dz-ghost"></g><line class="dz-guide dz-guide-v" x1="${CW / 2}" y1="0" x2="${CW / 2}" y2="${CH}"/><line class="dz-guide dz-guide-h" x1="0" y1="${CH / 2}" x2="${CW}" y2="${CH / 2}"/><g class="dz-selbox" visibility="hidden"></g></g>
           </svg>
-          <div class="dz-editor" hidden><label class="dz-ed-l" for="${P}-ta">Edit your text</label><textarea id="${P}-ta" rows="2" maxlength="140"></textarea><div class="dz-ed-b"><button type="button" class="dz-btn ghost" data-ed="cancel">Cancel</button><button type="button" class="dz-btn" data-ed="ok">Done ✓</button></div></div>
+          <div class="dz-editor" hidden><label class="dz-ed-l" for="${P}-ta">${t('Edit your text')}</label><textarea id="${P}-ta" rows="2" maxlength="140"></textarea><div class="dz-ed-b"><button type="button" class="dz-btn ghost" data-ed="cancel">${t('Cancel')}</button><button type="button" class="dz-btn" data-ed="ok">${t('Done')} ✓</button></div></div>
         </div>
       </div>
     </div>
@@ -71,18 +75,18 @@ export function mount(stage, cfg, api) {
       <div class="dz-tabs" role="tablist">${tabs.map(([id, ic, name], i) => `<button type="button" role="tab" class="dz-tab" data-tab="${id}" aria-selected="${i === 0}"><span aria-hidden="true">${ic}</span>${name}</button>`).join('')}</div>
       <div class="dz-panes">
         <section class="dz-pane" data-pane="bg">
-          <h3 class="dz-h">Colour</h3><div class="dz-swatches">${swatches.map(c => `<button type="button" class="dz-sw" data-bg="${c}" style="--c:${c}" aria-label="Background ${c}"></button>`).join('')}</div>
-          <h3 class="dz-h">Pattern</h3><div class="dz-pats">${PATTERNS.map(p => `<button type="button" class="dz-pat${p === 'none' ? ' on' : ''}" data-pat="${p}"><svg viewBox="0 0 60 40" aria-hidden="true">${patternMarkup(p, 60, 40, '#1F6F66', 'mini')}</svg><span>${PAT_NAME[p]}</span></button>`).join('')}</div>
+          <h3 class="dz-h">${t('Colour')}</h3><div class="dz-swatches">${swatches.map(c => `<button type="button" class="dz-sw" data-bg="${c}" style="--c:${c}" aria-label="${t('Background {c}', { c })}"></button>`).join('')}</div>
+          <h3 class="dz-h">${t('Pattern')}</h3><div class="dz-pats">${PATTERNS.map(p => `<button type="button" class="dz-pat${p === 'none' ? ' on' : ''}" data-pat="${p}"><svg viewBox="0 0 60 40" aria-hidden="true">${patternMarkup(p, 60, 40, '#1F6F66', 'mini')}</svg><span>${PAT_NAME[p]}</span></button>`).join('')}</div>
         </section>
         <section class="dz-pane" data-pane="text" hidden>
-          <button type="button" class="dz-btn dz-addtext">＋ Add my own text</button>
-          ${cfg.texts?.length ? `<h3 class="dz-h">Ideas: tap to add</h3><div class="dz-ideas">${cfg.texts.map((t, i) => `<button type="button" class="dz-idea" data-idea="${i}">${esc(t)}</button>`).join('')}</div>` : ''}
+          <button type="button" class="dz-btn dz-addtext">＋ ${t('Add my own text')}</button>
+          ${cfg.texts?.length ? `<h3 class="dz-h">${t('Ideas: tap to add')}</h3><div class="dz-ideas">${cfg.texts.map((tx, i) => `<button type="button" class="dz-idea" data-idea="${i}">${esc(tx)}</button>`).join('')}</div>` : ''}
         </section>
-        <section class="dz-pane" data-pane="stk" hidden><div class="dz-stks">${stickers.map((s, i) => `<button type="button" class="dz-stk" data-stk="${i}" aria-label="Add ${esc(s.label || s.sprite || s.emoji || 'sticker')}">${api.art(s)}</button>`).join('')}</div></section>
-        ${fields.length ? `<section class="dz-pane" data-pane="fld" hidden>${fields.map(f => `<label class="dz-field"><span>${esc(f.label)}</span><input type="text" maxlength="60" data-field="${esc(f.key)}" placeholder="${esc(f.placeholder || 'Type here…')}"></label>`).join('')}<p class="dz-note">What you type appears on your design. Drag it where you like.</p></section>` : ''}
+        <section class="dz-pane" data-pane="stk" hidden><div class="dz-stks">${stickers.map((s, i) => `<button type="button" class="dz-stk" data-stk="${i}" aria-label="${esc(t('Add {name}', { name: s.label || s.sprite || s.emoji || t('sticker') }))}">${api.art(s)}</button>`).join('')}</div></section>
+        ${fields.length ? `<section class="dz-pane" data-pane="fld" hidden>${fields.map(f => `<label class="dz-field"><span>${esc(f.label)}</span><input type="text" maxlength="60" data-field="${esc(f.key)}" placeholder="${esc(f.placeholder || t('Type here…'))}"></label>`).join('')}<p class="dz-note">${t('What you type appears on your design. Drag it where you like.')}</p></section>` : ''}
       </div>
-      <div class="dz-check"><h3 class="dz-h">Checklist</h3><ul>${checklist.map((c, i) => `<li data-ck="${i}"><span class="dz-box"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>${esc(c.text)}</span></li>`).join('')}</ul></div>
-      <button type="button" class="dz-save"><span class="dz-save-ic" aria-hidden="true">📁</span><span>Save to my portfolio</span></button>
+      <div class="dz-check"><h3 class="dz-h">${t('Checklist')}</h3><ul>${checklist.map((c, i) => `<li data-ck="${i}"><span class="dz-box"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>${esc(c.text)}</span></li>`).join('')}</ul></div>
+      <button type="button" class="dz-save"><span class="dz-save-ic" aria-hidden="true">📁</span><span>${t('Save to my portfolio')}</span></button>
     </aside>
     <div class="dz-proxies" aria-hidden="true"></div>`;
   stage.append(root);
@@ -170,10 +174,10 @@ export function mount(stage, cfg, api) {
     g.setAttribute('transform', xf(e));
     if (e.kind === 'text') {
       inn.innerHTML = textInner({ ...e, style: e.style === 'pill' ? 'plain' : e.style });
-      const t = inn.querySelector('text').getBBox();
-      e.bb = { x: t.x, y: t.y, w: t.width, h: t.height };
+      const bb = inn.querySelector('text').getBBox();
+      e.bb = { x: bb.x, y: bb.y, w: bb.width, h: bb.height };
       if (e.style === 'pill') inn.innerHTML = textInner(e);
-      g.setAttribute('aria-label', `Text: ${e.text}`);
+      g.setAttribute('aria-label', t('Text: {text}', { text: e.text }));
     } else if (!inn.firstChild) { inn.innerHTML = inner(e); }
     if (st.sel === e) drawSel();
   }
@@ -181,7 +185,7 @@ export function mount(stage, cfg, api) {
     e.id = ++nid;
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', `dz-el dz-${e.kind}`); g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button');
-    g.setAttribute('aria-label', e.kind === 'text' ? `Text: ${e.text}` : `Sticker: ${e.item.label || e.item.sprite || e.item.emoji || ''}`);
+    g.setAttribute('aria-label', e.kind === 'text' ? t('Text: {text}', { text: e.text }) : t('Sticker: {name}', { name: e.item.label || e.item.sprite || e.item.emoji || '' }));
     g.innerHTML = '<g class="dz-in"></g>';
     e.g = g; elsG.append(g); st.els.push(e);
     renderEl(e);
@@ -206,7 +210,7 @@ export function mount(stage, cfg, api) {
   }
   function reorder(e, dir) {
     const i = st.els.indexOf(e), j = clamp(i + dir, 0, st.els.length - 1);
-    if (i === j) { api.say(dir > 0 ? 'It is already on top.' : 'It is already at the back.', 'hint'); return; }
+    if (i === j) { api.say(dir > 0 ? t('It is already on top.') : t('It is already at the back.'), 'hint'); return; }
     st.els.splice(i, 1); st.els.splice(j, 0, e);
     st.els.forEach(x => elsG.append(x.g));
     api.sound('click');
@@ -266,9 +270,9 @@ export function mount(stage, cfg, api) {
 
   /* ---------- selection box with handles ---------- */
   selG.innerHTML = `<g class="dz-sel-in"><rect class="dz-sel-rect"/><line class="dz-sel-stalk"/>
-    <g class="dz-h-rot" role="button" aria-label="Rotate"><circle class="dz-hc"/><path class="dz-hi" d="M-4.5-1.5a5 5 0 1 1 1.2 5.3M-4.5-1.5v-3.6M-4.5-1.5h3.6"/></g>
-    <g class="dz-h-scale" role="button" aria-label="Resize"><circle class="dz-hc"/><path class="dz-hi" d="M-4 4L4-4M0-4h4v4M-4 0v4h4"/></g>
-    <g class="dz-h-del" role="button" aria-label="Delete"><circle class="dz-hc dz-hc-del"/><path class="dz-hi" d="M-3.5-3.5l7 7M3.5-3.5l-7 7"/></g></g>`;
+    <g class="dz-h-rot" role="button" aria-label="${t('Rotate')}"><circle class="dz-hc"/><path class="dz-hi" d="M-4.5-1.5a5 5 0 1 1 1.2 5.3M-4.5-1.5v-3.6M-4.5-1.5h3.6"/></g>
+    <g class="dz-h-scale" role="button" aria-label="${t('Resize')}"><circle class="dz-hc"/><path class="dz-hi" d="M-4 4L4-4M0-4h4v4M-4 0v4h4"/></g>
+    <g class="dz-h-del" role="button" aria-label="${t('Delete')}"><circle class="dz-hc dz-hc-del"/><path class="dz-hi" d="M-3.5-3.5l7 7M3.5-3.5l-7 7"/></g></g>`;
   function drawSel() {
     const e = st.sel;
     if (!e || !e.g.isConnected) { selG.setAttribute('visibility', 'hidden'); return; }
@@ -318,16 +322,16 @@ export function mount(stage, cfg, api) {
   }
   function renderTools() {
     const e = st.sel;
-    if (!e) { tools.innerHTML = `<p class="dz-tools-empty">Tap something on your ${esc(shape)} to change it. Double-tap text to edit it.</p>`; return; }
-    const common = `<span class="dz-sep"></span><button type="button" class="dz-tb" data-act="fwd" aria-label="Bring forward" title="Bring forward">⬆<small>Front</small></button><button type="button" class="dz-tb" data-act="back" aria-label="Send backward" title="Send backward">⬇<small>Back</small></button><button type="button" class="dz-tb dz-tb-del" data-act="del" aria-label="Delete" title="Delete">🗑<small>Delete</small></button>`;
+    if (!e) { tools.innerHTML = `<p class="dz-tools-empty">${esc(t('Tap something on your {shape} to change it. Double-tap text to edit it.', { shape: shapeName }))}</p>`; return; }
+    const common = `<span class="dz-sep"></span><button type="button" class="dz-tb" data-act="fwd" aria-label="${t('Bring forward')}" title="${t('Bring forward')}">⬆<small>${t('Front')}</small></button><button type="button" class="dz-tb" data-act="back" aria-label="${t('Send backward')}" title="${t('Send backward')}">⬇<small>${t('Back')}</small></button><button type="button" class="dz-tb dz-tb-del" data-act="del" aria-label="${t('Delete')}" title="${t('Delete')}">🗑<small>${t('Delete')}</small></button>`;
     if (e.kind === 'text') {
-      tools.innerHTML = `<button type="button" class="dz-tb" data-act="edit" aria-label="Edit text">✏️<small>Edit</small></button>
-        <button type="button" class="dz-tb" data-act="smaller" aria-label="Smaller text">A<sub>−</sub><small>Smaller</small></button><button type="button" class="dz-tb" data-act="bigger" aria-label="Bigger text">A<sup>+</sup><small>Bigger</small></button>
-        <button type="button" class="dz-tb dz-tb-font" data-act="font" aria-label="Change font" style="font-family:${font(e.font).css}">Aa<small>${font(e.font).name}</small></button>
-        <button type="button" class="dz-tb" data-act="style" aria-label="Change text style">✨<small>${STYLES.find(s => s.id === e.style).name}</small></button>
-        <span class="dz-colors">${textColors.map(c => `<button type="button" class="dz-tc${c === e.color.toUpperCase() ? ' on' : ''}" data-color="${c}" style="--c:${c}" aria-label="Text colour ${c}"></button>`).join('')}</span>${common}`;
+      tools.innerHTML = `<button type="button" class="dz-tb" data-act="edit" aria-label="${t('Edit text')}">✏️<small>${t('Edit')}</small></button>
+        <button type="button" class="dz-tb" data-act="smaller" aria-label="${t('Smaller text')}">A<sub>−</sub><small>${t('Smaller')}</small></button><button type="button" class="dz-tb" data-act="bigger" aria-label="${t('Bigger text')}">A<sup>+</sup><small>${t('Bigger')}</small></button>
+        <button type="button" class="dz-tb dz-tb-font" data-act="font" aria-label="${t('Change font')}" style="font-family:${font(e.font).css}">Aa<small>${font(e.font).name}</small></button>
+        <button type="button" class="dz-tb" data-act="style" aria-label="${t('Change text style')}">✨<small>${STYLES.find(s => s.id === e.style).name}</small></button>
+        <span class="dz-colors">${textColors.map(c => `<button type="button" class="dz-tc${c === e.color.toUpperCase() ? ' on' : ''}" data-color="${c}" style="--c:${c}" aria-label="${t('Text colour {c}', { c })}"></button>`).join('')}</span>${common}`;
     } else {
-      tools.innerHTML = `<button type="button" class="dz-tb" data-act="smaller" aria-label="Smaller">➖<small>Smaller</small></button><button type="button" class="dz-tb" data-act="bigger" aria-label="Bigger">➕<small>Bigger</small></button><button type="button" class="dz-tb" data-act="flip" aria-label="Flip">↔️<small>Flip</small></button><button type="button" class="dz-tb" data-act="turn" aria-label="Turn">↻<small>Turn</small></button>${common}`;
+      tools.innerHTML = `<button type="button" class="dz-tb" data-act="smaller" aria-label="${t('Smaller')}">➖<small>${t('Smaller')}</small></button><button type="button" class="dz-tb" data-act="bigger" aria-label="${t('Bigger')}">➕<small>${t('Bigger')}</small></button><button type="button" class="dz-tb" data-act="flip" aria-label="${t('Flip')}">↔️<small>${t('Flip')}</small></button><button type="button" class="dz-tb" data-act="turn" aria-label="${t('Turn')}">↻<small>${t('Turn')}</small></button>${common}`;
     }
     if (!api.reduced) gsap.from(tools.children, { y: 8, opacity: 0, duration: .25, stagger: .02, ease: 'power2.out' });
   }
@@ -385,7 +389,7 @@ export function mount(stage, cfg, api) {
     }, rows[1]);
     return addEl({ kind: 'text', text, x: CW / 2, y, rot: 0, scale: 1, size, color: isDark(st.bg) ? '#FFFFFF' : '#2B1A10', autoColor: true, font: title ? 'loud' : 'sans', style: 'plain', ...extra });
   }
-  $('.dz-addtext').addEventListener('click', () => { const e = newText('Your text'); openEditor(e); });
+  $('.dz-addtext').addEventListener('click', () => { const e = newText(t('Your text')); openEditor(e); });
   root.querySelectorAll('.dz-idea').forEach(b => b.addEventListener('click', () => {
     newText(cfg.texts[+b.dataset.idea]);
     if (!api.reduced) gsap.fromTo(b, { scale: .92 }, { scale: 1, duration: .3, ease: 'back.out(3)' });
@@ -445,7 +449,7 @@ export function mount(stage, cfg, api) {
     api.progress(n / checklist.length * .9);
     const all = n === checklist.length;
     $('.dz-save').classList.toggle('ready', all);
-    if (all && !allOk) { api.say('Everything on the checklist is done! Make it look just right, then save it to your portfolio.', 'good'); if (!api.reduced) gsap.fromTo('.lab-design .dz-save', { scale: .9 }, { scale: 1, duration: .6, ease: 'elastic.out(1, .4)' }); }
+    if (all && !allOk) { api.say(t('Everything on the checklist is done! Make it look just right, then save it to your portfolio.'), 'good'); if (!api.reduced) gsap.fromTo('.lab-design .dz-save', { scale: .9 }, { scale: 1, duration: .6, ease: 'elastic.out(1, .4)' }); }
     allOk = all;
   }
 
@@ -468,24 +472,24 @@ export function mount(stage, cfg, api) {
     closeEditor(true);
     const missing = checklist.filter((c, i) => !okState[i]);
     if (missing.length) {
-      api.say(`Almost! Still to do: ${missing.map(m => m.text.toLowerCase()).join('; ')}.`, 'hint');
+      api.say(t('Almost! Still to do: {list}.', { list: missing.map(m => m.text.toLowerCase()).join('; ') }), 'hint');
       root.querySelectorAll('.dz-check li:not(.ok)').forEach(li => { if (!api.reduced) gsap.fromTo(li, { x: 0 }, { x: 0, duration: .4, keyframes: { x: [0, -8, 7, -4, 2, 0] } }); });
       return;
     }
     saving = true; select(null);
     let url = '';
-    try { url = await exportPng(); } catch (err) { console.error(err); saving = false; api.say('Hmm, the picture could not be saved. Try again.', 'bad'); return; }
+    try { url = await exportPng(); } catch (err) { console.error(err); saving = false; api.say(t('Hmm, the picture could not be saved. Try again.'), 'bad'); return; }
     done = true;
-    const title = cfg.title || `My ${shape}`;
+    const title = cfg.title || t('My {shape}', { shape: shapeName });
     api.savePortfolio(url, title);
     api.sound('whoosh');
     celebrate(url);
-    later(() => api.complete({ message: cfg.win || `Your ${shape} is saved in your portfolio!` }), 1700);
+    later(() => api.complete({ message: cfg.win || t('Your {shape} is saved in your portfolio!', { shape: shapeName }) }), 1700);
   });
   function celebrate(url) {
     const box = $('.dz-canvasbox'), btn = $('.dz-save');
     const flash = document.createElement('div'); flash.className = 'dz-flash'; box.append(flash);
-    btn.classList.add('saved'); btn.querySelector('span:last-child').textContent = 'Saved!';
+    btn.classList.add('saved'); btn.querySelector('span:last-child').textContent = t('Saved!');
     if (api.reduced) return;
     gsap.fromTo(flash, { opacity: .9 }, { opacity: 0, duration: .5, onComplete: () => flash.remove() });
     const a = box.getBoundingClientRect(), b = btn.querySelector('.dz-save-ic').getBoundingClientRect(), rb = root.getBoundingClientRect();
@@ -499,11 +503,11 @@ export function mount(stage, cfg, api) {
 
   /* ---------- start ---------- */
   $('.dz-ghost').innerHTML = `<rect x="${CW * .08}" y="${CH * .08}" width="${CW * .84}" height="${CH * .84}" rx="${Math.min(CW, CH) * .04}" class="dz-ghost-r"/>
-    <text x="${CW / 2}" y="${CH / 2 - Math.min(CW, CH) * .07}" text-anchor="middle" class="dz-ghost-t" font-size="${Math.min(CW, CH) * .06}">Your ${esc(shape)} starts here</text>
-    <text x="${CW / 2}" y="${CH / 2 + Math.min(CW, CH) * .03}" text-anchor="middle" class="dz-ghost-s" font-size="${Math.min(CW, CH) * .036}">Pick a colour · add words · add stickers</text>`;
+    <text x="${CW / 2}" y="${CH / 2 - Math.min(CW, CH) * .07}" text-anchor="middle" class="dz-ghost-t" font-size="${Math.min(CW, CH) * .06}">${esc(t('Your {shape} starts here', { shape: shapeName }))}</text>
+    <text x="${CW / 2}" y="${CH / 2 + Math.min(CW, CH) * .03}" text-anchor="middle" class="dz-ghost-s" font-size="${Math.min(CW, CH) * .036}">${t('Pick a colour · add words · add stickers')}</text>`;
   checkRules();
   api.progress(0);
-  api.say(cfg.mission || 'Make your design, tick the checklist and save it!');
+  api.say(cfg.mission || t('Make your design, tick the checklist and save it!'));
   if (!api.reduced) {
     gsap.from(svg, { scale: .92, opacity: 0, duration: .6, ease: 'back.out(1.6)', delay: .1 });
     gsap.from(root.querySelectorAll('.dz-sw, .dz-pat'), { y: 14, opacity: 0, duration: .4, stagger: .025, ease: 'back.out(3)', delay: .3, clearProps: 'transform,opacity' });

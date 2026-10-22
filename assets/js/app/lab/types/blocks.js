@@ -4,26 +4,30 @@
 // optional cfg.target = ['move','jump',…]; a built-in dance is used when absent), sensor (Arduino +
 // LED + PIR: "if motion → LED on, wait, LED off", tested by a cat walking past).
 import { h, esc, sparkle, shake } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Block coding', needs: ['gsap'] };
 
+// Labels are translated; ops and arg values (compared by the program) stay English and are shown with argText().
 const B = {
-  move: { cat: 'motion', label: 'move', arg: { vals: [1, 2, 3, 4, 5], def: 1, after: 'steps' }, icon: '➜' },
-  turnLeft: { cat: 'motion', label: 'turn ↺ left', icon: '↺' },
-  turnRight: { cat: 'motion', label: 'turn ↻ right', icon: '↻' },
-  jump: { cat: 'motion', label: 'jump', icon: '⤒' },
-  say: { cat: 'looks', label: 'say', arg: { vals: ['Hello!', 'Namaste!', 'Yay!', 'Meow!'], def: 'Hello!' }, icon: '💬' },
-  playSound: { cat: 'sound', label: 'play sound', arg: { vals: ['meow', 'beep', 'drum'], def: 'meow' }, icon: '♪' },
-  wait: { cat: 'control', label: 'wait', arg: { vals: [1, 2, 3], def: 1, after: 'sec' }, icon: '⏱' },
-  repeat: { cat: 'control', label: 'repeat', arg: { vals: [2, 3, 4, 5, 6, 8, 10], def: 3 }, c: true, icon: '🔁' },
-  ifSensor: { cat: 'control', label: 'if motion seen then', c: true, icon: '❓' },
-  ledOn: { cat: 'arduino', label: 'turn LED on', icon: '💡' },
-  ledOff: { cat: 'arduino', label: 'turn LED off', icon: '⚫' },
+  move: { cat: 'motion', label: t('move'), arg: { vals: [1, 2, 3, 4, 5], def: 1, after: t('steps') }, icon: '➜' },
+  turnLeft: { cat: 'motion', label: t('turn ↺ left'), icon: '↺' },
+  turnRight: { cat: 'motion', label: t('turn ↻ right'), icon: '↻' },
+  jump: { cat: 'motion', label: t('jump'), icon: '⤒' },
+  say: { cat: 'looks', label: t('say'), arg: { vals: ['Hello!', 'Namaste!', 'Yay!', 'Meow!'], def: 'Hello!' }, icon: '💬' },
+  playSound: { cat: 'sound', label: t('play sound'), arg: { vals: ['meow', 'beep', 'drum'], def: 'meow' }, icon: '♪' },
+  wait: { cat: 'control', label: t('wait'), arg: { vals: [1, 2, 3], def: 1, after: t('sec') }, icon: '⏱' },
+  repeat: { cat: 'control', label: t('repeat'), arg: { vals: [2, 3, 4, 5, 6, 8, 10], def: 3 }, c: true, icon: '🔁' },
+  ifSensor: { cat: 'control', label: t('if motion seen then'), c: true, icon: '❓' },
+  ledOn: { cat: 'arduino', label: t('turn LED on'), icon: '💡' },
+  ledOff: { cat: 'arduino', label: t('turn LED off'), icon: '⚫' },
 };
+const argText = v => (typeof v === 'string' ? t(v) : v);
 const DIRS = { right: [1, 0], down: [0, 1], left: [-1, 0], up: [0, -1] }, ORDER = ['up', 'right', 'down', 'left'];
 const T = 64; // stage tile size (viewBox units)
 const flat = list => list.flatMap(n => [n, ...(n.kids ? flat(n.kids) : [])]);
-const shortName = o => ({ move: 'move', turnLeft: 'left', turnRight: 'right', jump: 'jump', say: 'say', playSound: 'sound' }[o] || o);
+const SHORT = { move: t('move'), turnLeft: t('left'), turnRight: t('right'), jump: t('jump'), say: t('say'), playSound: t('sound') };
+const shortName = o => SHORT[o] || o;
 
 /* ---------------------------------------------------------------- shapes */
 const NOTCH = 'l6 6 h20 l6 -6';
@@ -72,13 +76,13 @@ export function mount(stage, cfg, api) {
 
   let script = [], uid = 0, running = false, stopFlag = false, done = false, world = null, timers = [];
   const root = h(`<div class="lab-blocks mode-${mode}">
-    <section class="lb-pal" aria-label="Block palette"><p class="lb-h">Blocks</p><div class="lb-palist"></div><p class="lb-count"></p></section>
-    <section class="lb-script" aria-label="Your script"><div class="lb-shead"><p class="lb-h">Your script</p><button type="button" class="lb-clear" aria-label="Clear the script">🗑 Clear</button></div>
-      <div class="lb-canvas"><div class="lb-stack"></div><div class="lb-shadow" aria-hidden="true"></div><p class="lb-empty">Drag blocks here and snap them under the ${mode === 'sensor' ? 'forever' : 'green flag'} block.</p></div></section>
-    <section class="lb-stagebox" aria-label="Stage">
-      <div class="lb-stagehead"><button type="button" class="lb-run"><span aria-hidden="true">⚑</span> Run</button><button type="button" class="lb-stop" aria-label="Stop">⏹</button><button type="button" class="lb-reset" aria-label="Reset the stage">↺</button><span class="lb-score" aria-live="polite"></span></div>
-      <div class="lb-stagewrap"><svg class="lb-stage" role="img" aria-label="Stage"></svg></div>
-      ${mode === 'dance' ? `<div class="lb-target" aria-label="Dance to copy"><span class="lb-tlabel">Copy this dance:</span>${target.map((o, i) => `<span class="lb-chip c-${B[o].cat}" data-i="${i}" title="${esc(B[o].label)}">${B[o].icon}<small>${esc(shortName(o))}</small></span>`).join('')}</div>` : ''}
+    <section class="lb-pal" aria-label="${t('Block palette')}"><p class="lb-h">${t('Blocks')}</p><div class="lb-palist"></div><p class="lb-count"></p></section>
+    <section class="lb-script" aria-label="${t('Your script')}"><div class="lb-shead"><p class="lb-h">${t('Your script')}</p><button type="button" class="lb-clear" aria-label="${t('Clear the script')}">🗑 ${t('Clear')}</button></div>
+      <div class="lb-canvas"><div class="lb-stack"></div><div class="lb-shadow" aria-hidden="true"></div><p class="lb-empty">${mode === 'sensor' ? t('Drag blocks here and snap them under the forever block.') : t('Drag blocks here and snap them under the green flag block.')}</p></div></section>
+    <section class="lb-stagebox" aria-label="${t('Stage')}">
+      <div class="lb-stagehead"><button type="button" class="lb-run"><span aria-hidden="true">⚑</span> ${t('Run')}</button><button type="button" class="lb-stop" aria-label="${t('Stop')}">⏹</button><button type="button" class="lb-reset" aria-label="${t('Reset the stage')}">↺</button><span class="lb-score" aria-live="polite"></span></div>
+      <div class="lb-stagewrap"><svg class="lb-stage" role="img" aria-label="${t('Stage')}"></svg></div>
+      ${mode === 'dance' ? `<div class="lb-target" aria-label="${t('Dance to copy')}"><span class="lb-tlabel">${t('Copy this dance:')}</span>${target.map((o, i) => `<span class="lb-chip c-${B[o].cat}" data-i="${i}" title="${esc(B[o].label)}">${B[o].icon}<small>${esc(shortName(o))}</small></span>`).join('')}</div>` : ''}
     </section>
   </div>`);
   stage.append(root);
@@ -89,17 +93,17 @@ export function mount(stage, cfg, api) {
   function renderPalette() {
     const n = countBlocks(script);
     $('.lb-palist').innerHTML = pal.map(op => blockHTML({ op, arg: B[op].arg?.def, kids: B[op].c ? [] : undefined, id: `pal-${op}` }, true)).join('');
-    $('.lb-count').innerHTML = maxBlocks < 99 ? `Blocks used: <b>${n}</b> / ${maxBlocks}` : `Blocks used: <b>${n}</b>`;
+    $('.lb-count').innerHTML = maxBlocks < 99 ? t('Blocks used: <b>{n}</b> / {max}', { n, max: maxBlocks }) : t('Blocks used: <b>{n}</b>', { n });
     $('.lb-count').classList.toggle('full', n >= maxBlocks);
     root.querySelectorAll('.lb-palist .lb-b').forEach(el => { el.classList.toggle('off', n >= maxBlocks); });
     shapeAll($('.lb-palist'));
   }
   function blockHTML(n, inPal) {
-    const d = B[n.op], arg = d.arg ? `<button type="button" class="lb-arg" data-id="${n.id}" ${inPal ? 'tabindex="-1"' : ''} aria-label="Change value, now ${esc(n.arg)}">${esc(n.arg)}</button>${d.arg.after ? `<span>${d.arg.after}</span>` : ''}` : '';
+    const d = B[n.op], arg = d.arg ? `<button type="button" class="lb-arg" data-id="${n.id}" ${inPal ? 'tabindex="-1"' : ''} aria-label="${esc(t('Change value, now {v}', { v: argText(n.arg) }))}">${esc(argText(n.arg))}</button>${d.arg.after ? `<span>${d.arg.after}</span>` : ''}` : '';
     const label = d.label.replace(/↺|↻/, m => `<i>${m}</i>`);
-    return `<div class="lb-b c-${d.cat}${d.c ? ' lb-cb' : ''}" data-id="${n.id}" data-op="${n.op}" ${inPal ? `role="button" tabindex="0" aria-label="Add block: ${esc(d.label)}"` : ''}>
+    return `<div class="lb-b c-${d.cat}${d.c ? ' lb-cb' : ''}" data-id="${n.id}" data-op="${n.op}" ${inPal ? `role="button" tabindex="0" aria-label="${esc(t('Add block: {label}', { label: d.label }))}"` : ''}>
       <svg class="lb-shape" aria-hidden="true"><path/></svg>
-      <div class="lb-row"><span class="lb-lbl">${label}</span>${arg}${inPal ? '' : `<button type="button" class="lb-del" data-id="${n.id}" aria-label="Remove ${esc(d.label)}">×</button>`}</div>
+      <div class="lb-row"><span class="lb-lbl">${label}</span>${arg}${inPal ? '' : `<button type="button" class="lb-del" data-id="${n.id}" aria-label="${esc(t('Remove {label}', { label: d.label }))}">×</button>`}</div>
       ${d.c ? `<div class="lb-inner" data-id="${n.id}">${(n.kids || []).map(k => blockHTML(k)).join('')}</div><div class="lb-foot"></div>` : ''}</div>`;
   }
   function shapeAll(scope) {
@@ -121,7 +125,7 @@ export function mount(stage, cfg, api) {
 
   /* ---- script ---- */
   function renderScript() {
-    const hat = mode === 'sensor' ? 'forever <small>(Arduino loop)</small>' : 'when <b class="lb-flagic">⚑</b> clicked';
+    const hat = mode === 'sensor' ? t('forever <small>(Arduino loop)</small>') : t('when <b class="lb-flagic">⚑</b> clicked');
     stackEl.innerHTML = `<div class="lb-b lb-hat c-${mode === 'sensor' ? 'arduino' : 'events'}"><svg class="lb-shape" aria-hidden="true"><path/></svg><div class="lb-row"><span class="lb-lbl">${hat}</span></div></div>
       <div class="lb-list" data-id="root">${script.map(n => blockHTML(n)).join('')}</div>`;
     shapeAll(stackEl);
@@ -199,7 +203,7 @@ export function mount(stage, cfg, api) {
     if (el && gsap && !api.reduced) gsap.fromTo(el, { scale: 1.06, y: -6 }, { scale: 1, y: 0, duration: .35, ease: 'back.out(3)' });
     if (!running) resetWorld(false);
   }
-  function full() { api.sound('bad'); api.say(`You can use only ${maxBlocks} blocks. Try a repeat block to make your code shorter!`, 'hint'); const c = $('.lb-count'); shake(api, c); }
+  function full() { api.sound('bad'); api.say(t('You can use only {n} blocks. Try a repeat block to make your code shorter!', { n: maxBlocks }), 'hint'); const c = $('.lb-count'); shake(api, c); }
   root.addEventListener('click', e => {
     const a = e.target.closest('.lb-arg'), del = e.target.closest('.lb-del');
     if (running) return;
@@ -256,7 +260,7 @@ export function mount(stage, cfg, api) {
     gsap?.killTweensOf(svg.querySelectorAll('.lb-actor, .lb-actor *'));
     drawStage(); placeActor(true); updScore();
     root.querySelectorAll('.lb-chip').forEach(c => c.classList.remove('ok', 'no'));
-    if (sayIt) api.say('Stage reset. Change your script and run it again!');
+    if (sayIt) api.say(t('Stage reset. Change your script and run it again!'));
   }
   function cellXY(x, y) { return mode === 'sensor' ? { x: x, y: VH - 46 } : { x: x * T + T / 2, y: y * T + T / 2 + 18 }; }
   function placeActor() {
@@ -307,7 +311,7 @@ export function mount(stage, cfg, api) {
   function updScore() {
     const s = $('.lb-score');
     if (mode === 'maze') s.innerHTML = coins.length ? `<span class="lb-coinic">₹</span> ${world.got.size} / ${coins.length}` : '';
-    else if (mode === 'sensor') s.innerHTML = `LED: <b class="${world.led ? 'on' : ''}">${world.led ? 'ON' : 'off'}</b>`;
+    else if (mode === 'sensor') s.innerHTML = `LED: <b class="${world.led ? 'on' : ''}">${world.led ? t('ON') : t('off')}</b>`;
     else s.textContent = '';
   }
   class Stop extends Error { }
@@ -323,8 +327,8 @@ export function mount(stage, cfg, api) {
         for (let i = 0; i < steps; i++) {
           if (stopFlag) throw new Stop();
           const [dx, dy] = DIRS[world.dir], nx = world.x + dx, ny = world.y + dy;
-          if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) { await bump(world.dir); if (mode === 'maze') throw new Oops('Oops! The cat cannot walk off the edge of the garden.', n.id); return; }
-          if (isWall(nx, ny)) { await bump(world.dir); throw new Oops('Oops! A bush is in the way. Turn, or jump over it.', n.id); }
+          if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) { await bump(world.dir); if (mode === 'maze') throw new Oops(t('Oops! The cat cannot walk off the edge of the garden.'), n.id); return; }
+          if (isWall(nx, ny)) { await bump(world.dir); throw new Oops(t('Oops! A bush is in the way. Turn, or jump over it.'), n.id); }
           world.x = nx; world.y = ny; api.sound('tick');
           await moveActor(cellXY(nx, ny));
           collect();
@@ -341,12 +345,12 @@ export function mount(stage, cfg, api) {
       case 'jump': {
         if (mode !== 'maze') { api.sound('whoosh'); await moveActor(pos(), .45, 40); return; }
         const [dx, dy] = DIRS[world.dir], nx = world.x + 2 * dx, ny = world.y + 2 * dy;
-        if (nx < 0 || ny < 0 || nx >= GW || ny >= GH || isWall(nx, ny)) { await moveActor(pos(), .4, 30); throw new Oops(isWall(nx, ny) ? 'The cat would land on a bush! Jump only where the landing square is free.' : 'That jump would land outside the garden!', n.id); }
+        if (nx < 0 || ny < 0 || nx >= GW || ny >= GH || isWall(nx, ny)) { await moveActor(pos(), .4, 30); throw new Oops(isWall(nx, ny) ? t('The cat would land on a bush! Jump only where the landing square is free.') : t('That jump would land outside the garden!'), n.id); }
         world.x = nx; world.y = ny; api.sound('whoosh');
         await moveActor(cellXY(nx, ny), .55, 46);
         collect(); return;
       }
-      case 'say': api.sound('pop'); await bubble(String(arg)); return;
+      case 'say': api.sound('pop'); await bubble(String(argText(arg))); return;
       case 'playSound': beep(arg); notes(); await gsap.to({}, { duration: .6 }); return;
       case 'wait': await gsap.to({}, { duration: mode === 'sensor' ? arg : Math.min(arg, 1) * .8 }); return;
       case 'ledOn': case 'ledOff': setLED(op === 'ledOn'); await gsap.to({}, { duration: .25 }); return;
@@ -367,7 +371,7 @@ export function mount(stage, cfg, api) {
     const i = world.actions.length - 1, chip = root.querySelector(`.lb-chip[data-i="${i}"]`);
     const ok = target[i] === world.actions[i];
     if (chip) { chip.classList.add(ok ? 'ok' : 'no'); if (gsap && !api.reduced) gsap.fromTo(chip, { scale: 1.3 }, { scale: 1, duration: .35, ease: 'back.out(3)' }); }
-    if (!ok) throw new Oops(i >= target.length ? 'The dance is already finished. Remove the extra blocks!' : `Step ${i + 1} should be "${B[target[i]].label}", not "${B[world.actions[i]].label}".`, null);
+    if (!ok) throw new Oops(i >= target.length ? t('The dance is already finished. Remove the extra blocks!') : t('Step {n} should be "{want}", not "{got}".', { n: i + 1, want: B[target[i]].label, got: B[world.actions[i]].label }), null);
     if (mode === 'dance') svg.querySelectorAll('.lb-tile').forEach(t => gsap.to(t, { opacity: .45 + Math.random() * .55, duration: .2 }));
   }
   function setLED(on) {
@@ -399,7 +403,7 @@ export function mount(stage, cfg, api) {
   $('.lb-reset').addEventListener('click', () => { if (!running) { api.sound('click'); resetWorld(); } });
   async function runIt() {
     if (running || done) return;
-    if (!script.length) { api.say(`Drag some blocks under the "${mode === 'sensor' ? 'forever' : 'when ⚑ clicked'}" block first.`, 'hint'); shake(api, canvas); return; }
+    if (!script.length) { api.say(mode === 'sensor' ? t('Drag some blocks under the "forever" block first.') : t('Drag some blocks under the "when ⚑ clicked" block first.'), 'hint'); shake(api, canvas); return; }
     resetWorld(false);
     running = true; stopFlag = false; root.classList.add('running'); api.sound('whoosh');
     let err = null;
@@ -408,7 +412,7 @@ export function mount(stage, cfg, api) {
     } catch (e) { err = e; }
     running = false; root.classList.remove('running');
     stackEl.querySelectorAll('.run').forEach(el => el.classList.remove('run'));
-    if (err instanceof Stop) { api.say('Stopped. Press Run to try again.'); return; }
+    if (err instanceof Stop) { api.say(t('Stopped. Press Run to try again.')); return; }
     if (err instanceof Oops) {
       api.mistake(); api.say(err.message, 'bad');
       if (err.id) { const el = stackEl.querySelector(`.lb-b[data-id="${err.id}"]`); el?.classList.add('err'); timers.push(setTimeout(() => el?.classList.remove('err'), 1800)); }
@@ -420,23 +424,23 @@ export function mount(stage, cfg, api) {
   function judge() {
     if (mode === 'maze') {
       const atGoal = world.x === goalC.x && world.y === goalC.y, all = world.got.size === coins.length;
-      if (atGoal && all) return win('The cat reached the flag and collected every coin!');
+      if (atGoal && all) return win(t('The cat reached the flag and collected every coin!'));
       api.mistake();
-      if (atGoal) return api.say(`The cat reached the flag but missed ${coins.length - world.got.size} coin(s). Plan a path that visits every coin.`, 'bad');
+      if (atGoal) return api.say(t('The cat reached the flag but missed {n} coin(s). Plan a path that visits every coin.', { n: coins.length - world.got.size }), 'bad');
       const d = Math.abs(goalC.x - world.x) + Math.abs(goalC.y - world.y);
-      api.say(`The cat stopped ${d} square${d > 1 ? 's' : ''} away from the flag. Add more blocks to finish the path.`, 'bad');
+      api.say(t(d > 1 ? 'The cat stopped {n} squares away from the flag. Add more blocks to finish the path.' : 'The cat stopped {n} square away from the flag. Add more blocks to finish the path.', { n: d }), 'bad');
       return;
     }
     if (mode === 'dance') {
-      if (world.actions.length === target.length) return win('Perfect copy! Your cat danced the whole routine.');
-      api.mistake(); api.say(`Good start! The dance has ${target.length} moves and your cat did ${world.actions.length}. Keep going.`, 'hint'); return;
+      if (world.actions.length === target.length) return win(t('Perfect copy! Your cat danced the whole routine.'));
+      api.mistake(); api.say(t('Good start! The dance has {n} moves and your cat did {done}. Keep going.', { n: target.length, done: world.actions.length }), 'hint'); return;
     }
     const w = world;
-    if (w.badEarly) { api.mistake(); return api.say('The LED switched on before anyone came in. Put "turn LED on" inside the "if motion seen" block.', 'bad'); }
-    if (!w.onWithMotion) { api.mistake(); return api.say(script.some(n => n.op === 'ifSensor') ? 'The cat came, but the LED did not switch on. Put "turn LED on" inside the "if motion seen" block.' : 'Use an "if motion seen" block, so the code checks the sensor.', 'bad'); }
-    if (w.led) { api.mistake(); return api.say('The LED stayed on after the cat left. Add "wait" and then "turn LED off".', 'bad'); }
-    if ((w.maxOn || 0) < .6) { api.mistake(); return api.say('The LED only flickered! Add a "wait" block between "LED on" and "LED off".', 'hint'); }
-    win('Light on when the cat came, off after it left. Your room is smart!');
+    if (w.badEarly) { api.mistake(); return api.say(t('The LED switched on before anyone came in. Put "turn LED on" inside the "if motion seen" block.'), 'bad'); }
+    if (!w.onWithMotion) { api.mistake(); return api.say(script.some(n => n.op === 'ifSensor') ? t('The cat came, but the LED did not switch on. Put "turn LED on" inside the "if motion seen" block.') : t('Use an "if motion seen" block, so the code checks the sensor.'), 'bad'); }
+    if (w.led) { api.mistake(); return api.say(t('The LED stayed on after the cat left. Add "wait" and then "turn LED off".'), 'bad'); }
+    if ((w.maxOn || 0) < .6) { api.mistake(); return api.say(t('The LED only flickered! Add a "wait" block between "LED on" and "LED off".'), 'hint'); }
+    win(t('Light on when the cat came, off after it left. Your room is smart!'));
   }
   async function runSensor() {
     const a = actor(), cone = svg.querySelector('.lb-cone'), led = svg.querySelector('.lb-pirled');
@@ -479,7 +483,7 @@ export function mount(stage, cfg, api) {
 
   renderScript(); resetWorld(false);
   const ro = new ResizeObserver(() => shapeAll(root)); ro.observe($('.lb-script'));
-  api.say(cfg.mission || 'Snap the blocks together and press Run!');
+  api.say(cfg.mission || t('Snap the blocks together and press Run!'));
   return {
     destroy() {
       stopFlag = true; timers.forEach(clearTimeout); ro.disconnect(); obs.disconnect();

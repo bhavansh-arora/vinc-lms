@@ -252,8 +252,9 @@ function runSync() {
   inflight = http('sync', { method: 'POST', body: { changes } }).then(j => {
     const wasOffline = offline; offline = false;
     const changed = reconcile(j.data, atSend);
-    if (j.errors?.length) notify({ type: 'errors', errors: j.errors });
-    done({ ok: !j.errors?.length, errors: j.errors || [] });
+    const errors = (j.errors || []).map(x => ({ ...x, message: tx(x.message) }));
+    if (errors.length) notify({ type: 'errors', errors });
+    done({ ok: !errors.length, errors });
     if (changed || wasOffline) notify('data');
   }, e => {
     if (e.status === 401) { done({ ok: false, errors: [{ message: e.message }] }); notify('logout'); return; }
@@ -295,8 +296,8 @@ export async function loadPublic() {
 /* ---------- Account actions that work in both modes ---------- */
 export async function logIn(id, pw) {
   if (!REMOTE) { const r = authenticate(id, pw); if (r.user) session.set({ userId: r.user.id, at: Date.now() }); return r; }
-  if (!normLogin(id)) return { error: 'Enter your User ID.', field: 'uid' };
-  if (!pw) return { error: 'Enter your password.', field: 'pw' };
+  if (!normLogin(id)) return { error: t('Enter your User ID.'), field: 'uid' };
+  if (!pw) return { error: t('Enter your password.'), field: 'pw' };
   try {
     const j = await http('login', { method: 'POST', body: { login: id, password: pw } });
     session.set({ userId: j.me, token: j.token, at: Date.now() });
@@ -554,11 +555,11 @@ export const findByJoinCode = (schoolId, code, field = 'joinCode') => { const s 
 
 // Check a sign-in. Returns { user } or { error, field }.
 export function authenticate(id, pw) {
-  if (!normLogin(id)) return { error: 'Enter your User ID.', field: 'uid' };
-  if (!pw) return { error: 'Enter your password.', field: 'pw' };
+  if (!normLogin(id)) return { error: t('Enter your User ID.'), field: 'uid' };
+  if (!pw) return { error: t('Enter your password.'), field: 'pw' };
   const u = findByLogin(id);
-  if (!u || !checkPassword(u, pw)) return { error: 'That User ID and password do not match. Check both and try again.', field: 'pw' };
-  if (u.role !== 'admin' && u.schoolId && school(u.schoolId)?.active === false) return { error: 'Your school\'s VINC Lab account is paused. Please contact your school.', field: 'uid' };
+  if (!u || !checkPassword(u, pw)) return { error: t('That User ID and password do not match. Check both and try again.'), field: 'pw' };
+  if (u.role !== 'admin' && u.schoolId && school(u.schoolId)?.active === false) return { error: t('Your school\'s VINC Lab account is paused. Please contact your school.'), field: 'uid' };
   u.lastLogin = Date.now();
   save();
   return { user: u };
@@ -801,7 +802,7 @@ export function setPasswordFor(u, pw, { temp = true } = {}) { setPassword(u, pw,
 
 /* ---------------- Sign-up ----------------
    Each returns the new user, or throws an Error whose .field names the form field at fault. */
-const fail = (field, msg) => { const e = new Error(msg); e.field = field; throw e; };
+const fail = (field, msg) => { const e = new Error(tx(msg)); e.field = field; throw e; };
 function checkNewLogin(login, password) {
   const k = normLogin(login);
   if (!LOGIN_RULE.test(k)) fail('login', 'User IDs are 3 to 30 characters: letters, numbers, dots, dashes or underscores, starting with a letter.');

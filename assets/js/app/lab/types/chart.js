@@ -13,6 +13,7 @@
 //   questions[].options [..]   explicit answer options (category keys or numbers)
 //   questions[].why     shown after the right answer
 import { h, esc, shake, pop, sparkle } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Tally and chart', needs: ['gsap'] };
 
@@ -74,7 +75,7 @@ export function mount(stage, cfg, api) {
     <div class="ct-side">
       <div class="ct-sheet">
         <div class="ct-clip" aria-hidden="true"><i></i></div>
-        <p class="ct-sheet-h">${esc(collecting ? 'Tally sheet' : 'Our data')}<small>${collecting ? `${obs.length} observations` : ''}</small></p>
+        <p class="ct-sheet-h">${esc(collecting ? t('Tally sheet') : t('Our data'))}<small>${collecting ? t('{n} observations', { n: obs.length }) : ''}</small></p>
         <div class="ct-rows">${cats.map((c, i) => `<button type="button" class="ct-row" data-key="${esc(c.key)}" style="--c:${c.col}" aria-label="${esc(c.label)}: 0">
           <span class="ct-row-art">${artOf(api, c)}</span><span class="ct-row-lbl">${esc(c.label)}</span>
           <svg class="ct-tally" viewBox="0 0 210 40" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><g class="ct-marks"></g>${PENCIL}</svg>
@@ -118,11 +119,11 @@ export function mount(stage, cfg, api) {
   const cardFor = o => {
     const c = byKey[o.key], art = artOf(api, o.sprite || o.emoji ? o : c);
     return h(`<div class="ct-card" style="--c:${c.col}"><span class="ct-card-no">#${oi + 1}</span><div class="ct-card-art">${art}</div>
-      <p class="ct-card-note">${esc(o.note || 'Which row is this?')}</p></div>`);
+      <p class="ct-card-note">${esc(o.note || t('Which row is this?'))}</p></div>`);
   };
   function updateDeck() {
     const left = obs.length - oi;
-    $('.ct-left').textContent = left > 0 ? `${left} to go` : 'done';
+    $('.ct-left').textContent = left > 0 ? t('{n} to go', { n: left }) : t('done');
     root.querySelectorAll('.ct-deck i').forEach((d, i) => { d.style.visibility = left - 1 > i ? 'visible' : 'hidden'; });
   }
   function dealCard() {
@@ -147,7 +148,7 @@ export function mount(stage, cfg, api) {
       api.mistake(); cardMiss++;
       shake(api, card); shake(api, row);
       row.classList.add('no'); later(() => row.classList.remove('no'), 600);
-      api.say(cardMiss > 1 ? `This one goes in “${byKey[o.key].label}”. Look at the picture.` : `Not ${byKey[key].label}. Look at the card again!`, 'bad');
+      api.say(cardMiss > 1 ? t('This one goes in “{label}”. Look at the picture.', { label: byKey[o.key].label }) : t('Not {label}. Look at the card again!', { label: byKey[key].label }), 'bad');
       return;
     }
     busy = true;
@@ -161,8 +162,8 @@ export function mount(stage, cfg, api) {
       oi++;
       api.progress(.55 * oi / obs.length);
       const n = counts[key];
-      if (n % 5 === 0) api.say(`Five ${byKey[key].label.toLowerCase()} — close the gate with a line across! That makes counting in fives easy.`, 'good');
-      else if (oi === 1) api.say('A tally mark! Keep going.', 'good');
+      if (n % 5 === 0) api.say(t('Five {label} — close the gate with a line across! That makes counting in fives easy.', { label: byKey[key].label.toLowerCase() }), 'good');
+      else if (oi === 1) api.say(t('A tally mark! Keep going.'), 'good');
       tl.add(() => { busy = false; }, api.reduced ? 0 : '-=.3');
       dealCard();
     });
@@ -175,7 +176,7 @@ export function mount(stage, cfg, api) {
 
   function finishCollect() {
     phase = 'between';
-    api.say('Tally done! Now let’s turn the tally into a chart.', 'good');
+    api.say(t('Tally done! Now let’s turn the tally into a chart.'), 'good');
     root.querySelectorAll('.ct-row').forEach(r => r.classList.add('locked'));
     if (!api.reduced) g.fromTo(root.querySelectorAll('.ct-count'), { scale: 1 }, { scale: 1.35, duration: .18, yoyo: true, repeat: 1, stagger: .08 });
     later(showChart, 1300);
@@ -192,7 +193,7 @@ export function mount(stage, cfg, api) {
     $('.ct-desk').hidden = true;
     const box = $('.ct-chartbox'); box.hidden = false;
     chartApi = kind === 'pie' ? pieChart() : kind === 'pictograph' ? pictograph() : barChart();
-    svg.setAttribute('aria-label', `${kind} chart: ${cats.map(c => `${c.label} ${counts[c.key]}`).join(', ')}`);
+    svg.setAttribute('aria-label', t(`${kind} chart: {list}`, { list: cats.map(c => `${c.label} ${counts[c.key]}`).join(', ') }));
     if (!api.reduced) g.from(box, { scale: .92, opacity: 0, duration: .5, ease: 'back.out(1.6)' });
     if (matchMedia('(max-width: 760px)').matches) box.scrollIntoView({ block: 'start', behavior: api.reduced ? 'auto' : 'smooth' });
     api.progress(collecting ? .6 : .15);
@@ -214,8 +215,8 @@ export function mount(stage, cfg, api) {
     const barPath = (x, w, hh) => { if (hh <= .5) return `M${x} ${base}H${x + w}Z`; const r = Math.min(10, hh / 2, w / 2); return `M${x} ${base}V${base - hh + r}Q${x} ${base - hh} ${x + r} ${base - hh}H${x + w - r}Q${x + w} ${base - hh} ${x + w} ${base - hh + r}V${base}Z`; };
     svg.setAttribute('viewBox', `0 0 ${W} 360`);
     svg.innerHTML = `<defs><linearGradient id="${uid}sh" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".45" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".08"/></linearGradient></defs>
-      ${grid}<text x="${x0 - 44}" y="${(base + topY) / 2}" class="ct-ylab" transform="rotate(-90 ${x0 - 44} ${(base + topY) / 2})" text-anchor="middle">${esc(unitWord ? `Number of ${unitWord}` : 'How many')}</text>
-      ${cats.map((c, i) => { const cx = x0 + slot * (i + .5); return `<g class="ct-col" data-key="${esc(c.key)}" style="--c:${c.col}" ${build ? `tabindex="0" role="slider" aria-label="${esc(c.label)} bar" aria-valuemin="0" aria-valuemax="${top}" aria-valuenow="0"` : ''}>
+      ${grid}<text x="${x0 - 44}" y="${(base + topY) / 2}" class="ct-ylab" transform="rotate(-90 ${x0 - 44} ${(base + topY) / 2})" text-anchor="middle">${esc(unitWord ? t('Number of {unit}', { unit: unitWord }) : t('How many'))}</text>
+      ${cats.map((c, i) => { const cx = x0 + slot * (i + .5); return `<g class="ct-col" data-key="${esc(c.key)}" style="--c:${c.col}" ${build ? `tabindex="0" role="slider" aria-label="${esc(t('{label} bar', { label: c.label }))}" aria-valuemin="0" aria-valuemax="${top}" aria-valuenow="0"` : ''}>
         <rect class="ct-hit" x="${cx - slot / 2}" y="${topY - 14}" width="${slot}" height="${base - topY + 70}" fill="transparent"/>
         <path class="ct-bar" d="${barPath(cx - bw / 2, bw, 0)}"/><path class="ct-sheen" d="${barPath(cx - bw / 2, bw, 0)}" fill="url(#${uid}sh)"/>
         <text class="ct-val" x="${cx}" y="${base - 10}" text-anchor="middle">${build ? '' : 0}</text>
@@ -235,16 +236,16 @@ export function mount(stage, cfg, api) {
     function settle(i) {
       const want = counts[cats[i].key];
       if (cur[i] === want && !done[i]) {
-        done[i] = true; cols[i].classList.add('done'); cols[i].setAttribute('aria-valuetext', `${cur[i]}, correct`);
+        done[i] = true; cols[i].classList.add('done'); cols[i].setAttribute('aria-valuetext', t('{n}, correct', { n: cur[i] }));
         api.sound('good');
         g.fromTo(cols[i].querySelector('.ct-ok-in'), { opacity: 0, scale: 0, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: .4, ease: 'back.out(3)' });
         sparkle(api, cols[i].querySelector('.ct-bar'));
         const left = done.filter(d => !d).length;
         api.progress(.6 + .15 * (1 - left / cats.length));
-        if (!left) { api.say('Every bar matches the tally. That is a bar chart!', 'good'); onAllDone?.(); }
-        else api.say(`Yes! ${cats[i].label}: ${want}. ${left} bar${left > 1 ? 's' : ''} to go.`, 'good');
+        if (!left) { api.say(t('Every bar matches the tally. That is a bar chart!'), 'good'); onAllDone?.(); }
+        else api.say(t(left > 1 ? 'Yes! {label}: {n}. {left} bars to go.' : 'Yes! {label}: {n}. {left} bar to go.', { label: cats[i].label, n: want, left }), 'good');
       } else if (!done[i] && cur[i] !== want) {
-        api.say(cur[i] > want ? `Too tall! Count the tally marks for ${cats[i].label} again.` : `A bit short. The tally for ${cats[i].label} has more marks.`, 'hint');
+        api.say(t(cur[i] > want ? 'Too tall! Count the tally marks for {label} again.' : 'A bit short. The tally for {label} has more marks.', { label: cats[i].label }), 'hint');
       }
     }
     function setVal(i, v, snd) {
@@ -273,13 +274,13 @@ export function mount(stage, cfg, api) {
     return {
       start(next) {
         if (build) {
-          api.say('Build the bar chart: drag each bar up until it matches the tally. (Or tap a bar and use the arrow keys.)', 'info');
+          api.say(t('Build the bar chart: drag each bar up until it matches the tally. (Or tap a bar and use the arrow keys.)'), 'info');
           svg.classList.add('building');
           onAllDone = () => { svg.classList.remove('building'); g.to(svg.querySelectorAll('.ct-grip'), { opacity: 0, duration: .3 }); next(); };
           if (!api.reduced) g.fromTo(svg.querySelectorAll('.ct-grip-in'), { y: 0 }, { y: -10, duration: .35, yoyo: true, repeat: 3, stagger: .1, ease: 'power1.inOut' });
           return;
         }
-        api.say('Watch the bars grow from the data!', 'info');
+        api.say(t('Watch the bars grow from the data!'), 'info');
         const tl = g.timeline({ onComplete: next });
         cats.forEach((c, i) => {
           const o = { v: 0 };
@@ -299,7 +300,7 @@ export function mount(stage, cfg, api) {
     svg.setAttribute('viewBox', narrow ? `0 0 400 ${350 + rowH * cats.length}` : '0 0 600 350');
     svg.innerHTML = `<circle cx="${cx}" cy="${cy + 6}" r="${R}" class="ct-pieshadow"/><circle cx="${cx}" cy="${cy}" r="${R}" class="ct-piebg"/>
       ${cats.map((c, i) => `<g class="ct-slice" data-key="${esc(c.key)}" style="--c:${c.col}"><path class="ct-sl" d=""/><text class="ct-pct" text-anchor="middle" dominant-baseline="central" opacity="0"></text></g>`).join('')}
-      <circle cx="${cx}" cy="${cy}" r="${R * .28}" class="ct-hole"/><text x="${cx}" y="${cy - 8}" class="ct-tot" text-anchor="middle" dominant-baseline="central">${tot}</text><text x="${cx}" y="${cy + 16}" class="ct-totl" text-anchor="middle">${esc(unitWord || 'in all')}</text>
+      <circle cx="${cx}" cy="${cy}" r="${R * .28}" class="ct-hole"/><text x="${cx}" y="${cy - 8}" class="ct-tot" text-anchor="middle" dominant-baseline="central">${tot}</text><text x="${cx}" y="${cy + 16}" class="ct-totl" text-anchor="middle">${esc(unitWord || t('in all'))}</text>
       ${cats.map((c, i) => `<g class="ct-leg" data-key="${esc(c.key)}" style="--c:${c.col}" transform="translate(${narrow ? 40 : 352} ${ly + i * rowH})"><g class="ct-leg-in"><rect x="0" y="${rowH / 2 - 9}" width="18" height="18" rx="5" class="ct-sw"/>${svgArt(api, c, 26, rowH / 2 - 17, 34)}
         <text x="68" y="${rowH / 2 - 7}" class="ct-legl" dominant-baseline="central">${esc(trunc(c.label, 17))}</text><text x="68" y="${rowH / 2 + 12}" class="ct-legv" dominant-baseline="central">${vs[i]} · ${fmtN(vs[i] / tot * 100)}%</text></g></g>`).join('')}`;
     const sl = [...svg.querySelectorAll('.ct-slice')];
@@ -323,7 +324,7 @@ export function mount(stage, cfg, api) {
     draw(0);
     return {
       start(next) {
-        api.say('Watch the pie fill up: each slice is one part of the whole.', 'info');
+        api.say(t('Watch the pie fill up: each slice is one part of the whole.'), 'info');
         const o = { p: 0 };
         g.timeline({ onComplete: next })
           .to(o, { p: 1, duration: 1.8, ease: 'power2.inOut', onUpdate: () => draw(o.p) })
@@ -362,11 +363,11 @@ export function mount(stage, cfg, api) {
       body += `<text x="${PW - 14}" y="${y + rowH / 2 - 3}" class="ct-pval" text-anchor="end" dominant-baseline="central">${vs[i]}</text></g>`;
     });
     const ky = cats.length * rowH + 22;
-    body += `<g class="ct-key" transform="translate(${PW / 2 - 300} 0)"><rect x="150" y="${ky - 4}" width="300" height="40" rx="20" class="ct-keybg"/>${svgArt(api, cats[0], 176, ky, 32)}<text x="216" y="${ky + 16}" dominant-baseline="central" class="ct-keyt">= ${per} ${esc(unitWord || (per > 1 ? 'items' : 'item'))}${per > 1 ? ' (½ icon = less)' : ''}</text></g>`;
+    body += `<g class="ct-key" transform="translate(${PW / 2 - 300} 0)"><rect x="150" y="${ky - 4}" width="300" height="40" rx="20" class="ct-keybg"/>${svgArt(api, cats[0], 176, ky, 32)}<text x="216" y="${ky + 16}" dominant-baseline="central" class="ct-keyt">${t(per > 1 ? '= {n} {unit} (½ icon = less)' : '= {n} {unit}', { n: per, unit: esc(unitWord || (per > 1 ? t('items') : t('item'))) })}</text></g>`;
     svg.innerHTML = body;
     return {
       start(next) {
-        api.say(per > 1 ? `In this pictograph each picture stands for ${per}. Watch them drop in!` : 'Watch the pictures drop in: one picture for each one you counted.', 'info');
+        api.say(per > 1 ? t('In this pictograph each picture stands for {n}. Watch them drop in!', { n: per }) : t('Watch the pictures drop in: one picture for each one you counted.'), 'info');
         const tl = g.timeline({ onComplete: next });
         svg.querySelectorAll('.ct-prow').forEach((r, i) => {
           tl.from(r.querySelectorAll('.ct-icon'), { y: -90, opacity: 0, duration: .55, ease: 'bounce.out', stagger: .07, onStart: () => api.sound('drop') }, i * .35)
@@ -399,7 +400,7 @@ export function mount(stage, cfg, api) {
   function showQ() {
     const q = qs[qi], quiz = $('.ct-quiz'), opts = optionsFor(q);
     chartApi.highlight([]);
-    quiz.innerHTML = `<p class="ct-qn">Question ${qi + 1} of ${qs.length}</p><h3 class="ct-ask">${esc(q.ask)}</h3>
+    quiz.innerHTML = `<p class="ct-qn">${t('Question {n} of {total}', { n: qi + 1, total: qs.length })}</p><h3 class="ct-ask">${esc(q.ask)}</h3>
       <div class="ct-opts ${opts.every(isCat) ? 'cats' : 'nums'}">${opts.map((o, i) => isCat(o)
         ? `<button type="button" class="ct-opt" data-v="${esc(o)}" style="--c:${byKey[o].col}"><span class="ct-opt-art">${artOf(api, byKey[o])}</span><span>${esc(byKey[o].label)}</span></button>`
         : `<button type="button" class="ct-opt num" data-v="${esc(o)}"><span class="ct-opt-n">${esc(typeof o === 'number' ? fmtN(o) : o)}</span></button>`).join('')}</div>
@@ -415,9 +416,9 @@ export function mount(stage, cfg, api) {
     const ok = isCat(q.answer) ? v === q.answer : Math.abs(+v - +q.answer) < 1e-6 || v === String(q.answer);
     if (!ok) {
       api.mistake(); b.classList.add('wrong'); b.disabled = true; shake(api, b);
-      let why = 'Not quite. Look at the chart again.';
-      if (byKey[v]) { why = `Not ${byKey[v].label} — it has ${counts[v]}. ${q.hint || 'Compare the chart again.'}`; chartApi.highlight([v]); }
-      else if (q.hint) why = `Not quite. ${q.hint}`;
+      let why = t('Not quite. Look at the chart again.');
+      if (byKey[v]) { why = `${t('Not {label} — it has {n}.', { label: byKey[v].label, n: counts[v] })} ${q.hint || t('Compare the chart again.')}`; chartApi.highlight([v]); }
+      else if (q.hint) why = `${t('Not quite.')} ${q.hint}`;
       api.say(why, 'bad');
       return;
     }
@@ -428,7 +429,7 @@ export function mount(stage, cfg, api) {
     chartApi.highlight(hl);
     $('.ct-quiz').querySelectorAll('.ct-opt').forEach(x => { if (x !== b) x.disabled = true; });
     const why = $('.ct-why');
-    const say = q.why || (isCat(q.answer) ? `Yes — ${byKey[q.answer].label} with ${counts[q.answer]}.` : 'Yes, that is right!');
+    const say = q.why || (isCat(q.answer) ? t('Yes — {label} with {n}.', { label: byKey[q.answer].label, n: counts[q.answer] }) : t('Yes, that is right!'));
     why.textContent = say; why.hidden = false;
     if (!api.reduced) g.from(why, { y: 10, opacity: 0, duration: .35 });
     api.say(say, 'good');
@@ -444,7 +445,7 @@ export function mount(stage, cfg, api) {
   if (collecting) {
     updateDeck();
     later(dealCard, 350);
-    api.say('Look at each observation card, then tap the matching row to add a tally mark.', 'info');
+    api.say(t('Look at each observation card, then tap the matching row to add a tally mark.'), 'info');
   } else {
     Object.keys(counts).forEach(k => { const n = counts[k]; counts[k] = 0; for (let i = 0; i < n; i++) { counts[k]++; drawMark(k, false); } });
     $('.ct-desk').hidden = true;

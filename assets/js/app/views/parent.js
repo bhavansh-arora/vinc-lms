@@ -4,17 +4,18 @@ import { db, school, section, childrenOf, projectsFor, lastActive } from '../sto
 import { projectScore, nextActivity, yearSummary, band } from '../scoring.js';
 import { esc, icon, art, ring, bar, fmtDate, timeAgo, daysUntil, FORM_COLOR, PART_COLOR } from '../ui.js';
 import { gallery, badges } from './student.js';
+import { t } from '../../i18n.js';
 
 export const nav = () => [
-  { path: '', label: 'Overview', icon: 'home' },
-  { path: 'work', label: 'Work & portfolio', short: 'Work', icon: 'folder' },
-  { path: 'scores', label: 'Scores', icon: 'chart' },
-  { path: 'home-ideas', label: 'Learning at home', short: 'At home', icon: 'star' },
+  { path: '', label: t('Overview'), icon: 'home' },
+  { path: 'work', label: t('Work & portfolio'), short: t('Work'), icon: 'folder' },
+  { path: 'scores', label: t('Scores'), icon: 'chart' },
+  { path: 'home-ideas', label: t('Learning at home'), short: t('At home'), icon: 'star' },
 ];
 
 export function render(ctx) {
   const kids = childrenOf(ctx.me);
-  if (!kids.length) return { title: 'Overview', html: `<div class="empty"><p>No child is linked to this account yet.</p><p>Ask your child for their family code (on their Profile page) and add it on your profile.</p><a class="btn btn-brand" href="#/parent/profile">${icon('link')} Link my child</a></div>` };
+  if (!kids.length) return { title: t('Overview'), html: `<div class="empty"><p>${t('No child is linked to this account yet.')}</p><p>${t('Ask your child for their family code (on their Profile page) and add it on your profile.')}</p><a class="btn btn-brand" href="#/parent/profile">${icon('link')} ${t('Link my child')}</a></div>` };
   let chosen = null;
   try { chosen = localStorage.getItem(CHILD_KEY); } catch { /* ignore */ }
   const kid = kids.find(k => k.id === chosen) || kids[0];
@@ -23,9 +24,9 @@ export function render(ctx) {
   const out = page === 'work' ? work(kid, data) : page === 'scores' ? scores(kid, data) : page === 'home-ideas' ? homeIdeas(kid, data) : overview(ctx, kid, data);
   if (kids.length < 2) return out;
   // Families with more than one child switch between them here.
-  const switcher = `<div class="kid-switch" role="group" aria-label="Choose a child">${kids.map(k => {
+  const switcher = `<div class="kid-switch" role="group" aria-label="${t('Choose a child')}">${kids.map(k => {
     const sec = section(school(k.schoolId), k.sectionId);
-    return `<button class="kid ${k.id === kid.id ? 'on' : ''}" data-kid="${k.id}" aria-pressed="${k.id === kid.id}"><span class="avatar">${esc(k.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><span><b>${esc(k.name.split(' ')[0])}</b><small>Grade ${sec?.grade} · ${esc(sec?.name || '')}</small></span></button>`;
+    return `<button class="kid ${k.id === kid.id ? 'on' : ''}" data-kid="${k.id}" aria-pressed="${k.id === kid.id}"><span class="avatar">${esc(k.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><span><b>${esc(k.name.split(' ')[0])}</b><small>${t('Grade {g} · {section}', { g: sec?.grade, section: esc(sec?.name || '') })}</small></span></button>`;
   }).join('')}</div>`;
   return { ...out, html: switcher + out.html, mount(el, c) {
     el.querySelectorAll('[data-kid]').forEach(b => b.addEventListener('click', () => { try { localStorage.setItem(CHILD_KEY, b.dataset.kid); } catch { /* ignore */ } ctx.rerender(); }));
@@ -53,37 +54,39 @@ function overview(ctx, kid, { ids, prog, year, sch }) {
   const bs = badges(kid).filter(b => b.got);
   const last = lastActive(kid.id);
   return {
-    title: `${first}'s overview`, nav: '',
+    title: t("{name}'s overview", { name: first }), nav: '',
     html: `
     <section class="hero-card">
       <div class="hc-copy">
-        <p class="eyebrow">Grade ${sec?.grade || 6} · ${esc(sec?.name || '')} · ${esc(sch.name)}</p>
-        <h2>Hello, ${esc(ctx.me.name.split(' ')[0])}</h2>
-        <p>${esc(first)} has finished <b>${year.actsDone} of ${year.actsTotal}</b> Kaushal Bodh activities this year${year.score != null ? ` and is scoring <b>${year.score}%</b> (${band(year.score)}) so far` : ''}. Last active ${timeAgo(last)}.</p>
-        <a class="btn btn-brand" href="#/parent/work">See ${esc(first)}'s work ${icon('arrow')}</a>
+        <p class="eyebrow">${t('Grade {g} · {section} · {school}', { g: sec?.grade || 6, section: esc(sec?.name || ''), school: esc(sch.name) })}</p>
+        <h2>${t('Hello, {name}', { name: esc(ctx.me.name.split(' ')[0]) })}</h2>
+        <p>${year.score != null
+          ? t('{name} has finished <b>{done} of {total}</b> Kaushal Bodh activities this year and is scoring <b>{score}%</b> ({band}) so far. Last active {ago}.', { name: esc(first), done: year.actsDone, total: year.actsTotal, score: year.score, band: band(year.score), ago: timeAgo(last) })
+          : t('{name} has finished <b>{done} of {total}</b> Kaushal Bodh activities this year. Last active {ago}.', { name: esc(first), done: year.actsDone, total: year.actsTotal, ago: timeAgo(last) })}</p>
+        <a class="btn btn-brand" href="#/parent/work">${t("See {name}'s work", { name: esc(first) })} ${icon('arrow')}</a>
       </div>
-      <div class="hc-ring">${ring(year.activityPct, { size: 150, stroke: 14, sub: 'of the year' })}</div>
+      <div class="hc-ring">${ring(year.activityPct, { size: 150, stroke: 14, sub: t('of the year') })}</div>
     </section>
-    <h2 class="h-sec">Projects</h2>
+    <h2 class="h-sec">${t('Projects')}</h2>
     <div class="ptiles">${ids.map(id => {
       const p = projectById(id), sc = projectScore(prog[id], id), nx = nextActivity(prog[id], id);
       return `<div class="ptile f-${p.form} static">
         <div class="ptile-art">${art(p.art)}</div>
         <div class="ptile-body"><span class="form-tag">${esc(FORMS[p.form].short)}</span><h3>${esc(p.title)}</h3>
           <div class="ptile-prog">${bar(sc.activityPct, FORM_COLOR[p.form])}<small>${sc.done}/${sc.total}</small></div>
-          <small class="muted">${nx ? `Next: ${esc(nx.title)}` : 'All activities done'}</small></div></div>`;
+          <small class="muted">${nx ? t('Next: {title}', { title: esc(nx.title) }) : t('All activities done')}</small></div></div>`;
     }).join('')}</div>
     <div class="grid-2">
-      <section class="card"><h2 class="h-card">${icon('calendar')} Last two weeks</h2>
-        ${recent.length ? `<ul class="timeline-list">${recent.map(a => `<li class="f-${a.project.form}"><span class="dot"></span><div><b>${esc(a.title)}</b><small class="muted">${esc(a.project.title)} · ${fmtDate(a.at)}</small>${a.note ? `<p>“${esc(a.note)}”</p>` : ''}</div></li>`).join('')}</ul>` : `<p class="muted">No activities in the last two weeks.</p>`}
+      <section class="card"><h2 class="h-card">${icon('calendar')} ${t('Last two weeks')}</h2>
+        ${recent.length ? `<ul class="timeline-list">${recent.map(a => `<li class="f-${a.project.form}"><span class="dot"></span><div><b>${esc(a.title)}</b><small class="muted">${esc(a.project.title)} · ${fmtDate(a.at)}</small>${a.note ? `<p>“${esc(a.note)}”</p>` : ''}</div></li>`).join('')}</ul>` : `<p class="muted">${t('No activities in the last two weeks.')}</p>`}
       </section>
-      <section class="card"><h2 class="h-card">${icon('bell')} Teacher feedback</h2>
-        ${fb.length ? `<ul class="feed">${fb.map(f => `<li><b>${esc(f.by)}</b> <small class="muted">· ${esc(f.p)} · ${timeAgo(f.at)}</small><p>${esc(f.text)}</p></li>`).join('')}</ul>` : '<p class="muted">No feedback yet.</p>'}
-        <h2 class="h-card">${icon('trophy')} Badges earned</h2>
-        <div class="badges">${bs.length ? bs.map(b => `<span class="bdg got" title="${esc(b.how)}"><i>${b.emoji}</i><small>${esc(b.name)}</small></span>`).join('') : '<p class="muted">None yet.</p>'}</div>
+      <section class="card"><h2 class="h-card">${icon('bell')} ${t('Teacher feedback')}</h2>
+        ${fb.length ? `<ul class="feed">${fb.map(f => `<li><b>${esc(f.by)}</b> <small class="muted">· ${esc(f.p)} · ${timeAgo(f.at)}</small><p>${esc(f.text)}</p></li>`).join('')}</ul>` : `<p class="muted">${t('No feedback yet.')}</p>`}
+        <h2 class="h-card">${icon('trophy')} ${t('Badges earned')}</h2>
+        <div class="badges">${bs.length ? bs.map(b => `<span class="bdg got" title="${esc(b.how)}"><i>${b.emoji}</i><small>${esc(b.name)}</small></span>`).join('') : `<p class="muted">${t('None yet.')}</p>`}</div>
       </section>
     </div>
-    <section class="card mela-card"><div><h2 class="h-card">${icon('star')} Kaushal Mela</h2><p>The school's skill fair, where ${esc(first)} will show their projects to families. Save the date: <b>${fmtDate(new Date(`${sch.melaDate}T09:00:00`).getTime(), { day: 'numeric', month: 'long', year: 'numeric' })}</b>.</p></div><b class="mela-days">${Math.max(0, daysUntil(sch.melaDate))}<small>days to go</small></b></section>`,
+    <section class="card mela-card"><div><h2 class="h-card">${icon('star')} ${t('Kaushal Mela')}</h2><p>${t("The school's skill fair, where {name} will show their projects to families. Save the date: <b>{date}</b>.", { name: esc(first), date: fmtDate(new Date(`${sch.melaDate}T09:00:00`).getTime(), { day: 'numeric', month: 'long', year: 'numeric' }) })}</p></div><b class="mela-days">${Math.max(0, daysUntil(sch.melaDate))}<small>${t('days to go')}</small></b></section>`,
   };
 }
 
@@ -91,31 +94,31 @@ function work(kid, { ids, prog }) {
   const items = ids.flatMap(id => (prog[id]?.portfolio || []).map(x => ({ ...x, project: projectById(id).title })));
   const acts = ids.flatMap(id => Object.entries(prog[id]?.acts || {}).map(([n, a]) => ({ ...a, title: projectById(id).activities[n - 1].title, project: projectById(id) }))).sort((a, b) => b.at - a.at);
   return {
-    title: 'Work & portfolio', nav: 'work',
-    html: `<h2 class="h-sec">Portfolio</h2>${gallery(items, null, false)}
-      <h2 class="h-sec">Activity reflections</h2>
-      <section class="card"><ul class="timeline-list">${acts.map(a => `<li class="f-${a.project.form}"><span class="dot"></span><div><b>${esc(a.title)}</b><small class="muted">${esc(a.project.title)} · ${fmtDate(a.at)}</small>${a.note ? `<p>“${esc(a.note)}”</p>` : ''}</div></li>`).join('') || '<li class="muted">Nothing yet.</li>'}</ul></section>`,
+    title: t('Work & portfolio'), nav: 'work',
+    html: `<h2 class="h-sec">${t('Portfolio')}</h2>${gallery(items, null, false)}
+      <h2 class="h-sec">${t('Activity reflections')}</h2>
+      <section class="card"><ul class="timeline-list">${acts.map(a => `<li class="f-${a.project.form}"><span class="dot"></span><div><b>${esc(a.title)}</b><small class="muted">${esc(a.project.title)} · ${fmtDate(a.at)}</small>${a.note ? `<p>“${esc(a.note)}”</p>` : ''}</div></li>`).join('') || `<li class="muted">${t('Nothing yet.')}</li>`}</ul></section>`,
   };
 }
 
 function scores(kid, { ids, prog, year }) {
   return {
-    title: 'Scores', nav: 'scores',
-    html: `<p class="lead-in">Kaushal Bodh is assessed through projects, not exams. Each project is marked in five parts, as suggested by CBSE.</p>
+    title: t('Scores'), nav: 'scores',
+    html: `<p class="lead-in">${t('Kaushal Bodh is assessed through projects, not exams. Each project is marked in five parts, as suggested by CBSE.')}</p>
     <div class="score-cards">${ids.map(id => {
       const p = projectById(id), sc = projectScore(prog[id], id);
       return `<section class="card f-${p.form}"><h3 class="h-card"><span class="form-dot"></span>${esc(p.title)}</h3>
-        <ul class="parts">${WEIGHTS.map(w => `<li><div class="part-top"><b>${esc(w.label)}</b><span class="muted">${w.weight}%</span><span class="part-val">${sc.parts[w.key] == null ? 'Not yet' : `${sc.parts[w.key]}%`}</span></div>${bar(sc.parts[w.key], PART_COLOR[w.key])}</li>`).join('')}</ul>
-        <div class="total-row"><span>Score ${sc.complete ? '' : 'so far'}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${band(sc.score)}</span></div></section>`;
+        <ul class="parts">${WEIGHTS.map(w => `<li><div class="part-top"><b>${esc(w.label)}</b><span class="muted">${w.weight}%</span><span class="part-val">${sc.parts[w.key] == null ? t('Not yet') : `${sc.parts[w.key]}%`}</span></div>${bar(sc.parts[w.key], PART_COLOR[w.key])}</li>`).join('')}</ul>
+        <div class="total-row"><span>${sc.complete ? `${t('Score')} ` : t('Score so far')}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${band(sc.score)}</span></div></section>`;
     }).join('')}</div>
-    <section class="card"><h3 class="h-card">What the bands mean</h3><ul class="bands"><li><b>Exemplary</b> 85% and above</li><li><b>Proficient</b> 70–84%</li><li><b>Developing</b> 50–69%</li><li><b>Beginning</b> below 50%</li></ul><p class="muted small">Year score so far: <b>${year.score == null ? '—' : `${year.score}%`}</b></p></section>`,
+    <section class="card"><h3 class="h-card">${t('What the bands mean')}</h3><ul class="bands"><li>${t('<b>Exemplary</b> 85% and above')}</li><li>${t('<b>Proficient</b> 70–84%')}</li><li>${t('<b>Developing</b> 50–69%')}</li><li>${t('<b>Beginning</b> below 50%')}</li></ul><p class="muted small">${t('Year score so far: <b>{score}</b>', { score: year.score == null ? '—' : `${year.score}%` })}</p></section>`,
   };
 }
 
 function homeIdeas(kid, { ids }) {
   return {
-    title: 'Learning at home', nav: 'home-ideas',
-    html: `<p class="lead-in">Kaushal Bodh asks children to notice where their skills matter at home (learning outcome 18). Here are simple things to try together.</p>
-    <div class="score-cards">${ids.map(id => { const p = projectById(id); return `<section class="card f-${p.form}"><div class="mini-art">${art(p.art)}</div><h3 class="h-card">${esc(p.title)}</h3><ul>${p.home.map(h => `<li>${esc(h)}</li>`).join('')}</ul><p class="muted small">Talk about these jobs: ${p.careers.map(esc).join(', ')}.</p></section>`; }).join('')}</div>`,
+    title: t('Learning at home'), nav: 'home-ideas',
+    html: `<p class="lead-in">${t('Kaushal Bodh asks children to notice where their skills matter at home (learning outcome 18). Here are simple things to try together.')}</p>
+    <div class="score-cards">${ids.map(id => { const p = projectById(id); return `<section class="card f-${p.form}"><div class="mini-art">${art(p.art)}</div><h3 class="h-card">${esc(p.title)}</h3><ul>${p.home.map(h => `<li>${esc(h)}</li>`).join('')}</ul><p class="muted small">${t('Talk about these jobs: {jobs}.', { jobs: p.careers.map(esc).join(', ') })}</p></section>`; }).join('')}</div>`,
   };
 }

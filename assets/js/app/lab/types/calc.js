@@ -10,6 +10,7 @@
 //   working lines may use {key} (a value) and {=expr} (a calculation) so they stay true when sliders move
 //   cfg.animal          'cow' | 'buffalo' | 'goat' | 'sheep' for the animal scene (else guessed from the givens)
 import { h, esc, evalExpr, fmt, shake, pop, sparkle } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Picture maths', needs: ['gsap'] };
 
@@ -23,7 +24,9 @@ function withUnit(v, unit) {
   if (unit === '%') return `${n}%`;
   return `${n} ${unit}`;
 }
-const LEN = { mm: .1, cm: 1, m: 100, metre: 100, metres: 100, meter: 100, meters: 100, km: 1e5, in: 2.54, inch: 2.54, inches: 2.54, ft: 30.48, feet: 30.48, foot: 30.48 };
+// Hindi configs have Hindi units, so those count as lengths too.
+const LEN = { mm: .1, cm: 1, m: 100, metre: 100, metres: 100, meter: 100, meters: 100, km: 1e5, in: 2.54, inch: 2.54, inches: 2.54, ft: 30.48, feet: 30.48, foot: 30.48,
+  'मिमी': .1, 'मि.मी.': .1, 'सेमी': 1, 'से.मी.': 1, 'सेंटीमीटर': 1, 'मी': 100, 'मी.': 100, 'मीटर': 100, 'किमी': 1e5, 'कि.मी.': 1e5, 'किलोमीटर': 1e5, 'इंच': 2.54, 'फ़ुट': 30.48, 'फुट': 30.48 };
 const isLen = it => !!it && (String(it.unit || '').toLowerCase() in LEN);
 const toCm = it => (+it.value) * (LEN[String(it.unit || '').toLowerCase()] ?? 1);
 function rng(seed) { let s = seed % 2147483647 || 7; return () => (s = s * 16807 % 2147483647) / 2147483647; }
@@ -94,7 +97,7 @@ function playDims(g, el, tl, at = 0) {
 const SCENES = {
   'garden-bed'(c) {
     const { id } = c;
-    const L = c.pick('length', /len|long/i, isLen), Wd = c.pick('width', /wid|bread|wide|across/i, isLen);
+    const L = c.pick('length', /len|long|लंबाई|लम्बाई/i, isLen), Wd = c.pick('width', /wid|bread|wide|across|चौड़ाई/i, isLen);
     const lv = L ? toCm(L) : 400, wv = Wd ? toCm(Wd) : lv * .5;
     const k = Math.min(290 / lv, 100 / (wv * .62));
     const bw = clamp(lv * k, 60, 290), bh = clamp(wv * .62 * k, 26, 100);
@@ -134,7 +137,7 @@ const SCENES = {
       <g class="c-soil">${soil}</g><rect class="c-area" x="${x0 + 3}" y="${y0 + 3}" width="${bw - 6}" height="${bh - 6}" fill="#F0B44C" opacity="0"/>
       <g class="c-plants">${plants}</g>
       <rect x="${x0 - 4}" y="${y0 - 4}" width="8" height="${bh + 26}" rx="2" fill="#B98048"/><rect x="${x0 + bw - 4}" y="${y0 - 4}" width="8" height="${bh + 26}" rx="2" fill="#B98048"/>
-      ${dimH(x0, x0 + bw, yb + 46, L ? withUnit(L.value, L.unit) : 'length', L?.key, yb + 22)}
+      ${dimH(x0, x0 + bw, yb + 46, L ? withUnit(L.value, L.unit) : t('length'), L?.key, yb + 22)}
       ${Wd ? dimV(x0 + bw + 28, y0, yb, withUnit(Wd.value, Wd.unit), Wd.key, x0 + bw + 8) : ''}`;
     return {
       svg,
@@ -155,8 +158,8 @@ const SCENES = {
 
   'seed-tray'(c) {
     const { id } = c;
-    const S = c.pick('sprouted', /sprout|germin|grew|came|alive|healthy|success|up\b/i);
-    const T = c.pick('total', /sown|total|plant|seed|number|count/i) || c.pick('total', null);
+    const S = c.pick('sprouted', /sprout|germin|grew|came|alive|healthy|success|up\b|अंकुर|उग|निकल|स्वस्थ/i);
+    const T = c.pick('total', /sown|total|plant|seed|number|count|बोए|कुल|पौध|बीज|संख्या|गिनती/i) || c.pick('total', null);
     const N = clamp(Math.round(+T?.value || 20), 1, 400), K = clamp(Math.round(+S?.value || 0), 0, N);
     const per = Math.ceil(N / 100), cells = Math.ceil(N / per), kc = Math.round(K / per);
     const cols = Math.ceil(Math.sqrt(cells * 400 / 168)), rows = Math.ceil(cells / cols);
@@ -190,7 +193,7 @@ const SCENES = {
       ${cellsSvg}<g class="c-sprouts">${sprouts}</g>
       <g class="c-count" transform="translate(${tx + tw + 12} 14)"><rect x="-150" y="0" width="150" height="36" rx="18" fill="#FFF9EF" stroke="#4C7424" stroke-width="2.5"/>
         <text x="-75" y="19" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="#2B1A10">🌱 <tspan class="c-n">${K}</tspan> / ${N}</text></g>
-      ${per > 1 ? `<text x="${tx - 8}" y="34" font-size="13" font-weight="700" fill="#6E5442">each cell = ${per} seeds</text>` : ''}`;
+      ${per > 1 ? `<text x="${tx - 8}" y="34" font-size="13" font-weight="700" fill="#6E5442">${t('each cell = {n} seeds', { n: per })}</text>` : ''}`;
     return {
       svg,
       play(el, tl, first) {
@@ -319,15 +322,15 @@ const SCENES = {
 
   water(c) {
     const { id } = c;
-    const VOL = /^(l|litres?|liters?|ml|millilitres?|kl)$/i;
-    const kindOf = s => /mug/i.test(s) ? 'mug' : /glass|cup/i.test(s) ? 'glass' : /bottle/i.test(s) ? 'bottle' : 'bucket';
+    const VOL = /^(l|litres?|liters?|ml|millilitres?|kl|ली|ली\.|लीटर|मिली|मि\.ली\.|मिलीलीटर|किलोलीटर)$/i;
+    const kindOf = s => /mug|मग/i.test(s) ? 'mug' : /glass|cup|गिलास|कप/i.test(s) ? 'glass' : /bottle|बोतल/i.test(s) ? 'bottle' : 'bucket';
     const vols = c.items.filter(i => VOL.test(i.unit || '') || i.role === 'volume');
-    const counts = c.items.filter(i => !vols.includes(i) && (i.role === 'count' || /bucket|mug|glass|bottle|cup|times|count|number|people|members|days|trips|flush/i.test(`${i.key} ${i.label} ${i.unit}`))).slice(0, 2);
+    const counts = c.items.filter(i => !vols.includes(i) && (i.role === 'count' || /bucket|mug|glass|bottle|cup|times|count|number|people|members|days|trips|flush|बाल्टी|मग|गिलास|बोतल|कप|बार|गिनती|संख्या|लोग|सदस्य|दिन|चक्कर|फ़्लश|फ्लश/i.test(`${i.key} ${i.label} ${i.unit}`))).slice(0, 2);
     let groups;
     if (counts.length) {
       groups = counts.map((ct, i) => {
         const kind = kindOf(`${ct.label} ${ct.unit} ${ct.key}`);
-        const vol = vols.find(v => kindOf(`${v.label} ${v.key}`) === kind && /mug|glass|bottle|cup|bucket/i.test(`${v.label} ${v.key}`)) || (counts.length === 1 ? vols[0] : vols[i]);
+        const vol = vols.find(v => kindOf(`${v.label} ${v.key}`) === kind && /mug|glass|bottle|cup|bucket|मग|गिलास|बोतल|कप|बाल्टी/i.test(`${v.label} ${v.key}`)) || (counts.length === 1 ? vols[0] : vols[i]);
         return { kind, n: Math.max(1, Math.round(+ct.value)), vol, count: ct, level: .82 };
       });
     } else {
@@ -342,7 +345,7 @@ const SCENES = {
     for (const gp of groups) {
       const [w, ht] = SIZE[gp.kind].map(v => v * s), gx0 = x;
       for (let i = 0; i < gp.show; i++, ci++) { out += vessel(gp.kind, x + w / 2, base, w, ht, gp.level, `${id}v${ci}`); x += w + 10 * s; }
-      const txt = gp.count ? `${gp.n > gp.show ? `${gp.show}+… ` : ''}×${fmt(gp.n)}${gp.vol ? ` · ${withUnit(gp.vol.value, gp.vol.unit)} each` : ''}` : withUnit(gp.vol.value, gp.vol.unit);
+      const txt = gp.count ? `${gp.n > gp.show ? `${gp.show}+… ` : ''}×${fmt(gp.n)}${gp.vol ? ` · ${t('{v} each', { v: withUnit(gp.vol.value, gp.vol.unit) })}` : ''}` : withUnit(gp.vol.value, gp.vol.unit);
       labels += pill((gx0 + x - 10 * s) / 2, base - ht - 30, txt, { key: gp.count?.key || gp.vol?.key, fs: 15, stroke: '#2C7BB0' });
       x += 26 * s;
     }
@@ -380,8 +383,8 @@ const SCENES = {
 
   animal(c) {
     const all = `${c.api.cfg.animal || ''} ${c.items.map(i => `${i.sprite || ''} ${i.label}`).join(' ')}`;
-    const sp = /buffalo/i.test(all) ? 'buffalo' : /goat/i.test(all) ? 'goat' : /sheep/i.test(all) ? 'sheep' : 'cow';
-    const G = c.pick('girth', /girth|chest|heart|round/i), L = c.pick('length', /len|body|long/i);
+    const sp = /buffalo|भैंस/i.test(all) ? 'buffalo' : /goat|बकरी|बकरा/i.test(all) ? 'goat' : /sheep|भेड़/i.test(all) ? 'sheep' : 'cow';
+    const G = c.pick('girth', /girth|chest|heart|round|घेरा|घेर|छाती/i), L = c.pick('length', /len|body|long|लंबाई|लम्बाई|शरीर/i);
     const P = { cow: { body: '#F7F1E7', patch: '#6B4226', dark: '#4A2E1A', s: 1 }, buffalo: { body: '#4A4646', patch: '#3A3636', dark: '#262222', s: 1 }, goat: { body: '#D6A874', patch: '#F4EADB', dark: '#6B4A2E', s: .82 }, sheep: { body: '#F2EDE4', patch: '#E4DDD2', dark: '#3A3030', s: .82 } }[sp];
     const s = P.s, ox = 262, oy = 162, T = (x, y) => [ox + x * s, oy + y * s];
     const horns = sp === 'buffalo' ? `<path d="M-122 -58C-110 -78 -84 -78 -80 -60C-92 -70 -106 -66 -114 -52Z" fill="#2B2724"/>` : sp === 'goat' ? `<path d="M-128 -56C-124 -76 -108 -84 -96 -78C-108 -74 -116 -66 -120 -52Z" fill="#8C7A64"/>` : sp === 'cow' ? `<path d="M-130 -56C-132 -66 -128 -72 -122 -72C-124 -66 -124 -60 -122 -55Z" fill="#E8DCC4"/>` : '';
@@ -447,8 +450,8 @@ const SCENES = {
 
   plank(c) {
     const { id } = c;
-    const P = c.pick('piece', /piece|part|cut|each|size|shelf|leg|strip/i, isLen);
-    const L = c.pick('length', /plank|board|length|total|long|wood/i, isLen) || c.pick('length', null, isLen);
+    const P = c.pick('piece', /piece|part|cut|each|size|shelf|leg|strip|टुकड़|हिस्स|कट|प्रत्येक|नाप|शेल्फ़|शेल्फ|पाया|पट्टी/i, isLen);
+    const L = c.pick('length', /plank|board|length|total|long|wood|तख़्त|तख्त|पटरा|बोर्ड|लंबाई|लम्बाई|कुल|लकड़ी/i, isLen) || c.pick('length', null, isLen);
     const lv = L ? toCm(L) : 200, pv = P ? toCm(P) : 0;
     const x0 = 60, pw0 = 380, nCut = pv > 0 ? Math.floor(lv / pv + 1e-9) : 0, ppx = pv > 0 ? pw0 * pv / lv : 0;
     let cuts = '', pieces = '';
@@ -487,7 +490,7 @@ const SCENES = {
         <g transform="translate(${x0 - 34} 100)"><rect x="-26" y="-26" width="52" height="52" rx="12" fill="#E3A21A"/><rect x="-26" y="-26" width="52" height="52" rx="12" fill="none" stroke="#9A6A08" stroke-width="2"/><circle r="13" fill="#2B2B2B"/><circle r="5" fill="#E3A21A"/><rect x="18" y="-8" width="10" height="16" rx="2" fill="#2B2B2B"/></g>
       </g>
       ${L ? `<g class="c-dim">${pill(x0 + pw0 / 2, 72, withUnit(L.value, L.unit), { key: L.key })}</g>` : ''}
-      ${nCut ? `<text x="${x0}" y="196" font-size="15" font-weight="800" fill="#FFF3DE">${nCut} piece${nCut > 1 ? 's' : ''} of ${esc(withUnit(P.value, P.unit))}${left ? ' + a bit left over' : ''}</text>` : ''}`;
+      ${nCut ? `<text x="${x0}" y="196" font-size="15" font-weight="800" fill="#FFF3DE">${t(left ? (nCut > 1 ? '{n} pieces of {size} + a bit left over' : '{n} piece of {size} + a bit left over') : (nCut > 1 ? '{n} pieces of {size}' : '{n} piece of {size}'), { n: nCut, size: esc(withUnit(P.value, P.unit)) })}</text>` : ''}`;
     return {
       svg,
       play(el, tl, first) {
@@ -504,9 +507,9 @@ const SCENES = {
 
   recipe(c) {
     const { id } = c;
-    const list = c.items.slice(0, 6), serves = c.pick('serves', /serve|people|person|plate|portion|guest|student|children|friends/i);
+    const list = c.items.slice(0, 6), serves = c.pick('serves', /serve|people|person|plate|portion|guest|student|children|friends|परोस|लोग|व्यक्ति|प्लेट|मेहमान|विद्यार्थी|बच्चे|दोस्त/i);
     const lines = list.filter(i => i !== serves), lh = Math.min(34, 168 / Math.max(1, lines.length));
-    const title = trunc(c.api.cfg.title || 'Recipe', 22);
+    const title = trunc(c.api.cfg.title || t('Recipe'), 22);
     const rows = lines.map((it, i) => {
       const y = 82 + i * lh;
       // Fit label and value on one ruled line: shrink a long value, then shorten the label to the space left.
@@ -538,7 +541,7 @@ const SCENES = {
         <circle cx="181" cy="18" r="8" fill="#C2502A"/><circle cx="179" cy="16" r="2.5" fill="#fff" opacity=".6"/>
       </g>
       ${serves ? `<g class="c-serves" data-key="${esc(serves.key)}" transform="translate(360 48) rotate(10)"><circle r="40" fill="#D98A1C"/><circle r="34" fill="none" stroke="#FFF1DA" stroke-width="2" stroke-dasharray="4 3"/>
-        <text y="-10" text-anchor="middle" font-size="12" font-weight="700" fill="#FFF7EA">${esc(/serve/i.test(serves.label) ? 'Serves' : trunc(serves.label, 9))}</text><text class="c-lv" y="13" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${esc(fmt(+serves.value))}</text></g>` : ''}`;
+        <text y="-10" text-anchor="middle" font-size="12" font-weight="700" fill="#FFF7EA">${esc(/serve|परोस/i.test(serves.label) || /serve/i.test(serves.key) ? t('Serves') : trunc(serves.label, 9))}</text><text class="c-lv" y="13" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${esc(fmt(+serves.value))}</text></g>` : ''}`;
     return {
       svg,
       play(el, tl, first) {
@@ -569,7 +572,7 @@ const SCENES = {
       <rect width="480" height="280" fill="#EFE4D2"/>
       <rect x="22" y="14" width="436" height="234" rx="10" fill="#9A6A3A"/><rect x="32" y="24" width="416" height="214" rx="4" fill="url(#${id}b)"/>
       <ellipse cx="140" cy="200" rx="90" ry="20" fill="#fff" opacity=".04"/><ellipse cx="360" cy="80" rx="70" ry="24" fill="#fff" opacity=".05"/>
-      <text class="c-chalk" x="60" y="48" font-size="16" fill="#F7E7B5" opacity=".9">What we know:</text>
+      <text class="c-chalk" x="60" y="48" font-size="16" fill="#F7E7B5" opacity=".9">${t('What we know:')}</text>
       <g filter="url(#${id}chalk)" fill="#F4F1E6">${rows}</g>
       <rect x="40" y="246" width="400" height="10" rx="3" fill="#7E5530"/><rect x="300" y="236" width="44" height="12" rx="3" fill="#C9B79A"/><rect x="304" y="240" width="36" height="8" fill="#4E4E4E"/>
       <rect x="120" y="241" width="22" height="6" rx="3" fill="#fff"/><rect x="150" y="241" width="16" height="6" rx="3" fill="#F6E58D"/>`;
@@ -655,10 +658,10 @@ export function mount(stage, cfg, api) {
     <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="${id}chalk"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/></filter></svg>
     <div class="calc-l">
       <figure class="calc-scene">
-        <div class="calc-svgwrap"><svg class="calc-svg" viewBox="0 0 480 280" role="img" aria-label="${esc(`Picture: ${items.map(i => `${i.label} ${withUnit(i.value, i.unit)}`).join(', ')}`)}"></svg></div>
+        <div class="calc-svgwrap"><svg class="calc-svg" viewBox="0 0 480 280" role="img" aria-label="${esc(t('Picture: {list}', { list: items.map(i => `${i.label} ${withUnit(i.value, i.unit)}`).join(', ') }))}"></svg></div>
         <figcaption class="calc-chips">${items.filter(i => !i.isInput).map(i => `<div class="calc-chip" data-key="${esc(i.key)}"><span class="calc-chip-art">${htmlArt(api, i)}</span><span class="calc-chip-txt"><small>${esc(i.label)}</small><b>${esc(withUnit(i.value, i.unit))}</b></span></div>`).join('')}</figcaption>
       </figure>
-      <div class="calc-board" hidden><div class="calc-board-frame"><p class="calc-board-h">Working</p><ol class="calc-lines" style="filter:url(#${id}chalk)"></ol><i class="calc-nib"></i></div></div>
+      <div class="calc-board" hidden><div class="calc-board-frame"><p class="calc-board-h">${t('Working')}</p><ol class="calc-lines" style="filter:url(#${id}chalk)"></ol><i class="calc-nib"></i></div></div>
     </div>
     <div class="calc-r">
       <section class="calc-q">
@@ -668,17 +671,17 @@ export function mount(stage, cfg, api) {
       ${(cfg.inputs || []).length ? `<div class="calc-inputs">${items.filter(i => i.isInput).map(i => `<label class="calc-slider" data-key="${esc(i.key)}"><span class="calc-sl-top"><span class="calc-sl-name">${esc(i.label)}</span><output>${esc(withUnit(i.value, i.unit))}</output></span>
         <input type="range" min="${i.min ?? 0}" max="${i.max ?? 100}" step="${i.step ?? 1}" value="${i.value}" aria-label="${esc(i.label)}"></label>`).join('')}</div>` : ''}
       <div class="calc-ans">
-        <div class="calc-display" tabindex="0" role="textbox" aria-label="Your answer"><span class="calc-pre"></span><span class="calc-digits"></span><i class="calc-caret"></i><span class="calc-unit"></span><span class="calc-placeholder">?</span></div>
-        <div class="calc-stamp" aria-hidden="true"><span class="calc-stamp-in"><b></b><small>Correct</small></span></div>
+        <div class="calc-display" tabindex="0" role="textbox" aria-label="${t('Your answer')}"><span class="calc-pre"></span><span class="calc-digits"></span><i class="calc-caret"></i><span class="calc-unit"></span><span class="calc-placeholder">?</span></div>
+        <div class="calc-stamp" aria-hidden="true"><span class="calc-stamp-in"><b></b><small>${t('Correct')}</small></span></div>
       </div>
-      <div class="calc-pad" role="group" aria-label="Number pad">
-        ${['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', '⌫'].map(k => `<button type="button" class="calc-key ${k === '⌫' ? 'calc-key-del' : ''}" data-k="${k}" aria-label="${k === '⌫' ? 'Delete' : k === '.' ? 'Decimal point' : k}">${k}</button>`).join('')}
-        ${needMinus ? '<button type="button" class="calc-key calc-key-neg" data-k="-" aria-label="Minus">−</button>' : ''}
+      <div class="calc-pad" role="group" aria-label="${t('Number pad')}">
+        ${['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', '⌫'].map(k => `<button type="button" class="calc-key ${k === '⌫' ? 'calc-key-del' : ''}" data-k="${k}" aria-label="${k === '⌫' ? t('Delete') : k === '.' ? t('Decimal point') : k}">${k}</button>`).join('')}
+        ${needMinus ? `<button type="button" class="calc-key calc-key-neg" data-k="-" aria-label="${t('Minus')}">−</button>` : ''}
       </div>
       <div class="calc-acts">
-        <button type="button" class="calc-hint">💡 Hint</button>
-        <button type="button" class="calc-check">Check <span aria-hidden="true">✓</span></button>
-        <button type="button" class="calc-next" hidden>Next <span aria-hidden="true">→</span></button>
+        <button type="button" class="calc-hint">💡 ${t('Hint')}</button>
+        <button type="button" class="calc-check">${t('Check')} <span aria-hidden="true">✓</span></button>
+        <button type="button" class="calc-next" hidden>${t('Next')} <span aria-hidden="true">→</span></button>
       </div>
     </div>
   </div>`);
@@ -726,7 +729,7 @@ export function mount(stage, cfg, api) {
   function paintTyped(added) {
     digits.innerHTML = [...typed].map(ch => `<span>${ch === '-' ? '−' : esc(ch)}</span>`).join('');
     display.classList.toggle('empty', !typed);
-    display.setAttribute('aria-label', `Your answer: ${typed || 'empty'}`);
+    display.setAttribute('aria-label', typed ? t('Your answer: {n}', { n: typed }) : t('Your answer: empty'));
     if (added && !api.reduced) g.from(digits.lastElementChild, { y: -16, scale: 1.6, opacity: 0, duration: .28, ease: 'back.out(3)' });
   }
   function press(k) {
@@ -766,7 +769,7 @@ export function mount(stage, cfg, api) {
     root.querySelectorAll('.calc-step').forEach((s, i) => { s.classList.toggle('on', i === qi); s.classList.toggle('done', i < qi); });
     root.querySelectorAll('.calc-chip.hl').forEach(c => c.classList.remove('hl'));
     const ask = $('.calc-ask');
-    ask.textContent = q.ask || 'Work it out!';
+    ask.textContent = q.ask || t('Work it out!');
     hideBoard();
     if (!first && !api.reduced) g.from(ask, { x: 40, opacity: 0, duration: .45, ease: 'power3.out' });
     if (!first) {
@@ -780,24 +783,24 @@ export function mount(stage, cfg, api) {
   function check() {
     if (busy || btnCheck.hidden) return;
     const q = qs[qi];
-    if (!typed || typed === '-' || typed === '.') { api.say('Type your answer on the number pad first.', 'hint'); shake(api, display); return; }
+    if (!typed || typed === '-' || typed === '.') { api.say(t('Type your answer on the number pad first.'), 'hint'); shake(api, display); return; }
     const x = parseFloat(typed);
-    let t;
-    try { t = target(q); } catch (e) { console.error(e); api.say('This question has a problem in its answer formula.', 'bad'); return; }
-    const tol = tolOf(q, t);
-    if (Math.abs(x - t) <= tol + 1e-9) return right(q, t);
+    let want;
+    try { want = target(q); } catch (e) { console.error(e); api.say(t('This question has a problem in its answer formula.'), 'bad'); return; }
+    const tol = tolOf(q, want);
+    if (Math.abs(x - want) <= tol + 1e-9) return right(q, want);
     misses++; api.mistake();
     shake(api, display);
     display.classList.add('wrong'); later(() => display.classList.remove('wrong'), 700);
     let why = '';
-    if (t !== 0 && Math.abs(x - t * 100) < 1e-6) why = 'You may have multiplied by 100 one time too many. ';
-    else if (t !== 0 && Math.abs(x * 100 - t) < 1e-6) why = 'Nearly! Remember to multiply by 100 to turn it into a percentage. ';
-    else if (Math.abs(x - t) <= Math.max(1, Math.abs(t) * .03)) why = 'So close! Check your rounding. ';
+    if (want !== 0 && Math.abs(x - want * 100) < 1e-6) why = t('You may have multiplied by 100 one time too many.');
+    else if (want !== 0 && Math.abs(x * 100 - want) < 1e-6) why = t('Nearly! Remember to multiply by 100 to turn it into a percentage.');
+    else if (Math.abs(x - want) <= Math.max(1, Math.abs(want) * .03)) why = t('So close! Check your rounding.');
     if (misses === 1) {
-      api.say(`${why || 'Not quite. '}${q.hint || 'Look at the numbers in the picture again.'}`, 'bad');
+      api.say(`${why || t('Not quite.')} ${q.hint || t('Look at the numbers in the picture again.')}`, 'bad');
       highlightChips(q);
     } else {
-      api.say(misses === 2 ? `${why}Let's work it out together on the board. Then type the answer.` : 'Follow the board, line by line, and type the last number.', 'hint');
+      api.say(misses === 2 ? `${why ? `${why} ` : ''}${t("Let's work it out together on the board. Then type the answer.")}` : t('Follow the board, line by line, and type the last number.'), 'hint');
       highlightChips(q);
       if (!workShown) showWorking(true);
     }
@@ -845,12 +848,12 @@ export function mount(stage, cfg, api) {
     g.to(p, { y: 30 + Math.random() * 20, x: (Math.random() - .5) * 16, opacity: 0, duration: .8, ease: 'power1.in', onComplete: () => p.remove() });
   }
 
-  function right(q, t) {
+  function right(q, want) {
     busy = true;
-    if (q.key) answered[q.key] = t;
+    if (q.key) answered[q.key] = want;
     root.classList.add('solved');
     btnCheck.hidden = true; btnHint.hidden = true;
-    const shown = withUnit(+t.toFixed(2), unitOf(q));
+    const shown = withUnit(+want.toFixed(2), unitOf(q));
     stamp.querySelector('b').textContent = shown;
     stamp.classList.add('on');
     api.sound('drop');
@@ -860,7 +863,7 @@ export function mount(stage, cfg, api) {
         .fromTo(display, { y: 0 }, { y: 5, duration: .06, yoyo: true, repeat: 1, ease: 'power1.out' })
         .add(() => { inkSplat(); sparkle(api, stamp); }, '<');
     } else g.set(stamp.firstElementChild, { rotation: -9, opacity: 1 });
-    api.say(`${['Brilliant!', 'Spot on!', 'Yes! Well worked out.', 'Correct!'][qi % 4]} ${shown}.`, 'good');
+    api.say(t(['Brilliant! {shown}.', 'Spot on! {shown}.', 'Yes! Well worked out. {shown}.', 'Correct! {shown}.'][qi % 4], { shown }), 'good');
     const step = root.querySelector(`.calc-step[data-i="${qi}"]`); step?.classList.add('done'); if (step) pop(api, step, 1.4);
     api.progress((qi + 1) / qs.length);
     scene.cheer?.(svgEl);
@@ -868,7 +871,7 @@ export function mount(stage, cfg, api) {
       const tl = showWorking(true);
       tl.add(() => {
         busy = false;
-        if (qi < qs.length - 1) { btnNext.hidden = false; btnNext.innerHTML = 'Next question <span aria-hidden="true">→</span>'; btnNext.focus({ preventScroll: true }); if (!api.reduced) g.from(btnNext, { scale: .6, opacity: 0, duration: .45, ease: 'back.out(2.5)' }); }
+        if (qi < qs.length - 1) { btnNext.hidden = false; btnNext.innerHTML = `${t('Next question')} <span aria-hidden="true">→</span>`; btnNext.focus({ preventScroll: true }); if (!api.reduced) g.from(btnNext, { scale: .6, opacity: 0, duration: .45, ease: 'back.out(2.5)' }); }
         else finish();
       });
     }, 650);
@@ -883,7 +886,7 @@ export function mount(stage, cfg, api) {
     }
   }
   function finish() {
-    const ribbon = h(`<div class="calc-done"><span>🎉 All ${qs.length} solved!</span></div>`);
+    const ribbon = h(`<div class="calc-done"><span>🎉 ${t('All {n} solved!', { n: qs.length })}</span></div>`);
     $('.calc-r').append(ribbon);
     if (!api.reduced) g.from(ribbon, { scale: .3, rotation: -12, opacity: 0, duration: .6, ease: 'back.out(2.2)' });
     later(() => api.complete(), 1500);
@@ -893,7 +896,7 @@ export function mount(stage, cfg, api) {
   btnHint.addEventListener('click', () => {
     const q = qs[qi]; api.sound('pop');
     highlightChips(q);
-    api.say(q.hint || 'Look for the numbers you need in the picture.', 'hint');
+    api.say(q.hint || t('Look for the numbers you need in the picture.'), 'hint');
   });
   btnNext.addEventListener('click', () => {
     if (busy) return;
@@ -903,7 +906,7 @@ export function mount(stage, cfg, api) {
   });
   display.addEventListener('click', () => display.focus({ preventScroll: true }));
 
-  if (!qs.length) { $('.calc-ask').textContent = 'No questions in this lab.'; return { destroy() { sctx?.revert(); } }; }
+  if (!qs.length) { $('.calc-ask').textContent = t('No questions in this lab.'); return { destroy() { sctx?.revert(); } }; }
   showQuestion(true);
   api.say(`${cfg.mission ? `${cfg.mission} ` : ''}`.trim() || qs[0].ask);
 

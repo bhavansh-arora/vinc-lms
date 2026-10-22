@@ -1,5 +1,5 @@
 // VINC Lab landing page behaviour.
-import { langButton } from './i18n.js';
+import { langButton, t, isHi } from './i18n.js';
 import { COURSES, GRADES, FORMS, WEIGHTS, LEARNING_OUTCOMES, projectById, projectsOfGrade } from './data/courses.js';
 import { art, icon } from './art.js';
 
@@ -11,8 +11,29 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const TECH = { 6: 'Scratch games and simple machines', 7: 'An AI Assistant with Teachable Machine', 8: 'Home Automation with Arduino' };
+const TECH = { 6: t('Scratch games and simple machines'), 7: t('An AI Assistant with Teachable Machine'), 8: t('Home Automation with Arduino') };
 let courseGrade = 6;
+
+/* ---------- Hindi for the static page ----------
+   In index.html, [data-i18n] elements get the Hindi for their HTML (the key is the English HTML, trimmed and
+   with whitespace collapsed), [data-i18n-text] elements only have their own text nodes translated (buttons
+   with icons), and [data-i18n-attr="aria-label,value"] lists attributes to translate. English: untouched. */
+if (isHi()) {
+  const norm = s => s.replace(/\s+/g, ' ').trim();
+  document.title = t(norm(document.title));
+  $$('[data-i18n]').forEach(el => { el.innerHTML = t(norm(el.innerHTML)); });
+  $$('[data-i18n-text]').forEach(el => el.childNodes.forEach(n => {
+    if (n.nodeType === 3 && n.data.trim()) n.data = n.data.replace(n.data.trim(), () => t(norm(n.data)));
+  }));
+  $$('[data-i18n-attr]').forEach(el => el.dataset.i18nAttr.split(',').forEach(a => {
+    if (el.hasAttribute(a)) el.setAttribute(a, t(norm(el.getAttribute(a))));
+  }));
+  // The headline is animated word by word: one span per Hindi word, the last one underlined.
+  const h1 = $('#hero-title'), sc = $('.scribble', h1)?.outerHTML || '';
+  const words = t('Kaushal Bodh, brought to life').split(' ');
+  h1.innerHTML = words.map((w, i) => (i === words.length - 1 ? `<em class="w">${w}${sc}</em>` : `<span class="w">${w}</span>`)).join(' ');
+  document.documentElement.classList.remove('i18n-wait');
+}
 
 /* ---------- Motion helpers ----------
    One set of curves and timings, read from the tokens in tokens.css. Everything here checks the
@@ -244,8 +265,8 @@ onScroll();
     planets.forEach(q => q.setAttribute('aria-pressed', q === p));
     const f = FORMS[p.dataset.form];
     swap(cap, () => {
-      cap.innerHTML = `<strong>${esc(f.name)}</strong><span class="muted">Two projects in every grade. Schools pick one each year.</span>
-        ${GRADES.map(g => `<span class="pills"><span class="chip g-chip g${g}">Grade ${g}</span>${projectsOfGrade(g).filter(x => x.form === f.key).map(x => `<a class="chip" href="#course" data-open="${x.id}">${esc(x.title)}</a>`).join('')}</span>`).join('')}`;
+      cap.innerHTML = `<strong>${esc(f.name)}</strong><span class="muted">${t('Two projects in every grade. Schools pick one each year.')}</span>
+        ${GRADES.map(g => `<span class="pills"><span class="chip g-chip g${g}">${t('Grade {g}', { g })}</span>${projectsOfGrade(g).filter(x => x.form === f.key).map(x => `<a class="chip" href="#course" data-open="${x.id}">${esc(x.title)}</a>`).join('')}</span>`).join('')}`;
       $$('[data-open]', cap).forEach(a => a.addEventListener('click', e => { e.preventDefault(); openDrawer(a.dataset.open); }));
     });
   }));
@@ -281,10 +302,10 @@ let formFilter = 'all', gridToken = 0;
 const cardHTML = (p, i) => `
   <button class="pcard f-${p.form}" data-id="${p.id}" data-form="${p.form}" aria-haspopup="dialog" style="--fd:${i * 35}ms">
     <div class="art-box">${art(p.art)}</div>
-    <div class="meta"><span class="form-tag">${esc(FORMS[p.form].short)}</span><span class="chip">Grade ${p.grade} · ${p.periods} periods</span></div>
+    <div class="meta"><span class="form-tag">${esc(FORMS[p.form].short)}</span><span class="chip">${t('Grade {g} · {n} periods', { g: p.grade, n: p.periods })}</span></div>
     <h3>${esc(p.title)}</h3>
     <p>${esc(p.tagline)}</p>
-    <span class="more">See the ${p.activities.length} activities ${icon('arrow')}</span>
+    <span class="more">${t('See the {n} activities', { n: p.activities.length })} ${icon('arrow')}</span>
   </button>`;
 function applyFilter() {
   $$('.pcard', grid).forEach(c => c.classList.toggle('dim', formFilter !== 'all' && c.dataset.form !== formFilter));
@@ -325,7 +346,7 @@ $$('.filter').forEach(b => b.addEventListener('click', () => {
 }));
 // Grade tabs for the course explorer
 const gtabs = $('#grade-tabs');
-gtabs.innerHTML = GRADES.map(g => `<button role="tab" class="g${g}" data-g="${g}" aria-selected="${g === courseGrade}" tabindex="${g === courseGrade ? 0 : -1}"><span class="gn">${g}</span>Grade ${g}</button>`).join('');
+gtabs.innerHTML = GRADES.map(g => `<button role="tab" class="g${g}" data-g="${g}" aria-selected="${g === courseGrade}" tabindex="${g === courseGrade ? 0 : -1}"><span class="gn">${g}</span>${t('Grade {g}', { g })}</button>`).join('');
 const placeGradeInd = segmented(gtabs, b => b.getAttribute('aria-selected') === 'true');
 function selectGrade(g) {
   if (g === courseGrade) return;
@@ -347,24 +368,24 @@ function openDrawer(id) {
   drawer.classList.remove('closing');
   inner.className = `drawer-inner f-${p.form}`;
   inner.innerHTML = `
-    <button class="x" aria-label="Close">${icon('close')}</button>
-    <p class="label" style="color:var(--f)">Grade ${p.grade} · ${esc(f.name)} · Project ${p.num}</p>
+    <button class="x" aria-label="${t('Close')}">${icon('close')}</button>
+    <p class="label" style="color:var(--f)">${t('Grade {g} · {form} · Project {n}', { g: p.grade, form: esc(f.name), n: p.num })}</p>
     <h2 id="drawer-title">${esc(p.title)}</h2>
     <p class="lead-sm">${esc(p.summary)}</p>
-    <div class="facts"><span class="chip">${icon('book')} Kaushal Bodh Grade ${p.grade}, pp. ${p.pages[0]}–${p.pages[1]}</span><span class="chip">${icon('calendar')} ${p.periods} periods</span><span class="chip">${icon('school')} ${esc(p.subjects)}</span></div>
+    <div class="facts"><span class="chip">${icon('book')} ${t('Kaushal Bodh Grade {g}, pp. {a}–{b}', { g: p.grade, a: p.pages[0], b: p.pages[1] })}</span><span class="chip">${icon('calendar')} ${t('{n} periods', { n: p.periods })}</span><span class="chip">${icon('school')} ${esc(p.subjects)}</span></div>
     <div class="art-box">${art(p.art)}</div>
-    <h4>Activities</h4>
-    <ol class="acts">${p.activities.map((a, i) => `<li style="--i:${Math.min(i, 10)}"><span class="n">${a.n}</span><div><b>${esc(a.title)}</b><small>${esc(a.task)}</small></div><span class="pg">p. ${a.page}</span></li>`).join('')}</ol>
+    <h4>${t('Activities')}</h4>
+    <ol class="acts">${p.activities.map((a, i) => `<li style="--i:${Math.min(i, 10)}"><span class="n">${a.n}</span><div><b>${esc(a.title)}</b><small>${esc(a.task)}</small></div><span class="pg">${t('p. {n}', { n: a.page })}</span></li>`).join('')}</ol>
     <div class="cols2">
-      <div><h4>Students will</h4><ul>${p.goals.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
-      <div><h4>Safety first</h4><ul>${p.safety.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
-      <div><h4>You'll need</h4><ul>${p.materials.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
-      <div><h4>Careers to explore</h4><ul>${p.careers.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
+      <div><h4>${t('Students will')}</h4><ul>${p.goals.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
+      <div><h4>${t('Safety first')}</h4><ul>${p.safety.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
+      <div><h4>${t("You'll need")}</h4><ul>${p.materials.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
+      <div><h4>${t('Careers to explore')}</h4><ul>${p.careers.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
     </div>
-    <h4>How it's assessed</h4>
+    <h4>${t("How it's assessed")}</h4>
     <div class="weights-mini">${WEIGHTS.map((w, i) => `<i style="width:${w.weight}%;background:${segColor(i)};--i:${i}"></i>`).join('')}</div>
-    <p class="small muted">${p.quiz.length}-question quiz · ${p.viva.length} viva prompts · activity book · portfolio · observation rubric</p>
-    <p><a class="btn btn-primary" href="app.html#/signup/student">Join as a Grade ${p.grade} student</a></p>`;
+    <p class="small muted">${t('{q}-question quiz · {v} viva prompts · activity book · portfolio · observation rubric', { q: p.quiz.length, v: p.viva.length })}</p>
+    <p><a class="btn btn-primary" href="app.html#/signup/student">${t('Join as a Grade {g} student', { g: p.grade })}</a></p>`;
   $('.x', inner).addEventListener('click', closeDrawer);
   if (!drawer.open) drawer.showModal();
   inner.scrollTop = 0;
@@ -392,7 +413,7 @@ let planGrade = 6;
 let picks = { ...DEFAULT_PICKS[6] };
 const pickWrap = $('#planner-picks');
 const pgTabs = $('#plan-grades');
-pgTabs.innerHTML = GRADES.map(g => `<button class="g${g}" data-pg="${g}" aria-pressed="${g === planGrade}"><span class="gn">${g}</span>Grade ${g}</button>`).join('');
+pgTabs.innerHTML = GRADES.map(g => `<button class="g${g}" data-pg="${g}" aria-pressed="${g === planGrade}"><span class="gn">${g}</span>${t('Grade {g}', { g })}</button>`).join('');
 const placePlanInd = segmented(pgTabs, b => b.getAttribute('aria-pressed') === 'true');
 $$('[data-pg]', pgTabs).forEach(b => b.addEventListener('click', () => {
   if (+b.dataset.pg === planGrade) return;
@@ -406,7 +427,7 @@ function renderPicks() {
   pickWrap.innerHTML = Object.values(FORMS).map(f => `
   <div class="pick-group f-${f.key}" role="group" aria-labelledby="pg-${f.key}">
     <h3 id="pg-${f.key}">${esc(f.name)}</h3>
-    <div class="opts">${projectsOfGrade(planGrade).filter(p => p.form === f.key).map(p => `<button class="pick" data-form="${f.key}" data-id="${p.id}" aria-pressed="${picks[f.key] === p.id}">${esc(p.title)}<small>${p.periods} periods</small></button>`).join('')}</div>
+    <div class="opts">${projectsOfGrade(planGrade).filter(p => p.form === f.key).map(p => `<button class="pick" data-form="${f.key}" data-id="${p.id}" aria-pressed="${picks[f.key] === p.id}">${esc(p.title)}<small>${t('{n} periods', { n: p.periods })}</small></button>`).join('')}</div>
   </div>`).join('');
   $$('.pick', pickWrap).forEach(b => b.addEventListener('click', () => {
     const f = b.dataset.form;
@@ -432,9 +453,9 @@ function setSeg(k, grow, title = '', sub = '') {
   if (wasOff || !b.textContent) apply(); else swap(seg, apply);
 }
 $('#planner-sum').innerHTML = `
-  <div><b id="ps-used">0</b><span>project periods (about <span id="ps-total">160</span> in a year)</span></div>
-  <div><b id="ps-hours">0 h</b><span>of hands-on work, of the 110 h CBSE asks for</span></div>
-  <div><b id="ps-forms">0/3</b><span>forms of work covered</span></div>
+  <div><b id="ps-used">0</b><span>${t('project periods (about {total} in a year)', { total: '<span id="ps-total">160</span>' })}</span></div>
+  <div><b id="ps-hours">${t('{n} h', { n: 0 })}</b><span>${t('of hands-on work, of the 110 h CBSE asks for')}</span></div>
+  <div><b id="ps-forms">0/3</b><span>${t('forms of work covered')}</span></div>
   <p class="note" id="ps-note"></p>`;
 function renderPlan() {
   const total = COURSES[planGrade].periodsPerYear; // 160 periods ≈ 40 weeks × 4
@@ -443,19 +464,19 @@ function renderPlan() {
   const mela = 4;
   const free = Math.max(0, total - used - mela);
   const over = used + mela - total;
-  FORM_KEYS.forEach(f => { const p = projectById(picks[f]); setSeg(f, p ? p.periods : 0, p?.title, p ? `${Math.round(p.periods / 4)} wks · ${p.periods} periods` : ''); });
-  if (chosen.length < 3) setSeg('empty', Math.max(20, free), `Pick ${3 - chosen.length} more`);
-  else setSeg('empty', free, 'Buffer', `${free} periods`);
-  setSeg('mela', mela, 'Mela');
-  tl.setAttribute('aria-label', `Year timeline: ${chosen.map(p => `${p.title}, ${p.periods} periods`).join('; ') || 'no projects picked'}; Kaushal Mela, ${mela} periods`);
+  FORM_KEYS.forEach(f => { const p = projectById(picks[f]); setSeg(f, p ? p.periods : 0, p?.title, p ? t('{w} wks · {n} periods', { w: Math.round(p.periods / 4), n: p.periods }) : ''); });
+  if (chosen.length < 3) setSeg('empty', Math.max(20, free), t('Pick {n} more', { n: 3 - chosen.length }));
+  else setSeg('empty', free, t('Buffer'), t('{n} periods', { n: free }));
+  setSeg('mela', mela, t('Mela'));
+  tl.setAttribute('aria-label', t('Year timeline: {list}; Kaushal Mela, {n} periods', { list: chosen.map(p => t('{title}, {n} periods', { title: p.title, n: p.periods })).join('; ') || t('no projects picked'), n: mela }));
   const hours = Math.round(used * 40 / 60);
-  let note = 'CBSE asks for one project from each form of work every year.';
+  let note = t('CBSE asks for one project from each form of work every year.');
   if (chosen.length === 3) note = over > 0
-    ? `A complete Kaushal Bodh year, ${over} period${over > 1 ? 's' : ''} over the usual 160. Use a Saturday period or shorten one activity.`
-    : `A complete Kaushal Bodh year with ${free} periods spare for revision, the viva week and Mela preparation.`;
+    ? t(over > 1 ? 'A complete Kaushal Bodh year, {n} periods over the usual 160. Use a Saturday period or shorten one activity.' : 'A complete Kaushal Bodh year, {n} period over the usual 160. Use a Saturday period or shorten one activity.', { n: over })
+    : t('A complete Kaushal Bodh year with {n} periods spare for revision, the viva week and Mela preparation.', { n: free });
   $('#ps-total').textContent = total;
   tweenNumber($('#ps-used'), used);
-  tweenNumber($('#ps-hours'), hours, { fmt: v => `${Math.round(v)} h` });
+  tweenNumber($('#ps-hours'), hours, { fmt: v => t('{n} h', { n: Math.round(v) }) });
   tweenNumber($('#ps-forms'), chosen.length, { fmt: v => `${Math.round(v)}/3`, dur: 400 });
   const noteEl = $('#ps-note');
   if (noteEl.textContent !== note) { if (noteEl.textContent) swap(noteEl, () => { noteEl.textContent = note; }); else noteEl.textContent = note; }
@@ -480,17 +501,17 @@ $('#sliders').innerHTML = WEIGHTS.map((w, i) => `
 $('#legend').innerHTML = WEIGHTS.map((w, i) => `<li style="--c:var(${SEG_VARS[i]})"><i></i>${esc(w.label)} ${w.weight}%</li>`).join('');
 const donutSvg = $('#donut');
 const R = 90, CIRC = 2 * Math.PI * R, GAP = 4;
-donutSvg.innerHTML = `<title id="donut-title">Assessment weights</title><circle class="track" cx="110" cy="110" r="${R}" stroke-width="26"/>`
+donutSvg.innerHTML = `<title id="donut-title">${t('Assessment weights')}</title><circle class="track" cx="110" cy="110" r="${R}" stroke-width="26"/>`
   + WEIGHTS.map((w, i) => `<circle class="seg" cx="110" cy="110" r="${R}" style="stroke:${segColor(i)}" stroke-opacity=".25" stroke-width="26" stroke-dasharray="0 ${CIRC}" transform="rotate(-90 110 110)"><title>${esc(w.label)} ${w.weight}%</title></circle>
     <circle class="seg fill" cx="110" cy="110" r="${R}" style="stroke:${segColor(i)}" stroke-width="26" stroke-dasharray="0 ${CIRC}" transform="rotate(-90 110 110)"/>`).join('');
 const bgSegs = $$('.seg:not(.fill)', donutSvg), fillSegs = $$('.seg.fill', donutSvg);
 const scoreEl = $('#score'), bandEl = $('#band');
 const dn = { cur: WEIGHTS.map(() => 0), tgt: WEIGHTS.map(w => sample[w.key] / 100), sweep: 0, sweepTgt: 0, raf: 0, last: 0 };
 function band(score) {
-  if (score >= 85) return 'Exemplary';
-  if (score >= 70) return 'Proficient';
-  if (score >= 50) return 'Developing';
-  return 'Beginning';
+  if (score >= 85) return t('Exemplary');
+  if (score >= 70) return t('Proficient');
+  if (score >= 50) return t('Developing');
+  return t('Beginning');
 }
 function paintDonut() {
   let off = 0, score = 0;
@@ -582,18 +603,18 @@ $('.m-heat').innerHTML = Array.from({ length: 40 }, (_, i) => `<i style="--v:${2
 /* ---------- White-label preview ---------- */
 const BRAND_COLORS = ['#1F6F66', '#2D5BA8', '#7A3FA0', '#B23A48', '#C26A12', '#3E7B2A', '#0F4C5C'];
 let brandColor = BRAND_COLORS[0];
-$('#swatches').innerHTML = BRAND_COLORS.map((c, i) => `<button type="button" class="swatch" style="--c:${c}" data-c="${c}" aria-pressed="${i === 0}" aria-label="Colour ${i + 1}"></button>`).join('');
+$('#swatches').innerHTML = BRAND_COLORS.map((c, i) => `<button type="button" class="swatch" style="--c:${c}" data-c="${c}" aria-pressed="${i === 0}" aria-label="${t('Colour {n}', { n: i + 1 })}"></button>`).join('');
 const initials = s => s.split(/\s+/).filter(w => w && !/^(of|the|and|&)$/i.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'S';
 // "Greenwood Public School" → "Greenwood Skills Studio"; "St. Joseph's High School" → "St. Joseph's Skills Studio".
 function studioName(school) {
   const words = school.split(/\s+/).filter(Boolean);
   if (!words.length) return '';
   const short = /^(st\.?|sri|shri|the|dr\.?|sir|new|dav|dps)$/i.test(words[0]) || words[0].length <= 3;
-  return `${words.slice(0, short && words[1] ? 2 : 1).join(' ')} Skills Studio`;
+  return t('{name} Skills Studio', { name: words.slice(0, short && words[1] ? 2 : 1).join(' ') });
 }
 function renderBrand() {
-  const name = $('#b-name').value.trim() || 'Your School';
-  const studio = $('#b-studio').value.trim() || `${name} Skill Studio`;
+  const name = $('#b-name').value.trim() || t('Your School');
+  const studio = $('#b-studio').value.trim() || t('{name} Skill Studio', { name });
   const badge = $('#bp-badge'), ini = initials(name);
   $('#bp-school').textContent = name;
   $('#bp-studio').textContent = studio;
@@ -623,17 +644,17 @@ renderBrand();
 
 /* ---------- Learning outcomes ---------- */
 const GOALS = [
-  { title: 'Skills and knowledge of work', note: 'Tools, steps, care of equipment, safety', los: [1, 2, 3, 4, 5, 6] },
-  { title: 'Vocations in the world of work', note: 'Why the work matters, quality and quantity', los: [7, 8, 9, 10, 11] },
-  { title: 'Values while working', note: 'Observed by teachers in every activity', los: [12, 13, 14, 15, 16, 17] },
-  { title: 'Skills for the home', note: 'Taking the learning home', los: [18] },
+  { title: t('Skills and knowledge of work'), note: t('Tools, steps, care of equipment, safety'), los: [1, 2, 3, 4, 5, 6] },
+  { title: t('Vocations in the world of work'), note: t('Why the work matters, quality and quantity'), los: [7, 8, 9, 10, 11] },
+  { title: t('Values while working'), note: t('Observed by teachers in every activity'), los: [12, 13, 14, 15, 16, 17] },
+  { title: t('Skills for the home'), note: t('Taking the learning home'), los: [18] },
 ];
 const WHERE = lo => {
-  if (lo >= 12 && lo <= 17) return 'Teacher observation rubric (20%)';
-  if ([1, 2, 3, 6].includes(lo)) return 'Viva rubric (30%) and activity book (30%)';
-  if ([7, 8, 9].includes(lo)) return 'Viva rubric (30%) and written test (10%)';
-  if (lo === 18) return '"Try it at home" tasks in the portfolio (10%)';
-  return 'Activity book (30%) and portfolio (10%)';
+  if (lo >= 12 && lo <= 17) return t('Teacher observation rubric (20%)');
+  if ([1, 2, 3, 6].includes(lo)) return t('Viva rubric (30%) and activity book (30%)');
+  if ([7, 8, 9].includes(lo)) return t('Viva rubric (30%) and written test (10%)');
+  if (lo === 18) return t('"Try it at home" tasks in the portfolio (10%)');
+  return t('Activity book (30%) and portfolio (10%)');
 };
 $('#lo-grid').innerHTML = GOALS.map((g, i) => `
   <div class="lo-col"><h3>CG ${i + 1} · ${esc(g.title)}</h3><p>${esc(g.note)}</p>
@@ -642,16 +663,16 @@ const loDetail = $('#lo-detail');
 $$('.lo').forEach(b => b.addEventListener('click', () => {
   $$('.lo').forEach(x => x.setAttribute('aria-pressed', x === b));
   const l = +b.dataset.lo;
-  swap(loDetail, () => { loDetail.innerHTML = `<b>LO ${l}.</b> ${esc(LEARNING_OUTCOMES[l])}.<br><span class="muted">Measured in: ${esc(WHERE(l))}</span>`; });
+  swap(loDetail, () => { loDetail.innerHTML = t('<b>LO {l}.</b> {text}.<br><span class="muted">Measured in: {where}</span>', { l, text: esc(String(LEARNING_OUTCOMES[l]).replace(/[.।]\s*$/, '')), where: esc(WHERE(l)) }); });
 }));
 
 /* ---------- Roadmap ---------- */
 $('#road').innerHTML = GRADES.map(g => `
   <div class="road-card g${g}"><span class="big" aria-hidden="true">${g}</span>
-    <span class="chip live">Live</span>
-    <h3>Grade ${g}</h3><ul>${projectsOfGrade(g).map(p => `<li>${esc(p.title)}</li>`).join('')}</ul>
+    <span class="chip live">${t('Live')}</span>
+    <h3>${t('Grade {g}', { g })}</h3><ul>${projectsOfGrade(g).map(p => `<li>${esc(p.title)}</li>`).join('')}</ul>
     <p class="tech">${icon('flask')} ${esc(TECH[g])}</p>
-    <a class="btn btn-ghost btn-sm demo" href="app.html#/signup/student">Join as a Grade ${g} student</a></div>`).join('');
+    <a class="btn btn-ghost btn-sm demo" href="app.html#/signup/student">${t('Join as a Grade {g} student', { g })}</a></div>`).join('');
 
 /* ---------- FAQ: open and close with a height animation ----------
    Without JS (or with reduced motion) the native <details> behaviour is untouched. */
@@ -691,11 +712,11 @@ form.addEventListener('submit', async e => {
   $$('[required]', form).forEach(f => { const bad = !f.value.trim(); if (bad) { f.setAttribute('aria-invalid', 'true'); ok = false; } });
   const contact = form.contact.value.trim();
   if (contact && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact) && !/^[+\d][\d\s-]{7,}$/.test(contact)) { form.contact.setAttribute('aria-invalid', 'true'); ok = false; }
-  if (!ok) { say('Please fill in your name, school and a valid email or phone number.'); $('[aria-invalid="true"]', form)?.focus(); return; }
+  if (!ok) { say(t('Please fill in your name, school and a valid email or phone number.')); $('[aria-invalid="true"]', form)?.focus(); return; }
   if (form._honey.value) return;
   const data = Object.fromEntries(new FormData(form));
   delete data._honey;
-  say('Sending…');
+  say(t('Sending…'));
   const btn = $('button[type="submit"]', form); btn.disabled = true;
   try {
     const r = await fetch(`https://formsubmit.co/ajax/${LEADS_INBOX}`, {
@@ -704,10 +725,10 @@ form.addEventListener('submit', async e => {
     });
     if (!r.ok) throw new Error(r.status);
     form.reset();
-    say('Thank you. We will get back to you within two working days.');
+    say(t('Thank you. We will get back to you within two working days.'));
   } catch {
     const body = encodeURIComponent(Object.entries(data).map(([k, v]) => `${k}: ${v}`).join('\n'));
-    say(`We couldn't send that just now. <a href="mailto:${LEADS_INBOX}?subject=${encodeURIComponent('VINC Lab pilot request')}&body=${body}">Email it to us instead</a>.`);
+    say(t('We couldn\'t send that just now. <a href="{href}">Email it to us instead</a>.', { href: `mailto:${LEADS_INBOX}?subject=${encodeURIComponent('VINC Lab pilot request')}&body=${body}` }));
   } finally { btn.disabled = false; }
 });
 

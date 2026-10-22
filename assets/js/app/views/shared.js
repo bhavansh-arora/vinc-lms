@@ -4,38 +4,43 @@ import { db, save, school, section, progress, projectsFor, lastActive, log, user
 import { passwordModal, deleteModal, addPersonModal } from './accounts.js';
 import { projectScore, yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, credsHtml, bindCopy, PART_COLOR, FORM_COLOR } from '../ui.js';
+import { t } from '../../i18n.js';
 
-export const secLabel = s => s ? `Grade ${s.grade} · ${s.name}` : '';
+export const secLabel = s => s ? t('Grade {g} · {name}', { g: s.grade, name: s.name }) : '';
+// A score band (Exemplary, Proficient…) in the page's language; band() itself stays English.
+export const bandT = score => t(band(score));
 
 /* ---------- Joining codes ----------
    Each school has two: teachers sign up with the teacher code, students with the student code. */
 const CODES = {
-  joinCode: { title: 'Teacher joining code', who: 'Teachers', from: 'you' },
-  studentCode: { title: 'Student joining code', who: 'Students', from: 'their Kaushal Bodh teacher' },
+  joinCode: { title: 'Teacher joining code', note: 'Teachers create their own account: they choose {school} and enter this code.',
+    make: 'Make a new teacher joining code', ask: 'Make a new teacher joining code? The old one will stop working for new sign-ups. Accounts already made are not affected.' },
+  studentCode: { title: 'Student joining code', note: 'Students create their own account: they choose {school} and enter this code.',
+    make: 'Make a new student joining code', ask: 'Make a new student joining code? The old one will stop working for new sign-ups. Accounts already made are not affected.' },
 };
 // A card showing one of the school's codes. With renew, the coordinator can make a new one.
 export function codeCard(sch, field, { renew = false, note = '' } = {}) {
   const c = CODES[field], code = sch?.[field] || '';
   if (!code) return '';
-  return `<section class="card join-card"><div><h2 class="h-card">${icon('key')} ${c.title}</h2><p class="muted">${note || `${c.who} create their own account: they choose ${esc(sch.name)} and enter this code.`}</p></div>
-    <div class="big-code"><code>${esc(code)}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${esc(code)}">${icon('copy')} Copy</button>${renew ? `<button type="button" class="icon-btn" data-renew="${field}" aria-label="Make a new ${c.title.toLowerCase()}" title="Make a new code">${icon('refresh')}</button>` : ''}</div></section>`;
+  return `<section class="card join-card"><div><h2 class="h-card">${icon('key')} ${t(c.title)}</h2><p class="muted">${note || t(c.note, { school: esc(sch.name) })}</p></div>
+    <div class="big-code"><code>${esc(code)}</code><button type="button" class="btn btn-ghost btn-sm" data-copy="${esc(code)}">${icon('copy')} ${t('Copy')}</button>${renew ? `<button type="button" class="icon-btn" data-renew="${field}" aria-label="${t(c.make)}" title="${t('Make a new code')}">${icon('refresh')}</button>` : ''}</div></section>`;
 }
 export function bindCodeCards(el, ctx, sch) {
   bindCopy(el);
   $$('[data-renew]', el).forEach(b => b.addEventListener('click', () => {
     const field = b.dataset.renew, c = CODES[field];
-    if (!confirm(`Make a new ${c.title.toLowerCase()}? The old one will stop working for new sign-ups. Accounts already made are not affected.`)) return;
+    if (!confirm(t(c.ask))) return;
     sch[field] = newJoinCode(sch);
     log(ctx.me.name, `made a new ${c.title.toLowerCase()}`, sch.id); save();
-    toast('New joining code made.'); ctx.rerender();
+    toast(t('New joining code made.')); ctx.rerender();
   }));
 }
 
 /* ---------- Logins ---------- */
 export function showCreds(title, rows, note) {
-  modal(`<div class="creds-head"><span class="creds-ic">${icon('key')}</span><div><h2>${esc(title)}</h2><p class="muted">Here are the login details. The password is shown only this once.</p></div></div>
+  modal(`<div class="creds-head"><span class="creds-ic">${icon('key')}</span><div><h2>${esc(title)}</h2><p class="muted">${t('Here are the login details. The password is shown only this once.')}</p></div></div>
     ${credsHtml(rows, note)}
-    <div class="modal-actions"><button class="btn btn-brand" data-close>Done</button></div>`);
+    <div class="modal-actions"><button class="btn btn-brand" data-close>${t('Done')}</button></div>`);
 }
 // Show login details only once the server has the new accounts. It may have changed a User ID
 // (if another school already uses it) or a family code, so rows are read from the saved records (`u`).
@@ -83,24 +88,24 @@ export function currentProject(sec, kids) {
 
 export function heatmap(kids, pid, studentHref) {
   const P = projectById(pid);
-  if (!kids.length) return '<p class="empty-note">No students in this section yet. Students join on the sign-up page by choosing your school and class.</p>';
+  if (!kids.length) return `<p class="empty-note">${t('No students in this section yet. Students join on the sign-up page by choosing your school and class.')}</p>`;
   return `<div class="heat-wrap"><table class="heat f-${P.form}">
-    <thead><tr><th scope="col">Student</th>${P.activities.map(a => `<th scope="col" title="${esc(a.title)}">${a.n}</th>`).join('')}<th scope="col">Quiz</th><th scope="col">Viva</th></tr></thead>
-    <tbody>${kids.map(k => { const pr = progress(k.id, pid); return `<tr><th scope="row"><a href="${studentHref(k)}">${esc(k.name)}</a></th>${P.activities.map(a => `<td class="${pr?.acts[a.n]?.done ? 'on' : ''}" title="${esc(a.title)}${pr?.acts[a.n]?.done ? ': done' : ''}"><span class="sr-only">${pr?.acts[a.n]?.done ? 'done' : 'not done'}</span></td>`).join('')}<td class="num">${pr?.quiz.length ? Math.max(...pr.quiz.map(q => q.score)) : '·'}</td><td class="num">${pr?.viva ? '✓' : '·'}</td></tr>`; }).join('')}</tbody>
+    <thead><tr><th scope="col">${t('Student')}</th>${P.activities.map(a => `<th scope="col" title="${esc(a.title)}">${a.n}</th>`).join('')}<th scope="col">${t('Quiz')}</th><th scope="col">${t('Viva')}</th></tr></thead>
+    <tbody>${kids.map(k => { const pr = progress(k.id, pid); return `<tr><th scope="row"><a href="${studentHref(k)}">${esc(k.name)}</a></th>${P.activities.map(a => `<td class="${pr?.acts[a.n]?.done ? 'on' : ''}" title="${pr?.acts[a.n]?.done ? t('{title}: done', { title: esc(a.title) }) : esc(a.title)}"><span class="sr-only">${pr?.acts[a.n]?.done ? t('done') : t('not done')}</span></td>`).join('')}<td class="num">${pr?.quiz.length ? Math.max(...pr.quiz.map(q => q.score)) : '·'}</td><td class="num">${pr?.viva ? '✓' : '·'}</td></tr>`; }).join('')}</tbody>
   </table></div>
-  <p class="muted small">Hover a cell to see the activity. Columns are the ${P.activities.length} activities of ${esc(P.title)}.</p>`;
+  <p class="muted small">${t('Hover a cell to see the activity. Columns are the {n} activities of {title}.', { n: P.activities.length, title: esc(P.title) })}</p>`;
 }
 
 export function markTable(kids, pid) {
   return `<section class="card tbl-card"><table class="tbl mark-tbl">
-    <thead><tr><th>Student</th><th>Activity book</th><th>Quiz</th><th>Portfolio</th><th>Viva</th><th>Observation</th><th>Score</th><th></th></tr></thead>
-    <tbody>${kids.map(k => { const pr = progress(k.id, pid); const sc = projectScore(pr, pid); const tag = v => v == null ? '<span class="tag todo">To mark</span>' : `<span class="tag ok">${v}%</span>`; return `<tr>
-      <td><button class="name-btn" data-mark="${k.id}" aria-label="Mark ${esc(k.name)}">${esc(k.name)}</button></td>
+    <thead><tr><th>${t('Student')}</th><th>${t('Activity book')}</th><th>${t('Quiz')}</th><th>${t('Portfolio')}</th><th>${t('Viva')}</th><th>${t('Observation')}</th><th>${t('Score')}</th><th></th></tr></thead>
+    <tbody>${kids.map(k => { const pr = progress(k.id, pid); const sc = projectScore(pr, pid); const tag = v => v == null ? `<span class="tag todo">${t('To mark')}</span>` : `<span class="tag ok">${v}%</span>`; return `<tr>
+      <td><button class="name-btn" data-mark="${k.id}" aria-label="${t('Mark {name}', { name: esc(k.name) })}">${esc(k.name)}</button></td>
       <td>${sc.done}/${sc.total}</td><td>${sc.parts.written == null ? '—' : `${sc.parts.written}%`}</td>
-      <td>${pr?.portfolio.length || 0} items ${pr?.portfolioScore != null ? `<span class="tag ok">${RUBRIC_LEVELS[pr.portfolioScore - 1]}</span>` : ''}</td>
+      <td>${t('{n} items', { n: pr?.portfolio.length || 0 })} ${pr?.portfolioScore != null ? `<span class="tag ok">${RUBRIC_LEVELS[pr.portfolioScore - 1]}</span>` : ''}</td>
       <td>${tag(sc.parts.viva)}</td><td>${tag(sc.parts.observation)}</td>
       <td><b>${sc.score == null ? '—' : `${sc.score}%`}</b></td>
-      <td><button class="btn btn-sm btn-ghost" data-mark="${k.id}">Mark</button></td></tr>`; }).join('') || '<tr><td colspan="8" class="muted">No students in this section yet.</td></tr>'}</tbody>
+      <td><button class="btn btn-sm btn-ghost" data-mark="${k.id}">${t('Mark')}</button></td></tr>`; }).join('') || `<tr><td colspan="8" class="muted">${t('No students in this section yet.')}</td></tr>`}</tbody>
   </table></section>`;
 }
 export const bindMark = (el, ctx, pid) => $$('[data-mark]', el).forEach(b => b.addEventListener('click', () => markModal(ctx, user(b.dataset.mark), pid)));
@@ -113,15 +118,15 @@ function rubricRows(rubric, marks, name) {
 export function markModal(ctx, stu, pid) {
   const P = projectById(pid);
   const pr = progress(stu.id, pid, true);
-  const d = modal(`<div class="mm-head f-${P.form}"><div class="mini-art">${art(P.art)}</div><div><p class="eyebrow">Grade ${P.grade} · ${esc(P.title)}</p><h2>${esc(stu.name)}</h2></div><button class="icon-btn" data-close aria-label="Close">${icon('close')}</button></div>
-    <details class="viva-help"><summary>${icon('mic')} Viva questions to ask</summary><ol>${P.viva.map(v => `<li>${esc(v)}</li>`).join('')}</ol></details>
+  const d = modal(`<div class="mm-head f-${P.form}"><div class="mini-art">${art(P.art)}</div><div><p class="eyebrow">${t('Grade {g} · {name}', { g: P.grade, name: esc(P.title) })}</p><h2>${esc(stu.name)}</h2></div><button class="icon-btn" data-close aria-label="${t('Close')}">${icon('close')}</button></div>
+    <details class="viva-help"><summary>${icon('mic')} ${t('Viva questions to ask')}</summary><ol>${P.viva.map(v => `<li>${esc(v)}</li>`).join('')}</ol></details>
     <form id="mk">
-      <h3>Viva <small class="muted">30%</small></h3>${rubricRows(VIVA_RUBRIC, pr.viva, 'v')}
-      <h3>Teacher observation <small class="muted">20%</small></h3>${rubricRows(OBSERVATION_RUBRIC, pr.obs, 'o')}
-      <h3>Portfolio <small class="muted">10% · ${pr.portfolio.length} items</small></h3>${rubricRows([{ key: 'pf', label: 'Quality and range of the portfolio', lo: [10, 18] }], { pf: pr.portfolioScore }, 'p')}
-      <h3>Feedback for the student and parents</h3>
-      <textarea name="fb" rows="3" maxlength="400" placeholder="One thing they did well, one thing to try next."></textarea>
-      <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-brand">Save marks</button></div>
+      <h3>${t('Viva')} <small class="muted">30%</small></h3>${rubricRows(VIVA_RUBRIC, pr.viva, 'v')}
+      <h3>${t('Teacher observation')} <small class="muted">20%</small></h3>${rubricRows(OBSERVATION_RUBRIC, pr.obs, 'o')}
+      <h3>${t('Portfolio')} <small class="muted">10% · ${t('{n} items', { n: pr.portfolio.length })}</small></h3>${rubricRows([{ key: 'pf', label: t('Quality and range of the portfolio'), lo: [10, 18] }], { pf: pr.portfolioScore }, 'p')}
+      <h3>${t('Feedback for the student and parents')}</h3>
+      <textarea name="fb" rows="3" maxlength="400" placeholder="${t('One thing they did well, one thing to try next.')}"></textarea>
+      <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>${t('Cancel')}</button><button class="btn btn-brand">${t('Save marks')}</button></div>
     </form>`, { wide: true });
   $('#mk', d).addEventListener('submit', e => {
     e.preventDefault();
@@ -134,7 +139,7 @@ export function markModal(ctx, stu, pid) {
     const fb = String(f.get('fb') || '').trim();
     if (fb) pr.feedback.push({ at: Date.now(), by: ctx.me.name, text: fb });
     log(ctx.me.name, `marked ${stu.name} on ${P.title}`, stu.schoolId);
-    save(); d.close(); toast(`Saved marks for ${stu.name.split(' ')[0]}.`); ctx.rerender();
+    save(); d.close(); toast(t('Saved marks for {name}.', { name: stu.name.split(' ')[0] })); ctx.rerender();
   });
 }
 
@@ -146,21 +151,21 @@ export function studentDetail(ctx, s, back) {
   return {
     title: s.name,
     html: `<a class="back" href="${back.href}">← ${esc(back.label)}</a>
-    <section class="hero-card slim"><div class="hc-copy"><p class="eyebrow">${esc(secLabel(sec))} · Roll ${s.roll}</p><h2>${esc(s.name)}</h2><p>${parents.length > 1 ? 'Parents' : 'Parent'}: ${parents.length ? parents.map(p => esc(p.name)).join(', ') : '—'} · Last active ${timeAgo(lastActive(s.id))}${y.score != null ? ` · Score so far <b>${y.score}%</b> (${band(y.score)})` : ''}</p></div>
-      <div class="hc-ring">${ring(y.activityPct, { size: 120, stroke: 12, sub: 'activities' })}</div></section>
+    <section class="hero-card slim"><div class="hc-copy"><p class="eyebrow">${esc(secLabel(sec))} · ${t('Roll {n}', { n: s.roll })}</p><h2>${esc(s.name)}</h2><p>${parents.length > 1 ? t('Parents') : t('Parent')}: ${parents.length ? parents.map(p => esc(p.name)).join(', ') : '—'} · ${t('Last active {when}', { when: timeAgo(lastActive(s.id)) })}${y.score != null ? ` · ${t('Score so far <b>{score}%</b> ({band})', { score: y.score, band: bandT(y.score) })}` : ''}</p></div>
+      <div class="hc-ring">${ring(y.activityPct, { size: 120, stroke: 12, sub: t('activities') })}</div></section>
     <div class="score-cards">${ids.map(pid => { const p = projectById(pid), sc = projectScore(progress(s.id, pid), pid); return `<section class="card f-${p.form}">
       <h3 class="h-card"><span class="form-dot"></span>${esc(p.title)}</h3>
-      <ul class="parts">${WEIGHTS.map(w => `<li><div class="part-top"><b>${esc(w.label)}</b><span class="muted">${w.weight}%</span><span class="part-val">${sc.parts[w.key] == null ? 'Not yet' : `${sc.parts[w.key]}%`}</span></div>${bar(sc.parts[w.key], PART_COLOR[w.key])}</li>`).join('')}</ul>
-      <p class="muted small">Virtual labs: ${Object.keys(progress(s.id, pid)?.labs || {}).length} of ${p.activities.length} played · ${Object.values(progress(s.id, pid)?.labs || {}).reduce((n, l) => n + l.stars, 0)} ★</p>
-      <div class="total-row"><span>Score ${sc.complete ? '' : 'so far'}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${band(sc.score)}</span></div>
-      <button class="btn btn-brand btn-sm" data-markp="${pid}">Mark this project</button></section>`; }).join('')}</div>
-    <section class="card logins-card"><h2 class="h-card">${icon('key')} Logins</h2>
+      <ul class="parts">${WEIGHTS.map(w => `<li><div class="part-top"><b>${esc(w.label)}</b><span class="muted">${w.weight}%</span><span class="part-val">${sc.parts[w.key] == null ? t('Not yet') : `${sc.parts[w.key]}%`}</span></div>${bar(sc.parts[w.key], PART_COLOR[w.key])}</li>`).join('')}</ul>
+      <p class="muted small">${t('Virtual labs: {n} of {total} played · {stars} ★', { n: Object.keys(progress(s.id, pid)?.labs || {}).length, total: p.activities.length, stars: Object.values(progress(s.id, pid)?.labs || {}).reduce((n, l) => n + l.stars, 0) })}</p>
+      <div class="total-row"><span>${sc.complete ? t('Score ') : t('Score so far')}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${bandT(sc.score)}</span></div>
+      <button class="btn btn-brand btn-sm" data-markp="${pid}">${t('Mark this project')}</button></section>`; }).join('')}</div>
+    <section class="card logins-card"><h2 class="h-card">${icon('key')} ${t('Logins')}</h2>
       <ul class="login-list">
-        <li><span class="avatar">${icon('star')}</span><span><b>${esc(s.name)}</b><small class="muted">Student · <span class="mono">@${esc(s.login)}</span> · family code <span class="mono">${esc(s.familyCode || '')}</span></small></span><button class="btn btn-sm btn-ghost" data-reset="${s.id}">${icon('key')} Password</button></li>
-        ${parents.map(p => `<li><span class="avatar">${icon('home')}</span><span><b>${esc(p.name)}</b><small class="muted">${esc(p.relation || 'Parent')} · <span class="mono">@${esc(p.login)}</span>${p.phone ? ` · ${esc(p.phone)}` : ''}</small></span><span class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-reset="${p.id}">${icon('key')} Password</button>${manage ? `<button class="btn btn-sm btn-ghost danger" data-del="${p.id}" aria-label="Delete ${esc(p.name)}" title="Delete parent login">${icon('trash')}</button>` : ''}</span></li>`).join('')}
+        <li><span class="avatar">${icon('star')}</span><span><b>${esc(s.name)}</b><small class="muted">${t('Student')} · <span class="mono">@${esc(s.login)}</span> · ${t('family code')} <span class="mono">${esc(s.familyCode || '')}</span></small></span><button class="btn btn-sm btn-ghost" data-reset="${s.id}">${icon('key')} ${t('Password')}</button></li>
+        ${parents.map(p => `<li><span class="avatar">${icon('home')}</span><span><b>${esc(p.name)}</b><small class="muted">${esc(t(p.relation || 'Parent'))} · <span class="mono">@${esc(p.login)}</span>${p.phone ? ` · ${esc(p.phone)}` : ''}</small></span><span class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-reset="${p.id}">${icon('key')} ${t('Password')}</button>${manage ? `<button class="btn btn-sm btn-ghost danger" data-del="${p.id}" aria-label="${t('Delete {name}', { name: esc(p.name) })}" title="${t('Delete parent login')}">${icon('trash')}</button>` : ''}</span></li>`).join('')}
       </ul>
-      <p class="muted small">${parents.length ? '' : 'No parent account yet. Parents can sign up with the family code. '}A temporary password makes them choose a new one when they next log in.</p>
-      ${manage ? `<div class="manage-row"><button class="btn btn-sm btn-ghost" id="add-par">${icon('plus')} Add a parent</button><button class="btn btn-sm btn-ghost danger" data-del="${s.id}">${icon('trash')} Delete student</button></div>` : ''}
+      <p class="muted small">${parents.length ? '' : t('No parent account yet. Parents can sign up with the family code. ')}${t('A temporary password makes them choose a new one when they next log in.')}</p>
+      ${manage ? `<div class="manage-row"><button class="btn btn-sm btn-ghost" id="add-par">${icon('plus')} ${t('Add a parent')}</button><button class="btn btn-sm btn-ghost danger" data-del="${s.id}">${icon('trash')} ${t('Delete student')}</button></div>` : ''}
     </section>`,
     mount(el) {
       $$('[data-markp]', el).forEach(b => b.addEventListener('click', () => markModal(ctx, s, b.dataset.markp)));
@@ -199,10 +204,10 @@ export function rubricBars(rows) {
 }
 
 export function quizBars(an) {
-  if (!an.takers) return '<p class="muted">No quiz attempts with answers yet.</p>';
+  if (!an.takers) return `<p class="muted">${t('No quiz attempts with answers yet.')}</p>`;
   const sorted = [...an.rows].sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101));
-  return `<ol class="q-bars">${sorted.map(r => `<li class="${r.pct != null && r.pct < 60 ? 'weak' : ''}"><div><b>Q${r.i + 1}.</b> ${esc(r.q)}<small class="muted">Answer: ${esc(r.answer)}</small></div>${bar(r.pct, r.pct < 60 ? 'var(--bad)' : r.pct < 80 ? 'var(--amber)' : 'var(--ok)')}<b class="num">${r.pct == null ? '—' : `${r.pct}%`}</b></li>`).join('')}</ol>
-    <p class="muted small">${an.takers} student${an.takers === 1 ? '' : 's'}' latest attempts. Questions under 60% are worth revisiting in class.</p>`;
+  return `<ol class="q-bars">${sorted.map(r => `<li class="${r.pct != null && r.pct < 60 ? 'weak' : ''}"><div><b>Q${r.i + 1}.</b> ${esc(r.q)}<small class="muted">${t('Answer: {answer}', { answer: esc(r.answer) })}</small></div>${bar(r.pct, r.pct < 60 ? 'var(--bad)' : r.pct < 80 ? 'var(--amber)' : 'var(--ok)')}<b class="num">${r.pct == null ? '—' : `${r.pct}%`}</b></li>`).join('')}</ol>
+    <p class="muted small">${t(an.takers === 1 ? '{n} student\' latest attempts. Questions under 60% are worth revisiting in class.' : '{n} students\' latest attempts. Questions under 60% are worth revisiting in class.', { n: an.takers })}</p>`;
 }
 
 export { LEARNING_OUTCOMES, FORM_COLOR };

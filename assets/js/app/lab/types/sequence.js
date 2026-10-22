@@ -4,6 +4,7 @@
 // every step is right, a glowing runner travels the belt and each step lights up in turn.
 // Config: SPEC.md §2.2.
 import { esc, shuffle, sparkle } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Step by step', needs: ['gsap'] };
 
@@ -36,13 +37,13 @@ export function mount(stage, cfg, api) {
         <path class="seq-belt-bed"/><path class="seq-belt-roll"/><path class="seq-belt-lit"/>
       </svg>
       <svg class="seq-fx" aria-hidden="true"><g class="seq-runner"><circle r="17" class="seq-runner-halo"/><circle r="9" class="seq-runner-dot"/><circle r="3" cx="-3" cy="-3" class="seq-runner-shine"/></g></svg>
-      <ol class="seq-slots" aria-label="Steps in order">${order.map((_, p) => `
+      <ol class="seq-slots" aria-label="${t('Steps in order')}">${order.map((_, p) => `
         <li class="seq-slot" data-pos="${p}"><span class="seq-num" aria-hidden="true">${p + 1}</span><div class="seq-socket"></div></li>`).join('')}
       </ol>
     </div>
     <div class="seq-bar">
       <p class="seq-status" aria-live="polite"></p>
-      <button type="button" class="lab-act seq-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Check my order</button>
+      <button type="button" class="lab-act seq-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${t('Check my order')}</button>
     </div>`;
   stage.append(root);
   const $ = s => root.querySelector(s);
@@ -62,12 +63,12 @@ export function mount(stage, cfg, api) {
   });
   order.forEach((s, p) => sockets[p].append(cards[s]));
   const posOf = el => order.indexOf(+el.dataset.step);
-  const label = el => { const p = posOf(el); return `Slot ${p + 1}: ${steps[+el.dataset.step].label}${locked[p] ? ' (locked in)' : ''}`; };
+  const label = el => { const p = posOf(el); return t(locked[p] ? 'Slot {n}: {label} (locked in)' : 'Slot {n}: {label}', { n: p + 1, label: steps[+el.dataset.step].label }); };
   const relabel = () => cards.forEach(c => c.setAttribute('aria-label', label(c)));
   relabel();
   const setStatus = () => {
     const k = locked.filter(Boolean).length;
-    status.innerHTML = `<b>${k}</b> of ${n} locked in${k < n ? '<span> · drag or tap two cards to swap them</span>' : ''}`;
+    status.innerHTML = t(k < n ? '<b>{k}</b> of {n} locked in<span> · drag or tap two cards to swap them</span>' : '<b>{k}</b> of {n} locked in', { k, n });
   };
   setStatus();
   api.progress(0);
@@ -205,12 +206,12 @@ export function mount(stage, cfg, api) {
   function tap(el) {
     if (busy || finished) return;
     const p = posOf(el);
-    if (locked[p]) { api.sound('tick'); api.say(`Step ${p + 1} is already locked in. Move the others around it.`, 'hint'); bump(el); return; }
+    if (locked[p]) { api.sound('tick'); api.say(t('Step {n} is already locked in. Move the others around it.', { n: p + 1 }), 'hint'); bump(el); return; }
     if (!selected) {
       selected = el; el.classList.add('is-selected'); el.setAttribute('aria-pressed', 'true');
       gsap.to(el, { y: -6, scale: 1.04, duration: .3, ease: 'back.out(3)' });
       api.sound('pop');
-      api.say('Now tap the card you want to swap it with.', 'info');
+      api.say(t('Now tap the card you want to swap it with.'), 'info');
       return;
     }
     if (selected === el) { deselect(); api.sound('click'); return; }
@@ -245,9 +246,9 @@ export function mount(stage, cfg, api) {
       if (sig !== lastChecked) api.mistake();
       lastChecked = sig;
       const first = wrong[0];
-      const hint = first === 0 ? 'Which step has to happen first of all?' : `Which step comes straight after “${steps[first - 1].label}”?`;
-      if (fresh.length) api.say(`${fresh.length} more locked in! ${wrong.length} still out of place. ${hint}`, 'hint');
-      else { api.sound('bad'); api.say(`${wrong.length} steps are still out of place. ${hint}`, 'hint'); }
+      const hint = first === 0 ? t('Which step has to happen first of all?') : t('Which step comes straight after “{label}”?', { label: steps[first - 1].label });
+      if (fresh.length) api.say(`${t('{a} more locked in! {b} still out of place.', { a: fresh.length, b: wrong.length })} ${hint}`, 'hint');
+      else { api.sound('bad'); api.say(`${t('{n} steps are still out of place.', { n: wrong.length })} ${hint}`, 'hint'); }
     }, 160 + fresh.length * 170);
     api.sound('click');
   });
@@ -276,8 +277,8 @@ export function mount(stage, cfg, api) {
     checkBtn.disabled = true;
     root.classList.add('is-done');
     api.progress(.9);
-    status.innerHTML = '<b>Perfect order!</b> Watch the whole process…';
-    api.say(checks === 1 ? 'All in order on the first try! Let’s walk through it.' : 'All in order! Let’s walk through it step by step.', 'good');
+    status.innerHTML = t('<b>Perfect order!</b> Watch the whole process…');
+    api.say(t(checks === 1 ? 'All in order on the first try! Let’s walk through it.' : 'All in order! Let’s walk through it step by step.'), 'good');
     const per = R ? .25 : 1.25;
     const tl = gsap.timeline({ delay: R ? .1 : .7, onComplete: end });
     // a glowing comet rides the belt, bursts into each card (which lights up), then sets off again
@@ -302,7 +303,7 @@ export function mount(stage, cfg, api) {
     slots[k].classList.add('is-visited');
     api.sound('tick');
     const s = steps[k];
-    api.say(`Step ${k + 1}: ${s.label}${s.detail ? ` — ${s.detail}` : ''}`, 'info');
+    api.say(`${t('Step {n}: {label}', { n: k + 1, label: s.label })}${s.detail ? ` — ${s.detail}` : ''}`, 'info');
     if (!R) {
       gsap.fromTo(el, { scale: 1 }, { scale: 1.08, duration: .2, yoyo: true, repeat: 1, ease: 'power2.out' });
       sparkle(api, slots[k].querySelector('.seq-num'));
@@ -314,7 +315,7 @@ export function mount(stage, cfg, api) {
     cards.forEach(c => c.classList.remove('is-lit'));
     root.classList.add('is-finale');
     if (!R) gsap.to(cards, { y: -12, duration: .2, ease: 'power2.out', stagger: { each: .06, yoyo: true, repeat: 1 } });
-    later(() => api.complete({ message: cfg.win || `You put all ${n} steps in order${checks === 1 ? ' on your very first check' : ''}. Doing things in the right order is what makes a process work!` }), 500);
+    later(() => api.complete({ message: cfg.win || t(checks === 1 ? 'You put all {n} steps in order on your very first check. Doing things in the right order is what makes a process work!' : 'You put all {n} steps in order. Doing things in the right order is what makes a process work!', { n }) }), 500);
   }
 
   return {

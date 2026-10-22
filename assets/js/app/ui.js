@@ -1,6 +1,6 @@
 // Small UI helpers shared by every dashboard.
 import { icon as baseIcon } from '../art.js';
-import { locale } from '../i18n.js';
+import { t as tr, locale } from '../i18n.js';
 export { art } from '../art.js';
 
 // Extra icons for logins and profiles, drawn in the same 24px stroke style as art.js.
@@ -45,7 +45,7 @@ export function ring(pct, { size = 120, stroke = 12, color = 'var(--brand)', lab
 
 export function bar(pct, color = 'var(--brand)') {
   const v = pct == null ? 0 : Math.max(0, Math.min(100, pct));
-  return `<span class="bar" role="img" aria-label="${pct == null ? 'Not marked yet' : `${Math.round(v)} percent`}"><i style="width:${v}%;background:${color}"></i></span>`;
+  return `<span class="bar" role="img" aria-label="${pct == null ? tr('Not marked yet') : tr('{n} percent', { n: Math.round(v) })}"><i style="width:${v}%;background:${color}"></i></span>`;
 }
 
 export function fmtDate(t, opts = { day: 'numeric', month: 'short' }) {
@@ -53,13 +53,13 @@ export function fmtDate(t, opts = { day: 'numeric', month: 'short' }) {
   return new Date(t).toLocaleDateString(locale(), opts);
 }
 export function timeAgo(t) {
-  if (!t) return 'never';
+  if (!t) return tr('never');
   const s = (Date.now() - t) / 1000;
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  if (s < 60) return tr('just now');
+  if (s < 3600) return tr('{n} min ago', { n: Math.round(s / 60) });
+  if (s < 86400) return tr('{n} h ago', { n: Math.round(s / 3600) });
   const d = Math.round(s / 86400);
-  return d === 1 ? 'yesterday' : d < 30 ? `${d} days ago` : fmtDate(t);
+  return d === 1 ? tr('yesterday') : d < 30 ? tr('{n} days ago', { n: d }) : fmtDate(t);
 }
 export const daysUntil = iso => Math.ceil((new Date(`${iso}T09:00:00`) - Date.now()) / 86400000);
 
@@ -119,18 +119,18 @@ export function bindCopy(el) {
       ta.remove();
     }
     b.classList.remove('copied'); void b.offsetWidth; b.classList.add('copied');
-    toast(ok ? 'Copied.' : 'Select the text and copy it.', ok ? 'ok' : 'warn', 1600);
+    toast(ok ? tr('Copied.') : tr('Select the text and copy it.'), ok ? 'ok' : 'warn', 1600);
   }));
 }
 
 // A card listing User IDs and passwords for accounts someone just created or reset.
-export function credsHtml(rows, note = 'Share these privately. Each person will be asked to choose their own password after logging in.') {
+export function credsHtml(rows, note = tr('Share these privately. Each person will be asked to choose their own password after logging in.')) {
   return `<div class="creds">${rows.map(r => `<div class="cred">
       <span class="cred-who">${icon(r.icon || 'user')}<span><b>${esc(r.name)}</b><small>${esc(r.role)}</small></span></span>
       <dl>
-        <div><dt>User ID</dt><dd><code>${esc(r.login)}</code><button type="button" class="copy-btn" data-copy="${esc(r.login)}" aria-label="Copy User ID">${icon('copy')}</button></dd></div>
-        ${r.pw ? `<div><dt>${r.temp === false ? 'Password' : 'Temporary password'}</dt><dd><code>${esc(r.pw)}</code><button type="button" class="copy-btn" data-copy="${esc(r.pw)}" aria-label="Copy password">${icon('copy')}</button></dd></div>` : ''}
-        ${r.code ? `<div><dt>Family code</dt><dd><code>${esc(r.code)}</code><button type="button" class="copy-btn" data-copy="${esc(r.code)}" aria-label="Copy family code">${icon('copy')}</button></dd></div>` : ''}
+        <div><dt>${tr('User ID')}</dt><dd><code>${esc(r.login)}</code><button type="button" class="copy-btn" data-copy="${esc(r.login)}" aria-label="${tr('Copy User ID')}">${icon('copy')}</button></dd></div>
+        ${r.pw ? `<div><dt>${r.temp === false ? tr('Password') : tr('Temporary password')}</dt><dd><code>${esc(r.pw)}</code><button type="button" class="copy-btn" data-copy="${esc(r.pw)}" aria-label="${tr('Copy password')}">${icon('copy')}</button></dd></div>` : ''}
+        ${r.code ? `<div><dt>${tr('Family code')}</dt><dd><code>${esc(r.code)}</code><button type="button" class="copy-btn" data-copy="${esc(r.code)}" aria-label="${tr('Copy family code')}">${icon('copy')}</button></dd></div>` : ''}
       </dl></div>`).join('')}</div>
     ${note ? `<p class="muted small">${esc(note)}</p>` : ''}`;
 }
@@ -168,7 +168,7 @@ export function confetti(colors = ['#D98A1C', '#1F6F66', '#C2502A', '#8C3557', '
 // Shrink an uploaded photo so it fits in browser storage.
 export function resizeImage(file, max = 560, q = 0.72) {
   return new Promise((res, rej) => {
-    if (!file || !file.type.startsWith('image/')) { rej(new Error('Please choose an image file.')); return; }
+    if (!file || !file.type.startsWith('image/')) { rej(new Error(tr('Please choose an image file.'))); return; }
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
@@ -179,7 +179,7 @@ export function resizeImage(file, max = 560, q = 0.72) {
       URL.revokeObjectURL(url);
       res(c.toDataURL('image/jpeg', q));
     };
-    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('That image could not be read.')); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error(tr('That image could not be read.'))); };
     img.src = url;
   });
 }

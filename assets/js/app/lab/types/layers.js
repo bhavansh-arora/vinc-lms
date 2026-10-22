@@ -3,6 +3,7 @@
 // See ../SPEC.md §2.4. Everything is drawn here in SVG; textures are procedural and seeded, so the
 // same config always looks the same.
 import { h, esc, shuffle, shake, pop, sparkle } from '../kit.js';
+import { t, isHi } from '../../../i18n.js';
 
 export const meta = { title: 'Build it layer by layer', needs: ['gsap'] };
 
@@ -313,7 +314,7 @@ export function mount(stage, cfg, api) {
   const kind = ['bin', 'pot', 'bottle', 'trench', 'tray', 'bucket', 'tank', 'pit'].includes(cfg.container) ? cfg.container : 'bin';
   const after = cfg.after || { anim: 'none' };
   const C = containerArt(kind, after.anim === 'filter');
-  const kindName = { bin: 'bin', pot: 'pot', bottle: 'bottle', trench: 'trench', tray: 'tray', bucket: 'bucket', tank: 'tank', pit: 'pit' }[kind];
+  const kindName = { bin: t('bin'), pot: t('pot'), bottle: t('bottle'), trench: t('trench'), tray: t('tray'), bucket: t('bucket'), tank: t('tank'), pit: t('pit') }[kind];
   const seed = hash(cfg.title || kind);
   const timers = [], tickers = [];
   let placed = 0, busy = false, sel = null, wrongHere = 0, finished = false, queued = null;
@@ -329,14 +330,14 @@ export function mount(stage, cfg, api) {
 
   const root = h(`<div class="lab-layers lyr-k-${kind}${layers.length + distractors.length > 7 ? ' many' : ''}">
     <svg class="lyr-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>${patternDefs()}</defs></svg>
-    <section class="lyr-tray" aria-label="Layers to add">
-      <header class="lyr-tray-h"><h3 class="lab-h">Pick the next layer</h3><span class="lyr-count" aria-live="polite"><b>0</b> / ${layers.length}</span></header>
-      <p class="lyr-tip">Start at the <b>bottom</b>. Drag a card into the ${esc(kindName)}, or tap a card and then tap the ${esc(kindName)}.</p>
+    <section class="lyr-tray" aria-label="${t('Layers to add')}">
+      <header class="lyr-tray-h"><h3 class="lab-h">${t('Pick the next layer')}</h3><span class="lyr-count" aria-live="polite"><b>0</b> / ${layers.length}</span></header>
+      <p class="lyr-tip">${t('Start at the <b>bottom</b>. Drag a card into the {kind}, or tap a card and then tap the {kind}.', { kind: esc(kindName) })}</p>
       <div class="lyr-cards"></div>
     </section>
     <div class="lyr-scene">
-      <button type="button" class="lyr-drop" aria-label="Add the chosen layer to the ${esc(kindName)}">
-        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cut-away view of the ${esc(kindName)}">
+      <button type="button" class="lyr-drop" aria-label="${t('Add the chosen layer to the {kind}', { kind: esc(kindName) })}">
+        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('Cut-away view of the {kind}', { kind: esc(kindName) })}">
           <defs>${SCENE_DEFS}<clipPath id="lyr-clip"><polygon points="${ptsAttr(C.poly)}"/></clipPath>
             ${C.glass ? `<clipPath id="lyr-glass-clip"><path d="M${C.glass.x0 + 3} ${C.glass.top}H${C.glass.x1 - 3}L${C.glass.x1 - 7} ${C.glass.bottom - 3}H${C.glass.x0 + 7}Z"/></clipPath>` : ''}</defs>
           <g class="lyr-back">${C.back}</g>
@@ -349,7 +350,7 @@ export function mount(stage, cfg, api) {
           <g class="lyr-tags"></g>
           <g class="lyr-hud" opacity="0"><rect x="10" y="10" width="132" height="40" rx="20" class="lyr-hud-bg"/>
             <g class="lyr-hud-sun" transform="translate(32 30)"><circle r="8" fill="#F2B33D"/>${Array.from({ length: 8 }, (_, i) => `<path d="M0 -11.5V-14.5" stroke="#F2B33D" stroke-width="2.4" stroke-linecap="round" transform="rotate(${i * 45})"/>`).join('')}</g>
-            <text x="50" y="36" class="lyr-hud-t">Day 0</text></g>
+            <text x="50" y="36" class="lyr-hud-t">${t('Day {n}', { n: 0 })}</text></g>
         </svg>
       </button>
     </div>
@@ -402,13 +403,13 @@ export function mount(stage, cfg, api) {
   drop.addEventListener('click', () => {
     if (finished) return;
     if (busy) { if (sel) queued = sel; return; }
-    if (!sel) { api.say(`First pick a layer card, then tap the ${kindName}.`, 'hint'); pulseCards(); return; }
+    if (!sel) { api.say(t('First pick a layer card, then tap the {kind}.', { kind: kindName }), 'hint'); pulseCards(); return; }
     tryPlace(sel);
   });
   function setSel(c) {
     sel?.classList.remove('sel'); sel = c; c?.classList.add('sel');
     root.classList.toggle('has-sel', !!c);
-    drop.setAttribute('aria-label', c ? `Add ${c._layer.label} to the ${kindName}` : `Add the chosen layer to the ${kindName}`);
+    drop.setAttribute('aria-label', c ? t('Add {label} to the {kind}', { label: c._layer.label, kind: kindName }) : t('Add the chosen layer to the {kind}', { kind: kindName }));
     if (c) api.sound('pop');
   }
   function pulseCards() { if (!api.reduced) gsap.fromTo(cards.filter(c => !c.classList.contains('used')), { y: 0 }, { y: -6, duration: .18, yoyo: true, repeat: 1, stagger: .04, ease: 'power2.out' }); }
@@ -424,12 +425,12 @@ export function mount(stage, cfg, api) {
     api.mistake(); wrongHere++;
     gsap.to(card, { x: 0, y: 0, duration: .45, ease: 'back.out(1.6)', onComplete: () => shake(api, card) });
     flashZone();
-    if (!l.real) api.say(`${l.label}? No! ${l.why || `It does not belong in a ${kindName}.`}`, 'bad');
+    if (!l.real) api.say(`${t('{label}? No!', { label: l.label })} ${l.why || t('It does not belong in a {kind}.', { kind: kindName })}`, 'bad');
     else {
       const later = l.i > placed;
-      let msg = later ? `Not yet! ${l.label} goes higher up.` : `${l.label} is already in.`;
-      if (wrongHere >= 2 && want.why) msg += ` Hint: the next layer ${lowerFirst(want.why).replace(/^(it|this|they) /i, '')}.`;
-      else msg += placed === 0 ? ' What should go right at the bottom?' : ` What comes just above ${layers[placed - 1].label.toLowerCase()}?`;
+      let msg = t(later ? 'Not yet! {label} goes higher up.' : '{label} is already in.', { label: l.label });
+      if (wrongHere >= 2 && want.why) msg += isHi() ? ` ${t('Hint: {why}', { why: want.why })}` : ` Hint: the next layer ${lowerFirst(want.why).replace(/^(it|this|they) /i, '')}.`;
+      else msg += ` ${placed === 0 ? t('What should go right at the bottom?') : t('What comes just above {label}?', { label: isHi() ? layers[placed - 1].label : layers[placed - 1].label.toLowerCase() })}`;
       api.say(msg, 'bad');
     }
     if (wrongHere >= 3) { const right = cards.find(c => !c.classList.contains('used') && c._layer.real && c._layer.label === want.label); if (right) { right.classList.add('glow'); gsap.fromTo(right, { rotation: -4 }, { rotation: 0, duration: .6, ease: 'elastic.out(1.2,.3)' }); } }
@@ -453,7 +454,7 @@ export function mount(stage, cfg, api) {
     api.progress(placed / (layers.length + (after.anim && after.anim !== 'none' ? 1 : .2)));
     const done = () => {
       addTag(idx);
-      api.say(`${l.label} — ${l.why || 'nicely done!'}`, 'good');
+      api.say(`${l.label} — ${l.why || t('nicely done!')}`, 'good');
       sparkleAt(C.cx, bands[idx].y0);
       busy = false; root.classList.remove('busy');
       if (placed === layers.length) finish(); else drawGhost();
@@ -648,19 +649,19 @@ export function mount(stage, cfg, api) {
     finished = true; root.classList.add('done');
     ghostG.innerHTML = '';
     const anim = after.anim || 'none';
-    api.say(after.text ? `All ${layers.length} layers are in! Now watch… ${after.text}` : `All ${layers.length} layers are in. Well built!`, 'good');
+    api.say(after.text ? `${t('All {n} layers are in! Now watch…', { n: layers.length })} ${after.text}` : t('All {n} layers are in. Well built!', { n: layers.length }), 'good');
     const go = () => {
-      const tl = gsap.timeline({ onComplete: () => timers.push(setTimeout(() => api.complete({ message: cfg.win || after.text || 'You built every layer in the right order!' }), api.reduced ? 100 : 900)) });
+      const tl = gsap.timeline({ onComplete: () => timers.push(setTimeout(() => api.complete({ message: cfg.win || after.text || t('You built every layer in the right order!') }), api.reduced ? 100 : 900)) });
       ({ compost: tlCompost, roots: tlRoots, sprout: tlSprout, filter: tlFilter, bubbles: tlBubbles }[anim] || tlNone)(tl);
       api.progress(.95);
     };
     timers.push(setTimeout(go, api.reduced ? 50 : 1200));
   }
   const hud = $('.lyr-hud'), hudT = $('.lyr-hud-t'), hudSun = $('.lyr-hud-sun');
-  function dayCounter(tl, days, dur, word = 'Day', at = 0) {
+  function dayCounter(tl, days, dur, at = 0) {
     const o = { d: 0 };
     tl.to(hud, { opacity: 1, duration: .3 }, at)
-      .to(o, { d: days, duration: dur, ease: 'none', onUpdate: () => { hudT.textContent = `${word} ${Math.round(o.d)}`; } }, at)
+      .to(o, { d: days, duration: dur, ease: 'none', onUpdate: () => { hudT.textContent = t('Day {n}', { n: Math.round(o.d) }); } }, at)
       .to(hudSun, { rotation: 360 * Math.ceil(days / 6), svgOrigin: '32 30', duration: dur, ease: 'none' }, at);
   }
   const stackBounds = () => {
@@ -690,7 +691,7 @@ export function mount(stage, cfg, api) {
       const p = el('path', { d: `M${x} ${topSurface}q-8 -14 0 -26q8 -12 0 -26`, stroke: '#fff', 'stroke-width': 4, fill: 'none', 'stroke-linecap': 'round', opacity: 0 }, fxTop);
       tl.fromTo(p, { opacity: 0, y: 0 }, { opacity: .5, y: -20, duration: 1.2, repeat: 2, yoyo: true, ease: 'sine.inOut' }, .8 + i * .3);
     }
-    tl.add(() => { api.say('Dark, crumbly vermicompost! The worms did all the work.', 'good'); sparkleAt(C.cx, topSurface + 40); }, 5.2);
+    tl.add(() => { api.say(t('Dark, crumbly vermicompost! The worms did all the work.'), 'good'); sparkleAt(C.cx, topSurface + 40); }, 5.2);
   }
 
   function tlRoots(tl) {
@@ -750,7 +751,7 @@ export function mount(stage, cfg, api) {
   function tlFilter(tl) {
     const [lo, hi] = xRange(C.poly, topSurface - 4);
     const poolTop = Math.max(C.top + 4, topSurface - 34);
-    hudT.textContent = 'Filtering…';
+    hudT.textContent = t('Filtering…');
     tl.to(hud, { opacity: 1, duration: .3 }, 0);
     const pool = el('rect', { x: 0, y: poolTop, width: W, height: topSurface - poolTop + 6, fill: 'rgba(122,88,48,.88)' }, fxIn);
     stream('#8A6236', topSurface, .9, true);
@@ -780,15 +781,15 @@ export function mount(stage, cfg, api) {
         const d = el('path', { d: `M${ox} ${oy}q-4 7 0 9q4 -2 0 -9z`, fill: '#8FCBF0', opacity: 0 }, fxTop);
         tl.fromTo(d, { opacity: 1, y: 0 }, { y: G.bottom - oy - 12 - i * 2.4, duration: .5, ease: 'power2.in' }, tEnd + i * .25).to(d, { opacity: 0, duration: .1 });
       }
-      tl.add(() => { api.say('Look! Clear water drips out at the bottom. The dirt stayed behind in the layers.', 'good'); sparkleAt((G.x0 + G.x1) / 2, G.top + 20); }, tEnd + 2.4);
+      tl.add(() => { api.say(t('Look! Clear water drips out at the bottom. The dirt stayed behind in the layers.'), 'good'); sparkleAt((G.x0 + G.x1) / 2, G.top + 20); }, tEnd + 2.4);
     } else {
       const soak = el('ellipse', { cx: C.cx, cy: C.bottom + 8, rx: (hi - lo) / 2, ry: 14, fill: 'rgba(60,110,160,.35)', opacity: 0 }, under);
-      tl.to(soak, { opacity: 1, duration: 1.5 }, tEnd).add(() => api.say('The water soaked down through every layer and came out clean.', 'good'), tEnd + 1);
+      tl.to(soak, { opacity: 1, duration: 1.5 }, tEnd).add(() => api.say(t('The water soaked down through every layer and came out clean.'), 'good'), tEnd + 1);
     }
   }
 
   function tlBubbles(tl) {
-    hudT.textContent = 'Air pump on';
+    hudT.textContent = t('Air pump on');
     tl.to(hud, { opacity: 1, duration: .3 }, 0);
     const [lo, hi] = xRange(C.poly, C.bottom - 10), x = C.cx;
     const tube = el('g', {}, fxMid);
@@ -800,7 +801,7 @@ export function mount(stage, cfg, api) {
       tl.fromTo(b, { opacity: .95, y: 0, x: 0 }, { y: -rise, x: R(Math.random, -26, 26), duration: R(Math.random, 1.6, 2.4), ease: 'power1.in' }, .4 + i * .1)
         .to(b, { scale: 1.8, opacity: 0, transformOrigin: '50% 50%', duration: .15 });
     }
-    tl.add(() => { api.say('Bubbles carry air (oxygen) down to the roots.', 'good'); sparkleAt(x, topSurface); }, 4);
+    tl.add(() => { api.say(t('Bubbles carry air (oxygen) down to the roots.'), 'good'); sparkleAt(x, topSurface); }, 4);
   }
   function tlNone(tl) {
     const S = xf(stackG, C.cx, C.bottom);
@@ -808,7 +809,7 @@ export function mount(stage, cfg, api) {
       .add(() => sparkleAt(C.cx, topSurface + 20));
   }
 
-  api.say(cfg.mission || `Build the ${kindName} layer by layer, from the bottom up.`);
+  api.say(cfg.mission || t('Build the {kind} layer by layer, from the bottom up.', { kind: kindName }));
   return {
     destroy() {
       timers.forEach(clearTimeout);

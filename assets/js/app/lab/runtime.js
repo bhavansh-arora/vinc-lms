@@ -2,6 +2,7 @@
 // A lab type is a module in ./types/<type>.js exporting { meta, mount(stage, cfg, api), demo }.
 // See ./SPEC.md for the contract and every type's config.
 import { sprite, hasSprite } from './sprites.js';
+import { t } from '../../i18n.js';
 
 const VENDOR = new URL('../../../vendor/', import.meta.url).href;
 const CSS_DIR = new URL('../../../css/lab/', import.meta.url).href;
@@ -82,15 +83,15 @@ export function openLab(cfg, opts = {}) {
     let result = null;
     const d = document.createElement('dialog');
     d.className = `lab f-${opts.form || 'life'}`;
-    d.setAttribute('aria-label', `Virtual lab: ${cfg.title || ''}`);
+    d.setAttribute('aria-label', t('Virtual lab: {title}', { title: cfg.title || '' }));
     d.innerHTML = `
       <header class="lab-top">
-        <button class="lab-btn lab-x" type="button" aria-label="Close the lab">${ico('close')}</button>
-        <div class="lab-ttl"><small>${esc(opts.label || 'Virtual lab')}</small><b>${esc(cfg.title || 'Virtual lab')}</b></div>
+        <button class="lab-btn lab-x" type="button" aria-label="${t('Close the lab')}">${ico('close')}</button>
+        <div class="lab-ttl"><small>${esc(opts.label || t('Virtual lab'))}</small><b>${esc(cfg.title || t('Virtual lab'))}</b></div>
         <div class="lab-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
-        <div class="lab-stars" aria-label="Best: ${opts.best || 0} of 3 stars">${[1, 2, 3].map(i => `<span class="${i <= (opts.best || 0) ? 'on' : ''}">${STAR}</span>`).join('')}</div>
-        <button class="lab-btn lab-snd" type="button" aria-pressed="${!muted}" aria-label="Sound">${ico(muted ? 'mute' : 'sound')}</button>
-        <button class="lab-btn lab-re" type="button" aria-label="Start again">${ico('restart')}</button>
+        <div class="lab-stars" aria-label="${t('Best: {n} of 3 stars', { n: opts.best || 0 })}">${[1, 2, 3].map(i => `<span class="${i <= (opts.best || 0) ? 'on' : ''}">${STAR}</span>`).join('')}</div>
+        <button class="lab-btn lab-snd" type="button" aria-pressed="${!muted}" aria-label="${t('Sound')}">${ico(muted ? 'mute' : 'sound')}</button>
+        <button class="lab-btn lab-re" type="button" aria-label="${t('Start again')}">${ico('restart')}</button>
       </header>
       <div class="lab-body">
         <div class="lab-stage" tabindex="-1"></div>
@@ -98,11 +99,11 @@ export function openLab(cfg, opts = {}) {
         <div class="lab-cover lab-start">
           <div class="lab-card">
             <span class="lab-card-ic">${sprite('mascot')}</span>
-            <p class="lab-kicker">${esc(opts.label || 'Virtual lab')}</p>
-            <h2>${esc(cfg.title || 'Virtual lab')}</h2>
+            <p class="lab-kicker">${esc(opts.label || t('Virtual lab'))}</p>
+            <h2>${esc(cfg.title || t('Virtual lab'))}</h2>
             <p class="lab-mission">${esc(cfg.mission || '')}</p>
-            ${cfg.fact ? `<p class="lab-fact"><b>Did you know?</b> ${esc(cfg.fact)}</p>` : ''}
-            <button class="lab-go" type="button">${ico('play')} Start the lab</button>
+            ${cfg.fact ? `<p class="lab-fact"><b>${t('Did you know?')}</b> ${esc(cfg.fact)}</p>` : ''}
+            <button class="lab-go" type="button">${ico('play')} ${t('Start the lab')}</button>
           </div>
         </div>
       </div>`;
@@ -134,7 +135,7 @@ export function openLab(cfg, opts = {}) {
         result = { stars: s, score };
         api.progress(1);
         opts.onComplete?.(result);
-        setTimeout(() => showWin(s, message || cfg.win || 'Brilliant work!'), REDUCED ? 0 : 650);
+        setTimeout(() => showWin(s, message || cfg.win || t('Brilliant work!')), REDUCED ? 0 : 650);
       },
       savePortfolio(dataUrl, title) { opts.onPortfolio?.(dataUrl, title); },
       onCleanup(fn) { cleanups.push(fn); },
@@ -152,7 +153,7 @@ export function openLab(cfg, opts = {}) {
         return mod;
       } catch (e) {
         console.error(e);
-        stage.innerHTML = `<div class="lab-err"><p>This lab could not load. Check your connection and try again.</p></div>`;
+        stage.innerHTML = `<div class="lab-err"><p>${t('This lab could not load. Check your connection and try again.')}</p></div>`;
         return null;
       }
     }
@@ -170,8 +171,8 @@ export function openLab(cfg, opts = {}) {
       teardown();
       done = false; mistakes = 0; api.progress(0);
       stage.innerHTML = '';
-      api.say(cfg.mission || 'Let\'s begin!');
-      try { inst = mod.mount(stage, cfg, api) || null; } catch (e) { console.error(e); stage.innerHTML = '<div class="lab-err"><p>Something went wrong in this lab.</p></div>'; }
+      api.say(cfg.mission || t('Let\'s begin!'));
+      try { inst = mod.mount(stage, cfg, api) || null; } catch (e) { console.error(e); stage.innerHTML = `<div class="lab-err"><p>${t('Something went wrong in this lab.')}</p></div>`; }
       if (gsapRef && !REDUCED) gsapRef.from(stage.children, { opacity: 0, y: 18, duration: .5, stagger: .06, ease: 'power3.out' });
     }
     function teardown() {
@@ -186,9 +187,9 @@ export function openLab(cfg, opts = {}) {
       w.className = 'lab-cover lab-win';
       w.innerHTML = `<div class="lab-card win">
         <div class="win-stars">${[1, 2, 3].map(i => `<span class="${i <= stars ? 'on' : ''}">${STAR}</span>`).join('')}</div>
-        <h2>${stars === 3 ? 'Perfect!' : stars === 2 ? 'Great job!' : 'Lab complete!'}</h2>
+        <h2>${t(stars === 3 ? 'Perfect!' : stars === 2 ? 'Great job!' : 'Lab complete!')}</h2>
         <p>${esc(message)}</p>
-        <div class="win-btns"><button class="lab-go ghost" data-again type="button">${ico('restart')} Play again</button><button class="lab-go" data-close type="button">Back to the lesson ${ico('arrow')}</button></div>
+        <div class="win-btns"><button class="lab-go ghost" data-again type="button">${ico('restart')} ${t('Play again')}</button><button class="lab-go" data-close type="button">${t('Back to the lesson')} ${ico('arrow')}</button></div>
       </div>`;
       d.querySelector('.lab-body').append(w);
       const best = Math.max(stars, opts.best || 0);

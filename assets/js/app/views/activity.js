@@ -1,6 +1,6 @@
 // One activity, start to finish, inside the portal: the lesson (what you need, steps you can tick,
 // safety, a table to record in, questions to think about) and the activity's virtual lab.
-import { isHi } from '../../i18n.js';
+import { isHi, t } from '../../i18n.js';
 import { FORMS, projectById } from '../../data/courses.js';
 import { progress, save, log } from '../store.js';
 import { $, $$, esc, icon, art, toast, confetti, fmtDate } from '../ui.js';
@@ -18,12 +18,12 @@ export const lessonOf = (pid, n) => cache[pid]?.[n] || null;
 
 // How each lab type is named for children.
 export const LAB_KIND = {
-  sort: ['Sort it', '🧺'], sequence: ['Put in order', '🔢'], match: ['Match it', '🔗'], layers: ['Build it', '🧱'],
-  mix: ['Mix it', '🧪'], grow: ['Grow it', '🌱'], calc: ['Work it out', '🧮'], chart: ['Survey it', '📊'],
-  choice: ['Role-play', '💬'], explore: ['Explore', '🔍'], design: ['Design it', '🎨'], train: ['Train the AI', '🤖'],
-  physics: ['Physics lab', '🎯'], circuit: ['Circuit lab', '💡'], blocks: ['Code it', '🧩'],
+  sort: [t('Sort it'), '🧺'], sequence: [t('Put in order'), '🔢'], match: [t('Match it'), '🔗'], layers: [t('Build it'), '🧱'],
+  mix: [t('Mix it'), '🧪'], grow: [t('Grow it'), '🌱'], calc: [t('Work it out'), '🧮'], chart: [t('Survey it'), '📊'],
+  choice: [t('Role-play'), '💬'], explore: [t('Explore'), '🔍'], design: [t('Design it'), '🎨'], train: [t('Train the AI'), '🤖'],
+  physics: [t('Physics lab'), '🎯'], circuit: [t('Circuit lab'), '💡'], blocks: [t('Code it'), '🧩'],
 };
-export const starsHtml = (n, cls = '') => `<span class="stars ${cls}" aria-label="${n} of 3 stars">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}">★</i>`).join('')}</span>`;
+export const starsHtml = (n, cls = '') => `<span class="stars ${cls}" aria-label="${t('{n} of 3 stars', { n })}">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}">★</i>`).join('')}</span>`;
 
 /** Open an activity's lab. Saves the best stars and any portfolio image. Resolves when the lab closes. */
 export async function launchLab(ctx, p, n, lesson, { record = true } = {}) {
@@ -33,7 +33,7 @@ export async function launchLab(ctx, p, n, lesson, { record = true } = {}) {
   const prev = pr?.labs[n];
   return openLab(lesson.lab, {
     form: p.form,
-    label: `Activity ${n} · Virtual lab`,
+    label: t('Activity {n} · Virtual lab', { n }),
     best: prev?.stars || 0,
     onComplete({ stars }) {
       if (!pr) return;
@@ -45,9 +45,9 @@ export async function launchLab(ctx, p, n, lesson, { record = true } = {}) {
     async onPortfolio(dataUrl, title) {
       if (!pr) return;
       const img = await shrink(dataUrl);
-      pr.portfolio.push({ id: `pf_${Date.now().toString(36)}`, kind: 'photo', img, title: title || lesson.lab.title, text: `Made in the ${lesson.lab.title} lab`, at: Date.now() });
-      if (!save()) { pr.portfolio.pop(); toast('Storage is full, so the design was not saved.', 'bad'); return; }
-      toast('Saved to your portfolio.');
+      pr.portfolio.push({ id: `pf_${Date.now().toString(36)}`, kind: 'photo', img, title: title || lesson.lab.title, text: t('Made in the {lab} lab', { lab: lesson.lab.title }), at: Date.now() });
+      if (!save()) { pr.portfolio.pop(); toast(t('Storage is full, so the design was not saved.'), 'bad'); return; }
+      toast(t('Saved to your portfolio.'));
     },
   });
 }
@@ -70,11 +70,11 @@ function shrink(dataUrl, max = 560) {
 export function activityPage(ctx, pid, n) {
   const p = projectById(pid);
   const a = p.activities.find(x => x.n === n);
-  if (!a) return { title: p.title, html: `<div class="empty"><p>That activity does not exist.</p><a class="btn btn-brand" href="#/student/p/${pid}">Back to the project</a></div>`, nav: 'projects' };
+  if (!a) return { title: p.title, html: `<div class="empty"><p>${t('That activity does not exist.')}</p><a class="btn btn-brand" href="#/student/p/${pid}">${t('Back to the project')}</a></div>`, nav: 'projects' };
   const back = `<a class="back" href="#/student/p/${pid}/activities">← ${esc(p.title)}</a>`;
   if (!lessonsFor(pid)) {
     return { title: a.title, nav: 'projects',
-      html: `${back}<div class="act-loading card"><span></span><span></span><span></span><p class="muted">Opening the lesson…</p></div>`,
+      html: `${back}<div class="act-loading card"><span></span><span></span><span></span><p class="muted">${t('Opening the lesson…')}</p></div>`,
       mount() { loadLessons(pid).then(() => ctx.rerender()); } };
   }
   const L = lessonOf(pid, n);
@@ -85,7 +85,7 @@ export function activityPage(ctx, pid, n) {
   const lab = pr.labs[n];
   const idx = p.activities.findIndex(x => x.n === n);
   const prevA = p.activities[idx - 1], nextA = p.activities[idx + 1];
-  const kind = L?.lab ? LAB_KIND[L.lab.type] || ['Virtual lab', '🧪'] : null;
+  const kind = L?.lab ? LAB_KIND[L.lab.type] || [t('Virtual lab'), '🧪'] : null;
   const steps = L?.steps || [];
   const rec = L?.record;
   const recVals = pr.records[n] || [];
@@ -94,59 +94,59 @@ export function activityPage(ctx, pid, n) {
     ${back}
     <section class="act-hero f-${p.form}">
       <div class="ah-copy">
-        <p class="eyebrow">Activity ${n} of ${p.activities.length} · ${esc(FORMS[p.form].short)}</p>
+        <p class="eyebrow">${t('Activity {n} of {total} · {form}', { n, total: p.activities.length, form: esc(FORMS[p.form].short) })}</p>
         <h2>${esc(a.title)}</h2>
         <p class="ah-intro">${esc(L?.intro || a.task)}</p>
         <div class="chips">
           ${L?.time ? `<span class="chip">${icon('clock')} ${esc(L.time)}</span>` : ''}
           ${L?.group ? `<span class="chip">${icon('users')} ${esc(L.group)}</span>` : ''}
           ${L?.where ? `<span class="chip">${icon('home')} ${esc(L.where)}</span>` : ''}
-          <span class="chip" title="Where this activity is in the Kaushal Bodh book">${icon('book')} Book p. ${a.page}</span>
-          ${st?.done ? `<span class="chip ok">${icon('check')} Done ${fmtDate(st.at)}</span>` : ''}
+          <span class="chip" title="${t('Where this activity is in the Kaushal Bodh book')}">${icon('book')} ${t('Book p. {page}', { page: a.page })}</span>
+          ${st?.done ? `<span class="chip ok">${icon('check')} ${t('Done {date}', { date: fmtDate(st.at) })}</span>` : ''}
         </div>
       </div>
       ${L?.lab ? `<div class="ah-lab">
         <div class="lab-card-art">${art(p.art)}<span class="lab-kind" aria-hidden="true">${kind[1]}</span></div>
         <div class="ah-lab-copy">
-          <p class="eyebrow">Virtual lab · ${esc(kind[0])}</p>
+          <p class="eyebrow">${t('Virtual lab · {kind}', { kind: esc(kind[0]) })}</p>
           <h3>${esc(L.lab.title)}</h3>
           <p>${esc(L.lab.mission)}</p>
-          <div class="ah-lab-row"><button class="btn btn-brand" id="play-lab">${icon('play')} ${lab ? 'Play again' : 'Play the lab'}</button>${lab ? starsHtml(lab.stars, 'lg') : '<span class="muted small">Earn up to 3 stars</span>'}</div>
+          <div class="ah-lab-row"><button class="btn btn-brand" id="play-lab">${icon('play')} ${lab ? t('Play again') : t('Play the lab')}</button>${lab ? starsHtml(lab.stars, 'lg') : `<span class="muted small">${t('Earn up to 3 stars')}</span>`}</div>
         </div>
       </div>` : ''}
     </section>
     <div class="act-grid">
       <div class="act-main">
         ${L ? `
-        ${L.need?.length ? `<section class="card"><h3 class="h-card">${icon('flask')} You'll need</h3><ul class="need">${L.need.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+        ${L.need?.length ? `<section class="card"><h3 class="h-card">${icon('flask')} ${t("You'll need")}</h3><ul class="need">${L.need.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
         <section class="card steps-card">
-          <div class="card-head"><h3 class="h-card">${icon('check')} Steps</h3><span class="muted small" id="steps-count">${stepsDone.size} of ${steps.length} done</span></div>
+          <div class="card-head"><h3 class="h-card">${icon('check')} ${t('Steps')}</h3><span class="muted small" id="steps-count">${t('{n} of {total} done', { n: stepsDone.size, total: steps.length })}</span></div>
           <ol class="steps">${steps.map((s, i) => `<li class="step ${stepsDone.has(i) ? 'on' : ''}">
-            <button class="step-tick" data-step="${i}" aria-pressed="${stepsDone.has(i)}" aria-label="Step ${i + 1} done">${icon('check')}</button>
-            <div class="step-body"><span class="step-n">Step ${i + 1}</span><b>${esc(s.t)}</b><p>${esc(s.d)}</p></div>
+            <button class="step-tick" data-step="${i}" aria-pressed="${stepsDone.has(i)}" aria-label="${t('Step {n} done', { n: i + 1 })}">${icon('check')}</button>
+            <div class="step-body"><span class="step-n">${t('Step {n}', { n: i + 1 })}</span><b>${esc(s.t)}</b><p>${esc(s.d)}</p></div>
           </li>`).join('')}</ol>
         </section>
-        ${L.safety?.length ? `<section class="callout safety"><span class="callout-ic">${icon('shield')}</span><div><b>Stay safe</b><ul>${L.safety.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></section>` : ''}
-        ${rec ? `<section class="card"><h3 class="h-card">${icon('book')} ${esc(rec.title || 'My record')}</h3>
+        ${L.safety?.length ? `<section class="callout safety"><span class="callout-ic">${icon('shield')}</span><div><b>${t('Stay safe')}</b><ul>${L.safety.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></section>` : ''}
+        ${rec ? `<section class="card"><h3 class="h-card">${icon('book')} ${esc(rec.title || t('My record'))}</h3>
           <div class="rec-wrap"><table class="rec"><thead><tr>${rec.cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead>
-          <tbody>${Array.from({ length: Math.max(rec.rows || 3, recVals.length) }, (_, r) => `<tr>${rec.cols.map((c, ci) => `<td><input data-r="${r}" data-c="${ci}" aria-label="${esc(c)}, row ${r + 1}" value="${esc(recVals[r]?.[ci] || '')}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
-          <div class="rec-foot"><button class="btn btn-ghost btn-sm" id="add-row">${icon('plus')} Add a row</button><span class="muted small" id="rec-saved"></span></div></section>` : ''}
-        ${L.think?.length ? `<section class="card think"><h3 class="h-card">${icon('idea')} Think about it</h3><ul>${L.think.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
-        ${L.fact ? `<aside class="fact-card"><span>💡</span><p><b>Did you know?</b> ${esc(L.fact)}</p></aside>` : ''}`
-        : `<section class="card"><p>${esc(a.task)}</p><p class="book-ref">${icon('book')}<span>This activity is on <b>page ${a.page}</b> of your Kaushal Bodh book.</span></p></section>`}
+          <tbody>${Array.from({ length: Math.max(rec.rows || 3, recVals.length) }, (_, r) => `<tr>${rec.cols.map((c, ci) => `<td><input data-r="${r}" data-c="${ci}" aria-label="${t('{col}, row {n}', { col: esc(c), n: r + 1 })}" value="${esc(recVals[r]?.[ci] || '')}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+          <div class="rec-foot"><button class="btn btn-ghost btn-sm" id="add-row">${icon('plus')} ${t('Add a row')}</button><span class="muted small" id="rec-saved"></span></div></section>` : ''}
+        ${L.think?.length ? `<section class="card think"><h3 class="h-card">${icon('idea')} ${t('Think about it')}</h3><ul>${L.think.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
+        ${L.fact ? `<aside class="fact-card"><span>💡</span><p><b>${t('Did you know?')}</b> ${esc(L.fact)}</p></aside>` : ''}`
+        : `<section class="card"><p>${esc(a.task)}</p><p class="book-ref">${icon('book')}<span>${t('This activity is on <b>page {page}</b> of your Kaushal Bodh book.', { page: a.page })}</span></p></section>`}
       </div>
       <aside class="act-side">
         <section class="card reflect">
-          <h3 class="h-card">${icon('star')} My reflection</h3>
-          <label for="reflect" class="muted small">What did you do, and what did you learn?</label>
-          <textarea id="reflect" rows="4" maxlength="600" placeholder="We… I learnt… Next time I will…">${esc(st?.note || '')}</textarea>
+          <h3 class="h-card">${icon('star')} ${t('My reflection')}</h3>
+          <label for="reflect" class="muted small">${t('What did you do, and what did you learn?')}</label>
+          <textarea id="reflect" rows="4" maxlength="600" placeholder="${t('We… I learnt… Next time I will…')}">${esc(st?.note || '')}</textarea>
           ${st?.done
-            ? `<div class="btn-row"><button class="btn btn-ghost btn-sm" id="save-note">Update reflection</button><button class="btn btn-sm linkish" id="undo">Mark as not done</button></div>`
-            : `<button class="btn btn-brand" id="done">${icon('check')} Mark activity as done</button>`}
+            ? `<div class="btn-row"><button class="btn btn-ghost btn-sm" id="save-note">${t('Update reflection')}</button><button class="btn btn-sm linkish" id="undo">${t('Mark as not done')}</button></div>`
+            : `<button class="btn btn-brand" id="done">${icon('check')} ${t('Mark activity as done')}</button>`}
         </section>
-        <nav class="act-nav" aria-label="Other activities">
-          ${prevA ? `<a href="#/student/p/${pid}/a/${prevA.n}"><small>Previous</small><span>${esc(prevA.title)}</span></a>` : '<span></span>'}
-          ${nextA ? `<a class="next" href="#/student/p/${pid}/a/${nextA.n}"><small>Next</small><span>${esc(nextA.title)}</span></a>` : `<a class="next" href="#/student/p/${pid}/quiz"><small>Next</small><span>Take the project quiz</span></a>`}
+        <nav class="act-nav" aria-label="${t('Other activities')}">
+          ${prevA ? `<a href="#/student/p/${pid}/a/${prevA.n}"><small>${t('Previous')}</small><span>${esc(prevA.title)}</span></a>` : '<span></span>'}
+          ${nextA ? `<a class="next" href="#/student/p/${pid}/a/${nextA.n}"><small>${t('Next')}</small><span>${esc(nextA.title)}</span></a>` : `<a class="next" href="#/student/p/${pid}/quiz"><small>${t('Next')}</small><span>${t('Take the project quiz')}</span></a>`}
         </nav>
       </aside>
     </div>`;
@@ -164,22 +164,22 @@ export function activityPage(ctx, pid, n) {
         save();
         b.setAttribute('aria-pressed', String(on));
         b.closest('.step').classList.toggle('on', on);
-        $('#steps-count', el).textContent = `${set.size} of ${steps.length} done`;
-        if (on && set.size === steps.length) toast(st?.done ? 'All steps ticked.' : 'All steps done! Write your reflection and mark the activity as done.');
+        $('#steps-count', el).textContent = t('{n} of {total} done', { n: set.size, total: steps.length });
+        if (on && set.size === steps.length) toast(st?.done ? t('All steps ticked.') : t('All steps done! Write your reflection and mark the activity as done.'));
       }));
       // Record table: saves as you type.
-      let t;
+      let tm;
       const saveRec = () => {
         const rows = [];
         $$('.rec tbody tr', el).forEach((tr, r) => { rows[r] = $$('input', tr).map(i => i.value.trim()); });
         while (rows.length && rows[rows.length - 1].every(v => !v)) rows.pop();
         pr.records[n] = rows; save();
-        const s = $('#rec-saved', el); if (s) s.textContent = 'Saved';
+        const s = $('#rec-saved', el); if (s) s.textContent = t('Saved');
       };
-      $('.rec', el)?.addEventListener('input', () => { clearTimeout(t); t = setTimeout(saveRec, 400); });
+      $('.rec', el)?.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(saveRec, 400); });
       $('#add-row', el)?.addEventListener('click', () => {
         const tb = $('.rec tbody', el), r = tb.rows.length;
-        tb.insertAdjacentHTML('beforeend', `<tr>${rec.cols.map((c, ci) => `<td><input data-r="${r}" data-c="${ci}" aria-label="${esc(c)}, row ${r + 1}"></td>`).join('')}</tr>`);
+        tb.insertAdjacentHTML('beforeend', `<tr>${rec.cols.map((c, ci) => `<td><input data-r="${r}" data-c="${ci}" aria-label="${t('{col}, row {n}', { col: esc(c), n: r + 1 })}"></td>`).join('')}</tr>`);
         tb.lastElementChild.querySelector('input').focus();
       });
       const note = $('#reflect', el);
@@ -192,13 +192,13 @@ export function activityPage(ctx, pid, n) {
         save();
         if (done && !wasDone) {
           const all = p.activities.every(x => pr.acts[x.n]?.done);
-          if (all) { confetti(); toast(`All ${p.activities.length} activities done! Time for the quiz.`); }
-          else toast('Activity done. Nice work!');
-        } else toast(done ? 'Reflection saved.' : 'Marked as not done.');
+          if (all) { confetti(); toast(t('All {n} activities done! Time for the quiz.', { n: p.activities.length })); }
+          else toast(t('Activity done. Nice work!'));
+        } else toast(done ? t('Reflection saved.') : t('Marked as not done.'));
         ctx.rerender();
       };
       $('#done', el)?.addEventListener('click', () => {
-        if (!note.value.trim()) { note.focus(); toast('Write a line or two about what you did first.', 'warn'); return; }
+        if (!note.value.trim()) { note.focus(); toast(t('Write a line or two about what you did first.'), 'warn'); return; }
         finish(true);
       });
       $('#save-note', el)?.addEventListener('click', () => finish(true));

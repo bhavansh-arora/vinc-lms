@@ -1,5 +1,5 @@
 // VINC Lab LMS: hash router, app shell and page transitions.
-import { langButton } from '../i18n.js';
+import { t, langButton } from '../i18n.js';
 import { boot, session, user, school, canPersist, onSync, pull, takeRecovered, isRemote, refresh, loadPublic, logOut, backToAdmin } from './store.js';
 import { $, $$, esc, icon, toast, countUp, REDUCED } from './ui.js';
 import { renderAuth } from './auth.js';
@@ -12,7 +12,9 @@ import * as Profile from './views/profile.js';
 
 await boot();
 
-const ROLE_LABEL = { student: 'Student', parent: 'Parent', teacher: 'Teacher', school: 'School', admin: 'Admin' };
+const ROLE_LABEL = { student: t('Student'), parent: t('Parent'), teacher: t('Teacher'), school: t('School'), admin: t('Admin') };
+// Titles the app gives people by default are shown in the page's language; typed titles as they are.
+const roleTitle = x => (x === 'Kaushal Bodh teacher' || x === 'Kaushal Bodh coordinator' ? t(x) : x);
 const VIEWS = { student: Student, parent: Parent, teacher: Teacher, school: School, admin: Admin };
 const root = $('#app');
 
@@ -27,7 +29,7 @@ const busy = () => !!document.querySelector('dialog[open]')
   || (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '') && !!document.activeElement.closest('#app'));
 function syncNow(what) {
   const n = takeRecovered();
-  if (n) toast(`Carried over ${n} account${n === 1 ? '' : 's'} saved by an older VINC Lab tab.`, 'ok', 5000);
+  if (n) toast(t(n === 1 ? 'Carried over {n} account saved by an older VINC Lab tab.' : 'Carried over {n} accounts saved by an older VINC Lab tab.', { n }), 'ok', 5000);
   if (busy()) { syncPending = true; return; }
   syncPending = false;
   const changed = isRemote() ? true : pull();
@@ -36,9 +38,9 @@ function syncNow(what) {
 }
 // Messages from the store: new data, a save the server refused, a lost connection, or a session that ended.
 onSync(what => {
-  if (what === 'logout') { session.clear(); toast('Please log in again.', 'warn', 4500); go('/login'); return; }
-  if (what === 'offline') { toast('Cannot reach VINC Lab right now. Your changes will be saved when the connection is back.', 'warn', 6000); if ($('#view') && !busy()) rerender(); return; }
-  if (what?.type === 'errors') { toast(what.errors[0]?.message || 'Some changes could not be saved.', 'bad', 6000); syncNow('data'); return; }
+  if (what === 'logout') { session.clear(); toast(t('Please log in again.'), 'warn', 4500); go('/login'); return; }
+  if (what === 'offline') { toast(t('Cannot reach VINC Lab right now. Your changes will be saved when the connection is back.'), 'warn', 6000); if ($('#view') && !busy()) rerender(); return; }
+  if (what?.type === 'errors') { toast(what.errors[0]?.message || t('Some changes could not be saved.'), 'bad', 6000); syncNow('data'); return; }
   syncNow(what);
 });
 document.addEventListener('close', () => { if (syncPending) setTimeout(() => syncNow('data'), 80); }, true);
@@ -49,7 +51,7 @@ document.addEventListener('visibilitychange', () => {
 });
 // On the server, fetch the sign-up lists (schools and classes) before showing the login or sign-up screen.
 const withPublic = fn => (isRemote() ? loadPublic().then(fn) : fn());
-{ const n = takeRecovered(); if (n) setTimeout(() => toast(`Carried over ${n} account${n === 1 ? '' : 's'} saved by an older version of VINC Lab.`, 'ok', 5000), 900); }
+{ const n = takeRecovered(); if (n) setTimeout(() => toast(t(n === 1 ? 'Carried over {n} account saved by an older version of VINC Lab.' : 'Carried over {n} accounts saved by an older version of VINC Lab.', { n }), 'ok', 5000), 900); }
 
 /* ---------- Session ---------- */
 function currentUser() { const s = session.get(); return s ? user(s.userId) : null; }
@@ -63,11 +65,11 @@ function enter(u, { fresh }) {
   returnTo = null;
   if (u.pwTemp) {
     go(`/${u.role}/profile`);
-    setTimeout(() => toast('You logged in with a temporary password. Please choose your own below.', 'warn', 5200), 450);
+    setTimeout(() => toast(t('You logged in with a temporary password. Please choose your own below.'), 'warn', 5200), 450);
     return;
   }
   go(back);
-  setTimeout(() => toast(fresh ? `Welcome to VINC Lab, ${first}!` : `Welcome back, ${first}.`), 450);
+  setTimeout(() => toast(fresh ? t('Welcome to VINC Lab, {first}!', { first }) : t('Welcome back, {first}.', { first })), 450);
 }
 
 /* ---------- Router ---------- */
@@ -79,7 +81,7 @@ function route() {
   if (head === 'login' || head === 'signup') {
     shellKey = null; lastHash = null;
     withPublic(() => renderAuth(root, { tab: head, role: head === 'signup' ? rest[0] : null, code: head === 'signup' ? rest[1] : '', onEnter: enter }));
-    document.title = `${head === 'login' ? 'Log in' : 'Create an account'} · VINC Lab`;
+    document.title = `${head === 'login' ? t('Log in') : t('Create an account')} · VINC Lab`;
     return;
   }
   // Old link from the landing page's branding preview: register the school instead.
@@ -89,7 +91,7 @@ function route() {
     shellKey = null; lastHash = null;
     if (head) returnTo = `/${parts.join('/')}`;
     withPublic(() => renderAuth(root, { tab: 'login', onEnter: enter }));
-    document.title = 'Log in · VINC Lab';
+    document.title = `${t('Log in')} · VINC Lab`;
     return;
   }
   if (head !== me.role) { go(`/${me.role}`); return; }
@@ -112,7 +114,7 @@ function renderShell(me, rest) {
   const s = session.get();
   const ctx = { me, school: sch, params: rest, go, rerender, toast };
   let page;
-  try { page = View.render(ctx); } catch (e) { console.error(e); page = { title: 'Something went wrong', html: `<div class="empty"><p>That page could not be shown.</p><a class="btn btn-primary" href="#/${me.role}">Go to the dashboard</a></div>` }; }
+  try { page = View.render(ctx); } catch (e) { console.error(e); page = { title: t('Something went wrong'), html: `<div class="empty"><p>${t('That page could not be shown.')}</p><a class="btn btn-primary" href="#/${me.role}">${t('Go to the dashboard')}</a></div>` }; }
   const nav = VIEWS[me.role].nav(ctx);
   const active = isProfile ? 'profile' : (page.nav ?? rest[0] ?? '');
   const key = [me.id, me.name, me.login, me.title, sch?.id, sch?.color, sch?.studio, sch?.name, sch?.initials, s?.by || '', canPersist(), nav.map(n => n.path + n.label).join(',')].join('|');
@@ -156,39 +158,39 @@ function buildShell(me, sch, nav, s) {
   root.className = `app role-${me.role}${first ? ' shell-in' : ''}`;
   const href = n => `#/${me.role}${n.path ? '/' + n.path : ''}`;
   root.innerHTML = `
-    <aside class="side" aria-label="Sidebar">
+    <aside class="side" aria-label="${t('Sidebar')}">
       <a class="side-brand" href="#/${me.role}">
         ${sch ? `<span class="badge">${esc(sch.initials)}</span><span><b>${esc(sch.studio)}</b><small>${esc(sch.name)}</small></span>`
               : `<img class="logo-l" src="assets/logo/vinc-lab-logo.svg" alt="VINC Lab" width="150" height="34"><img class="logo-d" src="assets/logo/vinc-lab-logo-dark.svg" alt="VINC Lab" width="150" height="34">`}
       </a>
-      <nav class="side-nav" aria-label="Main">
+      <nav class="side-nav" aria-label="${t('Main')}">
         <span class="nav-pill" aria-hidden="true"></span>
         ${nav.map(n => `<a href="${href(n)}" data-path="${n.path}">${icon(n.icon)}<span>${esc(n.label)}</span></a>`).join('')}
       </nav>
       <div class="side-foot">
-        <a class="me" href="#/${me.role}/profile" data-path="profile"><span class="avatar">${esc(initialsOf(me.name))}</span><span><b>${esc(me.name)}</b><small>${esc(me.login ? `@${me.login}` : me.title || ROLE_LABEL[me.role])}</small></span>${icon('settings', 'me-ic')}</a>
-        ${sch ? '<small class="powered">Powered by <b>VINC Lab</b></small>' : ''}
+        <a class="me" href="#/${me.role}/profile" data-path="profile"><span class="avatar">${esc(initialsOf(me.name))}</span><span><b>${esc(me.name)}</b><small>${esc(me.login ? `@${me.login}` : roleTitle(me.title) || ROLE_LABEL[me.role])}</small></span>${icon('settings', 'me-ic')}</a>
+        ${sch ? `<small class="powered">${t('Powered by <b>VINC Lab</b>')}</small>` : ''}
       </div>
     </aside>
     <div class="main">
       <header class="top">
-        <button class="icon-btn only-m" id="nav-open" aria-label="Open menu" aria-expanded="false">${icon('menu')}</button>
+        <button class="icon-btn only-m" id="nav-open" aria-label="${t('Open menu')}" aria-expanded="false">${icon('menu')}</button>
         <h1 class="top-title" id="top-title"></h1>
         <div class="top-tools">
-          ${s?.by ? `<button class="btn btn-sm btn-ghost" id="back-admin">${icon('arrow', 'flip')} <span>Back to admin</span></button>` : ''}
+          ${s?.by ? `<button class="btn btn-sm btn-ghost" id="back-admin">${icon('arrow', 'flip')} <span>${t('Back to admin')}</span></button>` : ''}
           ${langButton('sm')}
-          <a class="me-btn" href="#/${me.role}/profile" data-path="profile" aria-label="Your profile: ${esc(me.name)}"><span class="avatar">${esc(initialsOf(me.name))}</span><span class="me-name">${esc(me.name.split(' ')[0])}</span></a>
-          <button class="icon-btn" id="logout" aria-label="Log out" title="Log out">${icon('logout')}</button>
+          <a class="me-btn" href="#/${me.role}/profile" data-path="profile" aria-label="${t('Your profile: {name}', { name: esc(me.name) })}"><span class="avatar">${esc(initialsOf(me.name))}</span><span class="me-name">${esc(me.name.split(' ')[0])}</span></a>
+          <button class="icon-btn" id="logout" aria-label="${t('Log out')}" title="${t('Log out')}">${icon('logout')}</button>
         </div>
       </header>
-      ${canPersist() ? '' : `<p class="warn-bar">${isRemote() ? 'Cannot reach VINC Lab right now. Your changes are kept here and will be saved when the connection is back.' : 'This browser is blocking storage, so changes will not be kept after you leave.'}</p>`}
+      ${canPersist() ? '' : `<p class="warn-bar">${isRemote() ? t('Cannot reach VINC Lab right now. Your changes are kept here and will be saved when the connection is back.') : t('This browser is blocking storage, so changes will not be kept after you leave.')}</p>`}
       <main id="view" class="view" tabindex="-1"></main>
     </div>
-    <nav class="tabbar" aria-label="Main">
+    <nav class="tabbar" aria-label="${t('Main')}">
       <span class="tab-pill" aria-hidden="true"></span>
       ${nav.slice(0, 5).map(n => `<a href="${href(n)}" data-path="${n.path}">${icon(n.icon)}<span>${esc(n.short || n.label)}</span></a>`).join('')}
     </nav>`;
-  $('#logout').addEventListener('click', async () => { await logOut(); toast('You have logged out.'); go('/login'); });
+  $('#logout').addEventListener('click', async () => { await logOut(); toast(t('You have logged out.')); go('/login'); });
   $('#back-admin')?.addEventListener('click', async () => {
     try { await backToAdmin(); go('/admin/schools'); } catch { await logOut(); go('/login'); }
   });

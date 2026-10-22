@@ -12,6 +12,7 @@
 //   - extras: node.place (change the backdrop), node.mood ('happy'|'think'|'surprised'|'sad'|'love'),
 //             choice.sprite / choice.emoji (art on the card), cfg.meter: false (hide the impression meter)
 import { h, esc, shake, pop, sparkle } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Story choices', needs: ['gsap'] };
 
@@ -129,7 +130,7 @@ export function mount(stage, cfg, api) {
   const nodes = cfg.nodes || {};
   const cast = (cfg.cast || []).filter(Boolean);
   const byId = Object.fromEntries(cast.map((c, i) => [c.id, { ...c, color: NAME_COLORS[i % NAME_COLORS.length] }]));
-  const meId = byId.me ? 'me' : (cast.find(c => /^(you|me)$/i.test(c.name || ''))?.id ?? null);
+  const meId = byId.me ? 'me' : (cast.find(c => /^(you|me|तुम|मैं|आप)$/i.test(c.name || ''))?.id ?? null);
   const npcs = cast.filter(c => c.id !== meId);
   const lead = npcs[0];
   const timers = [];
@@ -161,17 +162,17 @@ export function mount(stage, cfg, api) {
       <div class="chc-cast">${Object.keys(pos).map(id => `<div class="chc-actor ${id === meId ? 'is-me' : ''}" data-id="${esc(id)}" style="left:${pos[id]}%">
         <i class="chc-shadow"></i><div class="chc-breathe"><div class="chc-bob">${actorArt(api, byId[id])}</div></div><span class="chc-emote" aria-hidden="true"></span>
         <span class="chc-tag">${esc(byId[id].name || id)}</span></div>`).join('')}</div>
-      ${cfg.meter !== false && lead ? `<div class="chc-meter" role="meter" aria-label="${esc(lead.name)}'s impression of you" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35">
+      ${cfg.meter !== false && lead ? `<div class="chc-meter" role="meter" aria-label="${t('{name}\'s impression of you', { name: esc(lead.name) })}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35">
         <span class="chc-heart" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.5 3 4.5 6.8 4.5c2.2 0 3.6 1.3 5.2 3.1 1.6-1.8 3-3.1 5.2-3.1 3.8 0 5.9 4 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg></span>
         <span class="chc-mtxt"><small>${esc(lead.name)}</small><span class="chc-track"><i></i></span></span></div>` : ''}
     </div>
-    <div class="chc-dialog" role="group" aria-label="Conversation">
+    <div class="chc-dialog" role="group" aria-label="${t('Conversation')}">
       <span class="chc-tail" aria-hidden="true"></span>
       <span class="chc-name"></span>
       <p class="chc-text" aria-live="polite"></p>
-      <button type="button" class="chc-more" hidden><span>Tap to continue</span> <b aria-hidden="true">▶</b></button>
+      <button type="button" class="chc-more" hidden><span>${t('Tap to continue')}</span> <b aria-hidden="true">▶</b></button>
     </div>
-    <div class="chc-choices" role="group" aria-label="Your choices"></div>
+    <div class="chc-choices" role="group" aria-label="${t('Your choices')}"></div>
   </div>`);
   stage.append(root);
   const $ = s => root.querySelector(s);
@@ -192,7 +193,7 @@ export function mount(stage, cfg, api) {
   /* ---------- speaking ---------- */
   let bobTl = null;
   function setSpeaker(who) {
-    const a = who && actors[who], info = byId[who] || (who === '_you' ? { name: 'You', color: 'var(--lf)' } : null);
+    const a = who && actors[who], info = byId[who] || (who === '_you' ? { name: t('You'), color: 'var(--lf)' } : null);
     root.classList.toggle('narrate', !info);
     Object.entries(actors).forEach(([id, el]) => { el.classList.toggle('speaking', id === who); el.classList.toggle('quiet', !!a && id !== who); });
     if (info) { nameEl.textContent = info.name || who; nameEl.style.setProperty('--nc', info.color); nameEl.hidden = false; }
@@ -327,7 +328,7 @@ export function mount(stage, cfg, api) {
       sparkle(api, card); sparkTrail(card);
       setMeter(impression + (1 - .35) / goodSteps + .02);
       if (node.who) emote(node.who, 'love');
-      api.say(c.feedback || 'Good choice!', 'good');
+      api.say(c.feedback || t('Good choice!'), 'good');
       floatText(card, '+ ♥');
       await new Promise(r => later(r, 650));
       await speak(meId || '_you', c.text, { fast: true });
@@ -343,10 +344,10 @@ export function mount(stage, cfg, api) {
     shake(api, card);
     setMeter(impression - .5 / goodSteps);
     if (node.who) { emote(node.who, 'question'); const a = actors[node.who]; if (a) shake(api, a.querySelector('.chc-bob')); }
-    api.say(c.feedback || 'Hmm, that did not go so well. Try another way.', 'bad');
+    api.say(c.feedback || t('Hmm, that did not go so well. Try another way.'), 'bad');
     const retry = !c.to || c.to === id || !nodes[c.to];
-    const fb = h(`<div class="chc-fb" role="status"><span class="chc-fb-ic" aria-hidden="true">🤔</span><div><b>${retry ? 'Let’s try that again' : 'Hmm…'}</b><p>${esc(c.feedback || 'Think about how that would make the other person feel.')}</p></div>
-      <button type="button" class="chc-fb-go">${retry ? '↺ Choose again' : 'See what happens ▶'}</button></div>`);
+    const fb = h(`<div class="chc-fb" role="status"><span class="chc-fb-ic" aria-hidden="true">🤔</span><div><b>${retry ? t('Let’s try that again') : t('Hmm…')}</b><p>${esc(c.feedback || t('Think about how that would make the other person feel.'))}</p></div>
+      <button type="button" class="chc-fb-go">${retry ? t('↺ Choose again') : t('See what happens ▶')}</button></div>`);
     choicesEl.append(fb);
     if (!api.reduced) g.from(fb, { y: 16, opacity: 0, duration: .4, ease: 'back.out(2)' });
     fb.querySelector('.chc-fb-go').focus({ preventScroll: true });

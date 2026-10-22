@@ -4,6 +4,7 @@
 // the clock until the child picks the right fix from a toolbox. Extra (optional) config: a control may
 // set `value` (its starting position); otherwise it starts away from the ideal so the child must think.
 import { h, esc, shake, pop, sparkle } from '../kit.js';
+import { t, isHi } from '../../../i18n.js';
 
 export const meta = { title: 'Grow a plant', needs: ['gsap'] };
 
@@ -23,15 +24,15 @@ const leafD = (len, wid) => `M0 0C${n1(wid * .6)} ${n1(-len * .12)} ${n1(wid * .
    Plant kinds
 ------------------------------------------------------------------------------------------------ */
 const KINDS = {
-  tomato: { form: 'stem', h: 205, nodes: 9, leaf: 'compound', len: 58, spread: 64, cluster: 3, col: '#4F9A34', stem: '#5E8F2E', flowerAt: .46, fruitAt: .58, ripeAt: .84, fruit: 'tomato', fruitN: 9, flower: 'yellow', stake: true, name: 'tomato plant' },
-  chilli: { form: 'stem', h: 150, nodes: 10, leaf: 'lance', len: 34, spread: 55, cluster: 2, col: '#3F8A2C', stem: '#4E7F2A', branch: true, flowerAt: .48, fruitAt: .6, ripeAt: .86, fruit: 'chilli', fruitN: 8, flower: 'white', name: 'chilli plant' },
-  bean: { form: 'stem', h: 235, nodes: 10, leaf: 'trifoliate', len: 34, spread: 62, cluster: 2, col: '#5AA23A', stem: '#5E9A34', climb: true, flowerAt: .44, fruitAt: .58, ripeAt: 2, fruit: 'pod', fruitN: 7, flower: 'violet', name: 'bean plant' },
-  marigold: { form: 'stem', h: 125, nodes: 8, leaf: 'pinnate', len: 36, spread: 58, col: '#3E7D2A', stem: '#4C7A2A', branch: true, flowerAt: .46, fruitAt: .56, ripeAt: 2, fruit: 'marigold', fruitN: 5, name: 'marigold' },
-  sapling: { form: 'stem', h: 225, nodes: 11, leaf: 'oval', len: 32, spread: 58, col: '#4E9A3A', stem: '#7A5634', woody: true, branch: true, name: 'sapling' },
-  spinach: { form: 'rosette', n: 12, leaf: 'spinach', len: 70, col: '#2F7A2A', name: 'spinach' },
-  lettuce: { form: 'rosette', n: 15, leaf: 'ruffle', len: 66, col: '#7DBE4A', head: true, name: 'lettuce' },
-  coriander: { form: 'clump', n: 9, h: 92, col: '#4C9A34', name: 'coriander' },
-  microgreens: { form: 'micro', col: '#7CC250', name: 'microgreens' },
+  tomato: { form: 'stem', h: 205, nodes: 9, leaf: 'compound', len: 58, spread: 64, cluster: 3, col: '#4F9A34', stem: '#5E8F2E', flowerAt: .46, fruitAt: .58, ripeAt: .84, fruit: 'tomato', fruitN: 9, flower: 'yellow', stake: true, name: t('tomato plant') },
+  chilli: { form: 'stem', h: 150, nodes: 10, leaf: 'lance', len: 34, spread: 55, cluster: 2, col: '#3F8A2C', stem: '#4E7F2A', branch: true, flowerAt: .48, fruitAt: .6, ripeAt: .86, fruit: 'chilli', fruitN: 8, flower: 'white', name: t('chilli plant') },
+  bean: { form: 'stem', h: 235, nodes: 10, leaf: 'trifoliate', len: 34, spread: 62, cluster: 2, col: '#5AA23A', stem: '#5E9A34', climb: true, flowerAt: .44, fruitAt: .58, ripeAt: 2, fruit: 'pod', fruitN: 7, flower: 'violet', name: t('bean plant') },
+  marigold: { form: 'stem', h: 125, nodes: 8, leaf: 'pinnate', len: 36, spread: 58, col: '#3E7D2A', stem: '#4C7A2A', branch: true, flowerAt: .46, fruitAt: .56, ripeAt: 2, fruit: 'marigold', fruitN: 5, name: t('marigold') },
+  sapling: { form: 'stem', h: 225, nodes: 11, leaf: 'oval', len: 32, spread: 58, col: '#4E9A3A', stem: '#7A5634', woody: true, branch: true, name: t('sapling') },
+  spinach: { form: 'rosette', n: 12, leaf: 'spinach', len: 70, col: '#2F7A2A', name: t('spinach') },
+  lettuce: { form: 'rosette', n: 15, leaf: 'ruffle', len: 66, col: '#7DBE4A', head: true, name: t('lettuce') },
+  coriander: { form: 'clump', n: 9, h: 92, col: '#4C9A34', name: t('coriander') },
+  microgreens: { form: 'micro', col: '#7CC250', name: t('microgreens') },
 };
 const ICON = {
   water: '<path d="M12 3C9 8 6 11 6 14.5a6 6 0 0 0 12 0C18 11 15 8 12 3z" fill="#4BA3E3"/><path d="M9.5 15a2.6 2.6 0 0 0 2.6 2.6" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
@@ -42,26 +43,26 @@ const ICON = {
   temp: '<path d="M10 4a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z" fill="#F4EADB" stroke="#B23A2A" stroke-width="1.4"/><circle cx="12" cy="17" r="2.4" fill="#C2502A"/><path d="M12 9v8" stroke="#C2502A" stroke-width="2"/>',
   shade: '<path d="M3 9l9-5 9 5z" fill="#3F8F4A"/><path d="M5 9v11M19 9v11" stroke="#7A5634" stroke-width="2"/><path d="M4 9h16" stroke="#2F7A3B" stroke-width="2"/>',
 };
-const KEYNAME = { water: 'Water', sun: 'Sunlight', nutrients: 'Nutrients', ph: 'pH', spacing: 'Spacing', temp: 'Temperature', shade: 'Shade' };
+const KEYNAME = { water: t('Water'), sun: t('Sunlight'), nutrients: t('Nutrients'), ph: t('pH'), spacing: t('Spacing'), temp: t('Temperature'), shade: t('Shade') };
 const SYMPTOM = {
-  water: { low: 'The leaves are drooping. The plant is thirsty: give it more water.', high: 'Yellow leaves and soggy soil: too much water! Roots need air too.' },
-  sun: { low: 'The stem is long and thin, stretching for light. It needs more sunlight.', high: 'The leaf edges are scorched brown: too many hours of strong sun.' },
-  nutrients: { low: 'Pale yellow leaves: the plant is hungry for nutrients.', high: 'Brown leaf tips: too much fertiliser burns the roots.' },
-  ph: { low: 'Brown spots on the leaves: the water is too acidic, so roots cannot take in food.', high: 'Brown spots on the leaves: the pH is too high, so roots cannot take in food.' },
-  spacing: { low: 'The plants are too crowded. They fight for light and stay small.', high: 'So much empty space between plants: you could grow more!' },
-  temp: { low: 'It is too cold. The plant is hardly growing.', high: 'It is too hot. The plant wilts in the heat.' },
-  shade: { low: 'The midday sun is too harsh without any shade.', high: 'Too much shade: the plant stretches for light.' },
+  water: { low: t('The leaves are drooping. The plant is thirsty: give it more water.'), high: t('Yellow leaves and soggy soil: too much water! Roots need air too.') },
+  sun: { low: t('The stem is long and thin, stretching for light. It needs more sunlight.'), high: t('The leaf edges are scorched brown: too many hours of strong sun.') },
+  nutrients: { low: t('Pale yellow leaves: the plant is hungry for nutrients.'), high: t('Brown leaf tips: too much fertiliser burns the roots.') },
+  ph: { low: t('Brown spots on the leaves: the water is too acidic, so roots cannot take in food.'), high: t('Brown spots on the leaves: the pH is too high, so roots cannot take in food.') },
+  spacing: { low: t('The plants are too crowded. They fight for light and stay small.'), high: t('So much empty space between plants: you could grow more!') },
+  temp: { low: t('It is too cold. The plant is hardly growing.'), high: t('It is too hot. The plant wilts in the heat.') },
+  shade: { low: t('The midday sun is too harsh without any shade.'), high: t('Too much shade: the plant stretches for light.') },
 };
 const FIX = {
-  neem: { label: 'Spray neem', ico: '🌿' }, shade: { label: 'Put up shade net', ico: '⛱️' }, weed: { label: 'Pull the weeds', ico: '🧤' },
-  drain: { label: 'Drain extra water', ico: '🕳️' }, water: { label: 'Give water', ico: '🚿' },
+  neem: { label: t('Spray neem'), ico: '🌿' }, shade: { label: t('Put up shade net'), ico: '⛱️' }, weed: { label: t('Pull the weeds'), ico: '🧤' },
+  drain: { label: t('Drain extra water'), ico: '🕳️' }, water: { label: t('Give water'), ico: '🚿' },
 };
 const EVENT_HINT = {
-  pests: 'Aphids are tiny insects that suck the sap. Spray something that chases insects away.',
-  heat: 'The sun is burning hot. The plant needs protection from the strong sun.',
-  rain: 'Too much rain has flooded the soil. The extra water has to go.',
-  weeds: 'Weeds steal water, light and food from your plant. Take them out.',
-  wilting: 'The plant is thirsty and its leaves hang down.',
+  pests: t('Aphids are tiny insects that suck the sap. Spray something that chases insects away.'),
+  heat: t('The sun is burning hot. The plant needs protection from the strong sun.'),
+  rain: t('Too much rain has flooded the soil. The extra water has to go.'),
+  weeds: t('Weeds steal water, light and food from your plant. Take them out.'),
+  wilting: t('The plant is thirsty and its leaves hang down.'),
 };
 const EVENT_FIX = { pests: 'neem', heat: 'shade', rain: 'drain', weeds: 'weed', wilting: 'water' };
 
@@ -363,7 +364,7 @@ export function mount(stage, cfg, api) {
   /* ---------- DOM ---------- */
   const root = h(`<div class="lab-grow gr-m-${medium} gr-p-${plantKind}">
     <div class="gr-scene">
-      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="A ${esc(K.name)} growing in ${esc(medium)}">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('A {plant} growing in {medium}', { plant: esc(K.name), medium: { soil: t('soil'), water: t('water'), cocopeat: t('cocopeat') }[medium] })}">
         <defs>
           <linearGradient id="gr-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="s0" stop-color="#7EC8F0"/><stop offset="1" class="s1" stop-color="#DDF2FB"/></linearGradient>
           <radialGradient id="gr-sunglow"><stop offset="0" stop-color="#FFE9A8" stop-opacity=".9"/><stop offset="1" stop-color="#FFE9A8" stop-opacity="0"/></radialGradient>
@@ -401,17 +402,17 @@ export function mount(stage, cfg, api) {
         <g class="gr-thermo" transform="translate(560 120)" opacity="${has('temp') ? 1 : 0}"><rect x="-9" y="-46" width="18" height="96" rx="9" class="gr-thermo-bg"/><rect x="-3.5" y="-38" width="7" height="72" rx="3.5" fill="#F4EADB"/><rect class="gr-thermo-fill" x="-3.5" y="-10" width="7" height="44" rx="3.5" fill="#D9452B"/><circle cy="38" r="8" fill="#D9452B"/></g>
       </svg>
       <div class="gr-event" hidden><span class="gr-ev-ic" aria-hidden="true"></span><p></p></div>
-      <div class="gr-tools" hidden role="group" aria-label="Pick the right fix"></div>
+      <div class="gr-tools" hidden role="group" aria-label="${t('Pick the right fix')}"></div>
       <button type="button" class="gr-harvest lab-go" hidden></button>
       <div class="gr-hud" aria-live="polite">
-        <div class="gr-day"><span class="gr-dayn">Day <b>0</b></span><small>of ${days}</small></div>
-        <div class="gr-stage">Seed</div>
+        <div class="gr-day"><span class="gr-dayn">${t('Day <b>{n}</b>', { n: 0 })}</span><small>${t('of {n}', { n: days })}</small></div>
+        <div class="gr-stage">${t('Seed')}</div>
       </div>
     </div>
     <aside class="gr-panel">
-      <div class="gr-health"><span class="gr-heart" aria-hidden="true">♥</span><div class="gr-hbar" role="meter" aria-label="Plant health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i></i></div><b class="gr-hv">100</b></div>
+      <div class="gr-health"><span class="gr-heart" aria-hidden="true">♥</span><div class="gr-hbar" role="meter" aria-label="${t('Plant health')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i></i></div><b class="gr-hv">100</b></div>
       <div class="gr-ctrls"></div>
-      <div class="gr-go"><button type="button" class="lab-act gr-play">▶ Grow</button><button type="button" class="lab-act ghost gr-speed" aria-label="Speed: normal">1×</button></div>
+      <div class="gr-go"><button type="button" class="lab-act gr-play">${t('▶ Grow')}</button><button type="button" class="lab-act ghost gr-speed" aria-label="${t('Speed: normal')}">1×</button></div>
     </aside>
   </div>`);
   stage.append(root);
@@ -448,9 +449,9 @@ export function mount(stage, cfg, api) {
       const d = devOf(row._c), chip = row.querySelector('.gr-chip');
       const st = d < -1e-9 ? 'low' : d > 1e-9 ? 'high' : 'ok';
       chip.className = `gr-chip ${st}`;
-      chip.textContent = st === 'ok' ? '✓ Just right' : st === 'low' ? '▼ Too little' : '▲ Too much';
-      if (row._c.key === 'spacing') chip.textContent = st === 'ok' ? '✓ Just right' : st === 'low' ? '▼ Too close' : '▲ Too far apart';
-      if (row._c.key === 'temp') chip.textContent = st === 'ok' ? '✓ Just right' : st === 'low' ? '▼ Too cold' : '▲ Too hot';
+      chip.textContent = t(st === 'ok' ? '✓ Just right' : st === 'low' ? '▼ Too little' : '▲ Too much');
+      if (row._c.key === 'spacing') chip.textContent = t(st === 'ok' ? '✓ Just right' : st === 'low' ? '▼ Too close' : '▲ Too far apart');
+      if (row._c.key === 'temp') chip.textContent = t(st === 'ok' ? '✓ Just right' : st === 'low' ? '▼ Too cold' : '▲ Too hot');
     });
   }
   function applyEnv() {
@@ -570,12 +571,12 @@ export function mount(stage, cfg, api) {
     S.vigor = lerp(S.vigor, q, .12);
     healthSum += health; healthN++;
     updateHud();
-    if (day === 2) { updateChips(); root.classList.add('chips'); api.say('Look at the slider labels: they now tell you if each condition is just right.', 'hint'); }
+    if (day === 2) { updateChips(); root.classList.add('chips'); api.say(t('Look at the slider labels: they now tell you if each condition is just right.'), 'hint'); }
     // a hint about the worst condition every few days
     if (day - lastHint >= 5 && q < .985) {
       const worst = [...controls].sort((a, b) => scoreOf(a) - scoreOf(b))[0];
       const d = devOf(worst);
-      if (d) { api.say(SYMPTOM[worst.key]?.[d < 0 ? 'low' : 'high'] || `${worst.label} is not right yet.`, 'hint'); lastHint = day; pulseCtrl(worst.key); }
+      if (d) { api.say(SYMPTOM[worst.key]?.[d < 0 ? 'low' : 'high'] || t('{label} is not right yet.', { label: worst.label }), 'hint'); lastHint = day; pulseCtrl(worst.key); }
     }
     if (health <= 0) { die(); return; }
     const ev = events.find(e => !e.done && e.day <= day);
@@ -585,15 +586,15 @@ export function mount(stage, cfg, api) {
   function pulseCtrl(key) { const row = ctrlEls.find(r => r._c.key === key); if (row && !api.reduced) gsap.fromTo(row, { backgroundColor: 'rgba(217,138,28,.35)' }, { backgroundColor: 'rgba(217,138,28,0)', duration: 1.4 }); }
   const stageName = () => {
     const g = S.g;
-    if (S.dead) return 'Wilted';
-    if (g < .06) return 'Seed';
-    if (g < .15) return 'Sprouting';
-    if (g < .35) return 'Seedling';
-    if (K.flowerAt && g < K.flowerAt) return 'Growing leaves';
-    if (K.flowerAt && g < (K.fruitAt || 1)) return 'Flowering';
-    if (K.fruit && g < Math.min(1, K.ripeAt ?? 1)) return K.fruit === 'marigold' ? 'Blooming' : 'Fruiting';
-    if (g < .85) return 'Growing';
-    return 'Ready to harvest';
+    if (S.dead) return t('Wilted');
+    if (g < .06) return t('Seed');
+    if (g < .15) return t('Sprouting');
+    if (g < .35) return t('Seedling');
+    if (K.flowerAt && g < K.flowerAt) return t('Growing leaves');
+    if (K.flowerAt && g < (K.fruitAt || 1)) return t('Flowering');
+    if (K.fruit && g < Math.min(1, K.ripeAt ?? 1)) return K.fruit === 'marigold' ? t('Blooming') : t('Fruiting');
+    if (g < .85) return t('Growing');
+    return t('Ready to harvest');
   };
   function updateHud() {
     $('.gr-dayn b').textContent = day;
@@ -613,11 +614,11 @@ export function mount(stage, cfg, api) {
     if (ended || paused) return;
     if (S.dead) { restartGrowth(); return; }
     running = !running;
-    if (running && !started) { started = true; api.say(`Day 1… Watch your ${K.name} grow. You can move the sliders at any time.`); root.classList.add('started'); sparkle(api, playBtn); }
-    playBtn.textContent = running ? '❚❚ Pause' : '▶ Grow';
+    if (running && !started) { started = true; api.say(t('Day 1… Watch your {plant} grow. You can move the sliders at any time.', { plant: K.name })); root.classList.add('started'); sparkle(api, playBtn); }
+    playBtn.textContent = running ? t('❚❚ Pause') : t('▶ Grow');
     api.sound(running ? 'whoosh' : 'click');
   };
-  $('.gr-speed').onclick = e => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; e.currentTarget.textContent = `${speed}×`; e.currentTarget.setAttribute('aria-label', `Speed: ${speed} times`); api.sound('click'); };
+  $('.gr-speed').onclick = e => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; e.currentTarget.textContent = `${speed}×`; e.currentTarget.setAttribute('aria-label', t('Speed: {n} times', { n: speed })); api.sound('click'); };
 
   /* ---------- events ---------- */
   const evBox = $('.gr-event'), tools = $('.gr-tools');
@@ -627,9 +628,9 @@ export function mount(stage, cfg, api) {
     api.sound('bad');
     evBox.hidden = false;
     evBox.querySelector('.gr-ev-ic').textContent = { pests: '🐛', heat: '🔥', rain: '🌧️', weeds: '🌱', wilting: '🥀' }[ev.kind] || '⚠️';
-    evBox.querySelector('p').textContent = ev.text || EVENT_HINT[ev.kind] || 'Something is wrong!';
+    evBox.querySelector('p').textContent = ev.text || EVENT_HINT[ev.kind] || t('Something is wrong!');
     if (!api.reduced) gsap.fromTo(evBox, { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'back.out(2)' });
-    api.say(`Day ${day}: ${ev.text || 'Something is wrong!'} Pick the right fix.`, 'hint');
+    api.say(t('Day {n}: {text} Pick the right fix.', { n: day, text: ev.text || t('Something is wrong!') }), 'hint');
     // symptoms
     if (ev.kind === 'pests') { EV.pests = 1; EV.yellow = .25; }
     if (ev.kind === 'heat') { gsap.to(ST, { heat: 1, duration: 1, onUpdate: syncST }); EV.droop = .6; EV.brown = .3; }
@@ -651,7 +652,7 @@ export function mount(stage, cfg, api) {
     if (k !== ev.fix) {
       api.mistake(); health = Math.max(1, health - 4); updateHud();
       btn.classList.add('wrong'); btn.disabled = true; shake(api, btn);
-      api.say(`${FIX[k].label} won't help here. ${EVENT_HINT[ev.kind] || ''}`, 'bad');
+      api.say(`${t('{fix} won\'t help here.', { fix: FIX[k].label })} ${EVENT_HINT[ev.kind] || ''}`, 'bad');
       return;
     }
     tools.querySelectorAll('button').forEach(b => { b.disabled = true; });
@@ -660,7 +661,7 @@ export function mount(stage, cfg, api) {
     api.sound('good');
     const done = () => {
       tools.hidden = true; evBox.hidden = true;
-      api.say({ neem: 'The neem spray chased the aphids away. Neem is a natural, safe pest repellent.', shade: 'The shade net cools the plant and stops the leaves from scorching.', weed: 'Weeds out! Now your plant gets all the water and food.', drain: 'The extra water drained away, so the roots can breathe again.', water: 'A good drink of water: the leaves perk up again.' }[k], 'good');
+      api.say(t({ neem: 'The neem spray chased the aphids away. Neem is a natural, safe pest repellent.', shade: 'The shade net cools the plant and stops the leaves from scorching.', weed: 'Weeds out! Now your plant gets all the water and food.', drain: 'The extra water drained away, so the roots can breathe again.', water: 'A good drink of water: the leaves perk up again.' }[k]), 'good');
       paused = null; playBtn.disabled = false;
       if (day >= days) finishGrowth();
     };
@@ -767,10 +768,10 @@ export function mount(stage, cfg, api) {
   function die() {
     running = false; S.dead = 0; api.mistake(); deaths++;
     gsap.to(S, { dead: 1, duration: api.reduced ? .2 : 1.6 });
-    playBtn.textContent = '↺ Try again';
-    api.say(`Oh no, the ${K.name} has died. Look at the slider labels: fix what is wrong, then try again.`, 'bad');
+    playBtn.textContent = t('↺ Try again');
+    api.say(t('Oh no, the {plant} has died. Look at the slider labels: fix what is wrong, then try again.', { plant: K.name }), 'bad');
     updateChips(); root.classList.add('chips');
-    $('.gr-stage').textContent = 'Wilted';
+    $('.gr-stage').textContent = t('Wilted');
   }
   function restartGrowth() {
     gsap.killTweensOf(S); gsap.killTweensOf(EV);
@@ -779,33 +780,33 @@ export function mount(stage, cfg, api) {
     day = 0; dayFrac = 0; health = 100; lastHint = -10; healthSum = 0; healthN = 0;
     events.forEach(e => { e.done = false; });
     weedsG.innerHTML = '';
-    running = true; playBtn.textContent = '❚❚ Pause';
+    running = true; playBtn.textContent = t('❚❚ Pause');
     updateHud();
-    api.say('A fresh seed! Day 1 again.');
+    api.say(t('A fresh seed! Day 1 again.'));
   }
   function finishGrowth() {
     if (ended) return;
     ended = true; running = false;
-    playBtn.disabled = true; playBtn.textContent = 'Grown!';
+    playBtn.disabled = true; playBtn.textContent = t('Grown!');
     $('.gr-speed').disabled = true;
     gsap.to({ v: S.g }, { v: 1, duration: .6, onUpdate() { S.g = this.targets()[0].v; } });
     updateHud();
     const hv = Math.round(health);
     const hb = $('.gr-harvest');
     if (cfg.harvest) {
-      hb.innerHTML = `${cfg.harvest.sprite ? `<span class="gr-hv-art">${api.art(cfg.harvest)}</span>` : '🧺'} ${esc(cfg.harvest.text || 'Harvest!')}`;
+      hb.innerHTML = `${cfg.harvest.sprite ? `<span class="gr-hv-art">${api.art(cfg.harvest)}</span>` : '🧺'} ${esc(cfg.harvest.text || t('Harvest!'))}`;
       hb.hidden = false;
       if (!api.reduced) gsap.fromTo(hb, { scale: .5, opacity: 0 }, { scale: 1, opacity: 1, duration: .6, ease: 'back.out(2.2)', delay: .6 });
-      api.say(`Day ${days}! Your ${K.name} is ready, with health ${hv}. Time to harvest!`, 'good');
+      api.say(t('Day {n}! Your {plant} is ready, with health {hv}. Time to harvest!', { n: days, plant: K.name, hv }), 'good');
       hb.onclick = harvest;
     } else {
-      api.say(`Day ${days}! Your ${K.name} has grown, with health ${hv}.`, 'good');
+      api.say(t('Day {n}! Your {plant} has grown, with health {hv}.', { n: days, plant: K.name, hv }), 'good');
       timers.push(setTimeout(complete, api.reduced ? 300 : 1800));
     }
   }
   function complete() {
     const hv = Math.round(health);
-    api.complete({ stars: Math.max(1, (hv >= 80 ? 3 : hv >= 55 ? 2 : 1) - (deaths ? 1 : 0)), score: hv / 100, message: cfg.win || `Final health: ${hv}/100. ${hv >= 80 ? 'A healthy, happy plant!' : hv >= 55 ? 'Good, but some conditions were off for a while.' : 'The plant struggled. Try to keep every slider in the green.'}` });
+    api.complete({ stars: Math.max(1, (hv >= 80 ? 3 : hv >= 55 ? 2 : 1) - (deaths ? 1 : 0)), score: hv / 100, message: cfg.win || `${t('Final health: {hv}/100.', { hv })} ${t(hv >= 80 ? 'A healthy, happy plant!' : hv >= 55 ? 'Good, but some conditions were off for a while.' : 'The plant struggled. Try to keep every slider in the green.')}` });
   }
   function harvest() {
     const hb = $('.gr-harvest');
@@ -819,7 +820,7 @@ export function mount(stage, cfg, api) {
     const fr = (plantG._fruit || []).slice(0, 10);
     const item = cfg.harvest?.sprite && api.hasSprite(cfg.harvest.sprite) ? api.sprite(cfg.harvest.sprite) : null;
     let n = 0;
-    const tl = gsap.timeline({ delay: api.reduced ? 0 : .5, onComplete: () => { sparkle(api, $('.gr-scene')); api.say(`You picked ${n} ${n === 1 ? 'one' : ''}! ${cfg.harvest?.text ? '' : ''}Great harvest.`.replace(' one!', '!'), 'good'); timers.push(setTimeout(complete, api.reduced ? 200 : 1200)); } });
+    const tl = gsap.timeline({ delay: api.reduced ? 0 : .5, onComplete: () => { sparkle(api, $('.gr-scene')); api.say(isHi() ? t('You picked {n}! Great harvest.', { n }) : `You picked ${n} ${n === 1 ? 'one' : ''}! ${cfg.harvest?.text ? '' : ''}Great harvest.`.replace(' one!', '!'), 'good'); timers.push(setTimeout(complete, api.reduced ? 200 : 1200)); } });
     fr.forEach((f, i) => {
       const g = el('g', {}, fxG);
       const x0 = plantX + f.x, y0 = groundY + f.y;
@@ -843,7 +844,7 @@ export function mount(stage, cfg, api) {
   updateHud();
   sky(.3);
   render();
-  api.say(`${cfg.mission || ''} Set the sliders, then press Grow.`.trim());
+  api.say(`${cfg.mission || ''} ${t('Set the sliders, then press Grow.')}`.trim());
   return {
     destroy() {
       gsap.ticker.remove(tick);

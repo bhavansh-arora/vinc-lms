@@ -3,6 +3,7 @@
 // rope, ties a knot and throws a confetti puff; a wrong one flashes red and snaps back. Tap a card,
 // then a card in the other column, to connect without dragging (keyboard too). Config: SPEC.md §2.3.
 import { esc, shuffle } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Make the match', needs: ['gsap'] };
 
@@ -32,14 +33,14 @@ export function mount(stage, cfg, api) {
   root.className = 'lab-match';
   root.innerHTML = `
     <div class="mt-board">
-      <h3 class="mt-head mt-head-a">${esc(cfg.leftTitle || 'Match')}</h3>
-      <h3 class="mt-head mt-head-b">${esc(cfg.rightTitle || 'with')}</h3>
+      <h3 class="mt-head mt-head-a">${esc(cfg.leftTitle || t('Match'))}</h3>
+      <h3 class="mt-head mt-head-b">${esc(cfg.rightTitle || t('with'))}</h3>
       ${pairs.map((p, i) => card(p.a, 'a', p.k, i)).join('')}
       ${right.map((k, i) => card(pairs[k].b, 'b', k, i)).join('')}
       <div class="mt-gap" style="grid-row:2 / span ${n}" aria-hidden="true"></div>
       <svg class="mt-ropes" aria-hidden="true"><g class="mt-rope-layer"></g><g class="mt-knot-layer"></g></svg>
     </div>
-    <p class="mt-tip">Drag from a card to its partner, or tap one card and then its partner.</p>`;
+    <p class="mt-tip">${t('Drag from a card to its partner, or tap one card and then its partner.')}</p>`;
   stage.append(root);
   const board = root.querySelector('.mt-board'), svg = root.querySelector('.mt-ropes');
   const ropeLayer = svg.querySelector('.mt-rope-layer'), knotLayer = svg.querySelector('.mt-knot-layer');
@@ -48,7 +49,7 @@ export function mount(stage, cfg, api) {
   const side = el => (el.classList.contains('mt-a') ? 'a' : 'b');
   const pairOf = el => pairs[+el.dataset.k];
   const labelOf = el => pairOf(el)[side(el)].label;
-  all.forEach(el => el.setAttribute('aria-label', `${labelOf(el)}${side(el) === 'a' ? ` (${cfg.leftTitle || 'left'})` : ` (${cfg.rightTitle || 'right'})`}`));
+  all.forEach(el => el.setAttribute('aria-label', `${labelOf(el)}${side(el) === 'a' ? ` (${cfg.leftTitle || t('left')})` : ` (${cfg.rightTitle || t('right')})`}`));
   api.progress(0);
 
   /* ---------- Geometry ---------- */
@@ -169,7 +170,7 @@ export function mount(stage, cfg, api) {
   /* ---------- Tap / keyboard ---------- */
   function tap(el) {
     if (finished) return;
-    if (!isFree(el)) { api.sound('tick'); api.say(`“${labelOf(el)}” is already tied to its partner.`, 'info'); return; }
+    if (!isFree(el)) { api.sound('tick'); api.say(t('“{label}” is already tied to its partner.', { label: labelOf(el) }), 'info'); return; }
     if (sel && sel.el === el) { deselect(); api.sound('click'); return; }
     if (sel && side(sel.el) !== side(el)) {
       const { el: from, rope } = sel;
@@ -189,7 +190,7 @@ export function mount(stage, cfg, api) {
     el.classList.add('is-selected'); el.setAttribute('aria-pressed', 'true');
     api.sound('pop');
     pulsePeg(el);
-    api.say(`Now tap the partner for “${labelOf(el)}”.`, 'info');
+    api.say(t('Now tap the partner for “{label}”.', { label: labelOf(el) }), 'info');
   }
   function deselect() {
     if (!sel) return;
@@ -219,7 +220,7 @@ export function mount(stage, cfg, api) {
     const end = peg(to);
     rope.ex = end.x; rope.ey = end.y;
     rope.vy -= 14; // a little twang as it tightens
-    [a, b].forEach(el => { el.classList.add('is-matched'); el.style.setProperty('--c', `var(--${p.color})`); el._drag.disable(); el.setAttribute('aria-label', `${labelOf(el)}: matched`); });
+    [a, b].forEach(el => { el.classList.add('is-matched'); el.style.setProperty('--c', `var(--${p.color})`); el._drag.disable(); el.setAttribute('aria-label', t('{label}: matched', { label: labelOf(el) })); });
     const knot = makeKnot(end, p.color);
     knots.push({ el: knot, card: to });
     puff(end, p.color);
@@ -229,7 +230,7 @@ export function mount(stage, cfg, api) {
     api.sound('pop');
     api.progress(matched / n);
     const msg = p.why || `${p.a.label} — ${p.b.label}.`;
-    api.say(`${matched === n ? 'All tied up!' : ['Tied!', 'A perfect match!', 'Yes!', 'Knotted!'][matched % 4]} ${msg}`, 'good');
+    api.say(`${t(matched === n ? 'All tied up!' : ['Tied!', 'A perfect match!', 'Yes!', 'Knotted!'][matched % 4])} ${msg}`, 'good');
     if (matched === n) finish();
   }
 
@@ -240,7 +241,7 @@ export function mount(stage, cfg, api) {
     [a, b].forEach(el => { el.classList.add('is-wrong'); later(() => el.classList.remove('is-wrong'), 800); });
     if (!R) gsap.fromTo(to, { x: 0 }, { x: 0, duration: .45, ease: 'none', keyframes: { x: [0, -9, 8, -5, 3, 0] } });
     api.sound('bad');
-    api.say(`“${pairOf(a).a.label}” and “${pairOf(b).b.label}” don’t go together. Think again and try another one!`, 'hint');
+    api.say(t('“{a}” and “{b}” don’t go together. Think again and try another one!', { a: pairOf(a).a.label, b: pairOf(b).b.label }), 'hint');
   }
 
   function makeKnot(p, color) {
@@ -278,11 +279,11 @@ export function mount(stage, cfg, api) {
   function finish() {
     finished = true;
     root.classList.add('is-done');
-    root.querySelector('.mt-tip').textContent = 'Every pair is tied together!';
+    root.querySelector('.mt-tip').textContent = t('Every pair is tied together!');
     const list = [...ropes].filter(r => r.taut);
     list.forEach((r, i) => later(() => { r.vy += 26; api.sound('tick'); }, 450 + i * 140));
     if (!R) gsap.to(all, { y: -6, duration: .18, stagger: { each: .05, yoyo: true, repeat: 1 }, delay: .45, ease: 'power2.out' });
-    later(() => api.complete({ message: cfg.win || `You matched all ${n} pairs${api.mistakes ? '' : ' without a single slip'}. Knowing what goes with what is half the skill!` }), 900 + list.length * 140);
+    later(() => api.complete({ message: cfg.win || t(api.mistakes ? 'You matched all {n} pairs. Knowing what goes with what is half the skill!' : 'You matched all {n} pairs without a single slip. Knowing what goes with what is half the skill!', { n }) }), 900 + list.length * 140);
   }
 
   /* ---------- Keep ropes attached when the layout changes ---------- */

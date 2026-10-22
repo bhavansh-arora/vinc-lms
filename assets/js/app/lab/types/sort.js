@@ -3,6 +3,7 @@
 // float gently in the tray and a combo counter rewards streaks. Tap an item, then a bin, to sort
 // without dragging (works with the keyboard too). Config: SPEC.md §2.1.
 import { esc, shuffle, sparkle } from '../kit.js';
+import { t } from '../../../i18n.js';
 
 export const meta = { title: 'Sort it out', needs: ['gsap'] };
 
@@ -13,10 +14,10 @@ const SHAPES = ['bin', 'basket', 'crate', 'box'];
 function shapeFor(bin, i) {
   if (SHAPES.includes(bin.shape)) return bin.shape;
   const s = `${bin.id} ${bin.label}`.toLowerCase();
-  if (/\b(bin|dustbin|waste|trash|garbage|compost|recycl\w*|hazard\w*)\b/.test(s)) return 'bin';
-  if (/basket|fruit|vegetable|harvest|kitchen|eat/.test(s)) return 'basket';
-  if (/crate|wood|tool|metal|market|sell/.test(s)) return 'crate';
-  if (/box|carton|paper|cardboard|store|pack|keep|save/.test(s)) return 'box';
+  if (/\b(bin|dustbin|waste|trash|garbage|compost|recycl\w*|hazard\w*)\b|कचरा|कूड़ा|कूड़े|खाद|हानिकारक/.test(s)) return 'bin';
+  if (/basket|fruit|vegetable|harvest|kitchen|eat|टोकरी|फल|सब्ज़ी|सब्जी|फ़सल|रसोई|खाने/.test(s)) return 'basket';
+  if (/crate|wood|tool|metal|market|sell|लकड़ी|औज़ार|धातु|बाज़ार|बेच/.test(s)) return 'crate';
+  if (/box|carton|paper|cardboard|store|pack|keep|save|डिब्बा|डिब्बे|कागज़|गत्ता|रख|बचा/.test(s)) return 'box';
   return SHAPES[i % SHAPES.length];
 }
 
@@ -124,20 +125,20 @@ export function mount(stage, cfg, api) {
   const root = document.createElement('div');
   root.className = 'lab-sort';
   root.innerHTML = `
-    <section class="srt-tray" aria-label="Items to sort">
+    <section class="srt-tray" aria-label="${t('Items to sort')}">
       <header class="srt-head">
-        <h3 class="srt-title">Sort these <span class="srt-left" aria-live="polite"></span></h3>
-        <div class="srt-combo" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z"/></svg><span>Combo <b>×2</b></span></div>
+        <h3 class="srt-title">${t('Sort these')} <span class="srt-left" aria-live="polite"></span></h3>
+        <div class="srt-combo" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z"/></svg><span>${t('Combo')} <b>×2</b></span></div>
       </header>
       <ul class="srt-items" role="list">${items.map(it => `
-        <li class="srt-slot"><button class="srt-item" type="button" data-i="${it.i}" aria-label="${esc(it.label)}: pick up to sort">
+        <li class="srt-slot"><button class="srt-item" type="button" data-i="${it.i}" aria-label="${t('{label}: pick up to sort', { label: esc(it.label) })}">
           <span class="srt-float"><span class="srt-art">${api.art(it)}</span><span class="srt-name">${esc(it.label)}</span></span>
         </button></li>`).join('')}
       </ul>
-      <div class="srt-done" hidden><b>All sorted!</b></div>
-      <p class="srt-tip">Drag each item into the right container, or tap an item and then tap a container.</p>
+      <div class="srt-done" hidden><b>${t('All sorted!')}</b></div>
+      <p class="srt-tip">${t('Drag each item into the right container, or tap an item and then tap a container.')}</p>
     </section>
-    <section class="srt-bins" style="--n:${bins.length}" aria-label="Containers">${bins.map(b => {
+    <section class="srt-bins" style="--n:${bins.length}" aria-label="${t('Containers')}">${bins.map(b => {
       const d = DRAW[b.shape](`${uid}-${b.i}`);
       const emb = (b.sprite || b.emoji) ? `<span class="srt-emb" style="top:${d.emblem}%">${api.art(b)}</span>` : '';
       const [pl, pt, pw, ph] = d.pile;
@@ -161,7 +162,7 @@ export function mount(stage, cfg, api) {
   bins.forEach((b, i) => { b.el = binEls[i]; b.art = b.el.querySelector('.srt-bin-art'); b.body = b.el.querySelector('.srt-bin-body'); b.pile = b.el.querySelector('.srt-pile'); counts[b.id] = 0; });
   const itemEls = [...root.querySelectorAll('.srt-item')];
   const itemOf = el => items.find(it => it.i === +el.dataset.i);
-  const updateLeft = () => { const n = total - sorted; leftEl.textContent = n ? `· ${n} left` : ''; };
+  const updateLeft = () => { const n = total - sorted; leftEl.textContent = n ? t('· {n} left', { n }) : ''; };
   updateLeft();
   api.progress(0);
 
@@ -213,7 +214,7 @@ export function mount(stage, cfg, api) {
     gsap.to(el, { scale: 1.08, duration: .3, ease: 'back.out(3)' });
     api.sound('pop');
     bins.forEach((b, i) => { mood(b, 1); if (!R) gsap.fromTo(b.art, { rotation: 0 }, { rotation: 0, duration: .5, delay: i * .06, keyframes: { rotation: [0, -4, 3, 0] } }); });
-    api.say(`Where does “${itemOf(el).label}” go? Tap its container.`, 'info');
+    api.say(t('Where does “{label}” go? Tap its container.', { label: itemOf(el).label }), 'info');
   }
   function unpick(silent) {
     if (!picked) return;
@@ -277,7 +278,7 @@ export function mount(stage, cfg, api) {
       if (!picked) {
         api.sound('click');
         if (!R) gsap.fromTo(b.art, { rotation: 0 }, { rotation: 0, duration: .5, keyframes: { rotation: [0, -5, 4, 0] } });
-        api.say(`First pick an item from the tray, then tap “${b.label}”.`, 'hint');
+        api.say(t('First pick an item from the tray, then tap “{label}”.', { label: b.label }), 'hint');
         return;
       }
       const it = picked; unpick(true); bins.forEach(bb => { if (bb !== b) mood(bb, 0); }); tryDrop(it, b, false);
@@ -337,8 +338,8 @@ export function mount(stage, cfg, api) {
     if (!R) gsap.fromTo(c, { scale: 1.8 }, { scale: 1, duration: .5, ease: 'back.out(3)' });
     sparkle(api, b.pile, ['#F0B44C', '#FFFFFF', getComputedStyle(b.el).getPropertyValue('--bin').trim() || '#4C7424', '#4C7424']);
     showCombo();
-    const why = it.why ? ` ${it.why}` : ` ${it.label} belongs in ${b.label}.`;
-    const cheer = streak >= 5 ? `On fire! ${streak} in a row!` : streak >= 3 ? `Combo ×${streak}!` : ['Yes!', 'Right!', 'Spot on!', 'Correct!'][sorted % 4];
+    const why = it.why ? ` ${it.why}` : ` ${t('{item} belongs in {bin}.', { item: it.label, bin: b.label })}`;
+    const cheer = streak >= 5 ? t('On fire! {n} in a row!', { n: streak }) : streak >= 3 ? t('Combo ×{n}!', { n: streak }) : t(['Yes!', 'Right!', 'Spot on!', 'Correct!'][sorted % 4]);
     api.say(`${cheer}${why}`, 'good');
     if (sorted === total) finish();
   }
@@ -370,7 +371,7 @@ export function mount(stage, cfg, api) {
       gsap.fromTo(el, { x: 0 }, { x: 0, duration: .45, ease: 'none', keyframes: { x: [0, -10, 9, -6, 4, 0] } });
     }
     api.sound('bad');
-    api.say(`Not the ${b.label}. ${it.why || `Think: where does ${it.label} really belong?`}`, 'hint');
+    api.say(`${t('Not the {bin}.', { bin: b.label })} ${it.why || t('Think: where does {item} really belong?', { item: it.label })}`, 'hint');
   }
 
   function showCombo() {
@@ -393,7 +394,7 @@ export function mount(stage, cfg, api) {
     done.hidden = false;
     $('.srt-tip').hidden = true;
     if (!R) gsap.from(done, { scale: .6, opacity: 0, duration: .5, ease: 'back.out(2)' });
-    const tl = gsap.timeline({ delay: .5, onComplete: () => api.complete({ message: cfg.win || `All ${total} items are in the right place${best >= 3 ? `, with a best streak of ${best}` : ''}. Sorting at the source makes recycling and composting easy!` }) });
+    const tl = gsap.timeline({ delay: .5, onComplete: () => api.complete({ message: cfg.win || t(best >= 3 ? 'All {n} items are in the right place, with a best streak of {best}. Sorting at the source makes recycling and composting easy!' : 'All {n} items are in the right place. Sorting at the source makes recycling and composting easy!', { n: total, best }) }) });
     bins.forEach((b, i) => {
       tl.add(() => { mood(b, 2); sparkle(api, b.art); api.sound('tick'); }, i * .18)
         .to(b.art, { y: -22, duration: .22, ease: 'power2.out' }, i * .18)
