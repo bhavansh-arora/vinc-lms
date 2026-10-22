@@ -970,3 +970,7 @@ code.code { font: 600 1em var(--mono); padding: .05em .4em; border-radius: 6px; 
 
 /* Language button on the login and sign-up screens. */
 .auth-lang { align-self: flex-end; }
+
+/* Hindi: small "mono" labels (eyebrows, chips, scores) use the Devanagari font first, so word spaces are not
+   the wide monospace ones (same as landing.css). */
+html[lang="hi"] { --mono: "Noto Sans Devanagari", "DM Mono", ui-monospace, monospace; }

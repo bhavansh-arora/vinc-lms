@@ -1,11 +1,11 @@
 // Teacher portal: a Kaushal Bodh teacher's own sections, monitored grade by grade.
 import { FORMS, projectById } from '../../data/courses.js';
 import { db, school, section, studentsOf, sectionsOf, progress, lastActive, user, setTaught, log } from '../store.js';
-import { projectScore, yearSummary } from '../scoring.js';
+import { projectScore, yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, FORM_COLOR } from '../ui.js';
 import { loadLessons, lessonsFor, lessonOf, launchLab, LAB_KIND } from './activity.js';
 import { t, tx } from '../../i18n.js';
-import { stats, secLabel, bandT, heatmap, markTable, bindMark, studentDetail, currentProject, quizAnalysis, rubricAnalysis, rubricBars, quizBars, INACTIVE_DAYS, codeCard, bindCodeCards } from './shared.js';
+import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, quizAnalysis, rubricAnalysis, rubricBars, quizBars, INACTIVE_DAYS, codeCard, bindCodeCards } from './shared.js';
 
 const myGrades = me => [...new Set(sectionsOf(me).map(s => s.grade))];
 
@@ -261,7 +261,7 @@ function students(ctx) {
       <tbody>${rows.map(r => `<tr data-name="${esc(r.s.name.toLowerCase())}" data-g="${r.sec.grade}">
         <td><a href="#/teacher/student/${r.s.id}">${esc(r.s.name)}</a></td><td>${esc(secLabel(r.sec))}</td>
         <td><div class="cell-bar">${bar(r.y.activityPct)}<span>${r.y.actsDone}/${r.y.actsTotal}</span></div></td>
-        <td>${r.y.score == null ? '—' : `${r.y.score}% <small class="muted">${bandT(r.y.score)}</small>`}</td>
+        <td>${r.y.score == null ? '—' : `${r.y.score}% <small class="muted">${band(r.y.score)}</small>`}</td>
         <td class="${!r.la || Date.now() - r.la > INACTIVE_DAYS * 86400000 ? 'warn-txt' : ''}">${timeAgo(r.la)}</td></tr>`).join('')}</tbody>
     </table><p class="muted small" id="count"></p></section>`,
     mount(el) {

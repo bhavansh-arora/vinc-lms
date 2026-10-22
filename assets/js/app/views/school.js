@@ -1,10 +1,10 @@
 // School dashboard: overview across Grades 6–8, teachers, year plan, students, marking, reports and branding.
 import { FORMS, GRADES, projectById, projectsOfGrade } from '../../data/courses.js';
 import { db, save, school, section, studentsOf, projectsFor, lastActive, log, addSection, addTeacher, assignSections, setSectionTeacher, teachersOf, initials, user, parentsOf } from '../store.js';
-import { projectScore, yearSummary, band } from '../scoring.js';
+import { projectScore, yearSummary, band, bandKey } from '../scoring.js';
 import { $, $$, esc, icon, ring, bar, timeAgo, daysUntil, toast, modal, download, csvCell } from '../ui.js';
 import { t, tx } from '../../i18n.js';
-import { stats, secLabel, bandT, heatmap, markTable, bindMark, studentDetail, currentProject, showCredsSaved, codeCard, bindCodeCards } from './shared.js';
+import { stats, secLabel, heatmap, markTable, bindMark, studentDetail, currentProject, showCredsSaved, codeCard, bindCodeCards } from './shared.js';
 import { accountsPage, addPersonModal, passwordModal, deleteModal } from './accounts.js';
 
 export const nav = () => [
@@ -290,7 +290,7 @@ function students(ctx, sch) {
       <tbody>${rows.map(r => `<tr data-name="${esc(r.s.name.toLowerCase())}" data-sec="${r.s.sectionId}">
         <td><a href="#/school/student/${r.s.id}">${esc(r.s.name)}</a><small class="muted mono block">@${esc(r.s.login)}</small></td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>
         <td><div class="cell-bar">${bar(r.y.activityPct)}<span>${r.y.actsDone}/${r.y.actsTotal}</span></div></td>
-        <td>${r.y.score == null ? '—' : `${r.y.score}% <small class="muted">${bandT(r.y.score)}</small>`}</td>
+        <td>${r.y.score == null ? '—' : `${r.y.score}% <small class="muted">${band(r.y.score)}</small>`}</td>
         <td class="${!r.la || Date.now() - r.la > 14 * 86400000 ? 'warn-txt' : ''}">${timeAgo(r.la)}</td><td>${r.parents.length ? r.parents.map(p => esc(p.name)).join(', ') : '—'}</td>
         <td><div class="btn-row nowrap acc-acts"><button class="btn btn-sm btn-ghost" data-pw="${r.s.id}" aria-label="${t('Password for {name}', { name: esc(r.s.name) })}" title="${t('Password')}">${icon('key')}</button><button class="btn btn-sm btn-ghost danger" data-del="${r.s.id}" aria-label="${t('Delete {name}', { name: esc(r.s.name) })}" title="${t('Delete')}">${icon('trash')}</button></div></td></tr>`).join('')}</tbody>
     </table><p class="muted small" id="count"></p></section>`,
@@ -339,7 +339,7 @@ function reports(ctx, sch) {
   const rows = studentsOf(sch.id).map(s => { const ids = projectsFor(s); return { s, g: gradeOfStudent(sch, s), ids, y: yearSummary(db().progress[s.id], ids) }; })
     .filter(r => state.grade === 'all' || r.g === +state.grade).sort((a, b) => a.g - b.g || a.s.name.localeCompare(b.s.name));
   const marked = rows.filter(r => r.y.score != null);
-  const dist = ['Exemplary', 'Proficient', 'Developing', 'Beginning'].map(b => ({ b, n: marked.filter(r => band(r.y.score) === b).length }));
+  const dist = ['Exemplary', 'Proficient', 'Developing', 'Beginning'].map(b => ({ b, n: marked.filter(r => bandKey(r.y.score) === b).length }));
   return {
     title: t('Reports'), nav: 'reports',
     html: `${gradeTabs(sch)}
@@ -353,7 +353,7 @@ function reports(ctx, sch) {
     </div>
     <section class="card tbl-card"><table class="tbl">
       <thead><tr><th>${t('Student')}</th><th>${t('Grade')}</th><th>${t('Section')}</th>${['Life forms', 'Machines', 'Services'].map(x => `<th>${t(x)}</th>`).join('')}<th>${t('Year')}</th><th>${t('Band')}</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>${r.y.per.map(x => `<td title="${esc(projectById(x.id).title)}">${x.score == null ? '—' : `${x.score}%${x.complete ? '' : '*'}`}</td>`).join('')}<td><b>${r.y.score == null ? '—' : `${r.y.score}%`}</b></td><td>${bandT(r.y.score)}</td></tr>`).join('') || `<tr><td colspan="8" class="muted">${t('No students yet.')}</td></tr>`}</tbody>
+      <tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.g}</td><td>${esc(secName(sch, r.s.sectionId))}</td>${r.y.per.map(x => `<td title="${esc(projectById(x.id).title)}">${x.score == null ? '—' : `${x.score}%${x.complete ? '' : '*'}`}</td>`).join('')}<td><b>${r.y.score == null ? '—' : `${r.y.score}%`}</b></td><td>${band(r.y.score)}</td></tr>`).join('') || `<tr><td colspan="8" class="muted">${t('No students yet.')}</td></tr>`}</tbody>
     </table><p class="muted small">${t('* still in progress, scored on the parts marked so far.')}</p></section>`,
     mount(el) {
       bindGradeTabs(el, ctx);

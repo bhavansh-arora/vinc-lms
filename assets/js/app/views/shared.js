@@ -7,8 +7,6 @@ import { $, $$, esc, icon, art, ring, bar, timeAgo, toast, modal, credsHtml, bin
 import { t } from '../../i18n.js';
 
 export const secLabel = s => s ? t('Grade {g} · {name}', { g: s.grade, name: s.name }) : '';
-// A score band (Exemplary, Proficient…) in the page's language; band() itself stays English.
-export const bandT = score => t(band(score));
 
 /* ---------- Joining codes ----------
    Each school has two: teachers sign up with the teacher code, students with the student code. */
@@ -151,13 +149,13 @@ export function studentDetail(ctx, s, back) {
   return {
     title: s.name,
     html: `<a class="back" href="${back.href}">← ${esc(back.label)}</a>
-    <section class="hero-card slim"><div class="hc-copy"><p class="eyebrow">${esc(secLabel(sec))} · ${t('Roll {n}', { n: s.roll })}</p><h2>${esc(s.name)}</h2><p>${parents.length > 1 ? t('Parents') : t('Parent')}: ${parents.length ? parents.map(p => esc(p.name)).join(', ') : '—'} · ${t('Last active {when}', { when: timeAgo(lastActive(s.id)) })}${y.score != null ? ` · ${t('Score so far <b>{score}%</b> ({band})', { score: y.score, band: bandT(y.score) })}` : ''}</p></div>
+    <section class="hero-card slim"><div class="hc-copy"><p class="eyebrow">${esc(secLabel(sec))} · ${t('Roll {n}', { n: s.roll })}</p><h2>${esc(s.name)}</h2><p>${parents.length > 1 ? t('Parents') : t('Parent')}: ${parents.length ? parents.map(p => esc(p.name)).join(', ') : '—'} · ${t('Last active {when}', { when: timeAgo(lastActive(s.id)) })}${y.score != null ? ` · ${t('Score so far <b>{score}%</b> ({band})', { score: y.score, band: band(y.score) })}` : ''}</p></div>
       <div class="hc-ring">${ring(y.activityPct, { size: 120, stroke: 12, sub: t('activities') })}</div></section>
     <div class="score-cards">${ids.map(pid => { const p = projectById(pid), sc = projectScore(progress(s.id, pid), pid); return `<section class="card f-${p.form}">
       <h3 class="h-card"><span class="form-dot"></span>${esc(p.title)}</h3>
       <ul class="parts">${WEIGHTS.map(w => `<li><div class="part-top"><b>${esc(w.label)}</b><span class="muted">${w.weight}%</span><span class="part-val">${sc.parts[w.key] == null ? t('Not yet') : `${sc.parts[w.key]}%`}</span></div>${bar(sc.parts[w.key], PART_COLOR[w.key])}</li>`).join('')}</ul>
       <p class="muted small">${t('Virtual labs: {n} of {total} played · {stars} ★', { n: Object.keys(progress(s.id, pid)?.labs || {}).length, total: p.activities.length, stars: Object.values(progress(s.id, pid)?.labs || {}).reduce((n, l) => n + l.stars, 0) })}</p>
-      <div class="total-row"><span>${sc.complete ? t('Score ') : t('Score so far')}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${bandT(sc.score)}</span></div>
+      <div class="total-row"><span>${sc.complete ? t('Score ') : t('Score so far')}</span><b>${sc.score == null ? '—' : `${sc.score}%`}</b><span class="chip">${band(sc.score)}</span></div>
       <button class="btn btn-brand btn-sm" data-markp="${pid}">${t('Mark this project')}</button></section>`; }).join('')}</div>
     <section class="card logins-card"><h2 class="h-card">${icon('key')} ${t('Logins')}</h2>
       <ul class="login-list">

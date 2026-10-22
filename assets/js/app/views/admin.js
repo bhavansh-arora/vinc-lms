@@ -1,10 +1,10 @@
 // VINC Lab admin: network overview, schools, course content and settings.
 import { COURSES, GRADES, FORMS, WEIGHTS, projectById } from '../../data/courses.js';
 import { db, save, reset, studentsOf, projectsFor, lastActive, addSchool, log, gradeOf, teachersOf, viewAs, isRemote, schoolIdList, createSchoolIds, deleteSchoolId, noteSchoolId } from '../store.js';
-import { showCredsSaved, bandT } from './shared.js';
-import { t, tx } from '../../i18n.js';
+import { showCredsSaved } from './shared.js';
+import { t, tx, isHi } from '../../i18n.js';
 import { accountsPage, deleteSchoolModal, filterAccounts } from './accounts.js';
-import { yearSummary } from '../scoring.js';
+import { yearSummary, band } from '../scoring.js';
 import { $, $$, esc, icon, art, ring, bar, timeAgo, fmtDate, toast, modal, download, bindCopy } from '../ui.js';
 
 export const nav = () => [
@@ -103,7 +103,7 @@ function schools(ctx) {
         <td><div class="sch-cell"><span class="badge sm" style="--brand:${s.color}">${esc(s.initials)}</span><div><b>${esc(s.name)}</b><small class="muted">${esc(s.studio)}</small></div></div></td>
         <td><code class="mono">${esc(s.regCode || '—')}</code></td><td>${esc(s.city)}</td><td>${esc(t(s.plan))}</td><td>${st.students}/${s.seats}</td><td>${teachersOf(s.id).length}</td>
         <td><div class="cell-bar">${bar(st.completion, s.color)}<span>${st.completion}%</span></div></td>
-        <td>${st.score == null ? '—' : `${st.score}% <small class="muted">${bandT(st.score)}</small>`}</td>
+        <td>${st.score == null ? '—' : `${st.score}% <small class="muted">${band(st.score)}</small>`}</td>
         <td><button class="tag ${s.active ? 'ok' : 'todo'} tag-btn" data-toggle="${s.id}" aria-label="${t(s.active ? 'Pause {name}' : 'Activate {name}', { name: esc(s.name) })}">${s.active ? t('Active') : t('Paused')}</button></td>
         <td><div class="btn-row nowrap"><button class="btn btn-sm btn-ghost" data-open="${s.id}">${t('Open dashboard')}</button><button class="btn btn-sm linkish" data-logins="${s.id}">${icon('key')} ${t('Accounts')}</button><button class="btn btn-sm btn-ghost danger" data-delsch="${s.id}" aria-label="${t('Delete {name}', { name: esc(s.name) })}">${icon('trash')}</button></div></td></tr>`; }).join('') || `<tr><td colspan="10" class="muted">${t('No schools yet. Use Add school, or give a coordinator a School ID so they can register on the sign-up page.')}</td></tr>`}</tbody>
     </table></section>`,
@@ -154,6 +154,8 @@ function schools(ctx) {
    The admin makes School IDs and gives one to each school. A school needs an unused one to
    register on the sign-up page; each works once. */
 let idFilter = 'unused';
+// "Link" is a verb elsewhere (profile: link a child, 'जोड़ें'); here it is the noun, a sign-up link.
+const LINK = isHi() ? 'लिंक' : 'Link';
 const signupLink = id => `${location.origin}${location.pathname}#/signup/school/${id}`;
 
 function schoolIdsPage(ctx) {
@@ -180,7 +182,7 @@ function schoolIdsPage(ctx) {
         <td>${x.note ? esc(x.note) : '<span class="muted">—</span>'}</td>
         <td>${x.usedBy ? `<span class="tag ok">${t('Used')}</span> <small class="muted">${x.usedAt ? t('by {name}, {date}', { name: esc(nameOf(x.usedBy)), date: fmtDate(x.usedAt, { day: 'numeric', month: 'short', year: 'numeric' }) }) : t('by {name}', { name: esc(nameOf(x.usedBy)) })}</small>` : `<span class="tag todo">${t('Unused')}</span>`}</td>
         <td><small class="muted">${fmtDate(x.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}</small></td>
-        <td><div class="btn-row nowrap">${x.usedBy ? '' : `<button class="btn btn-sm btn-ghost" data-copy="${esc(x.id)}" title="${t('Copy the School ID')}">${icon('copy')} ${t('ID')}</button><button class="btn btn-sm btn-ghost" data-copy="${esc(signupLink(x.id))}" title="${t('Copy a sign-up link with this School ID filled in')}">${icon('link')} ${t('Link')}</button>`}
+        <td><div class="btn-row nowrap">${x.usedBy ? '' : `<button class="btn btn-sm btn-ghost" data-copy="${esc(x.id)}" title="${t('Copy the School ID')}">${icon('copy')} ${t('ID')}</button><button class="btn btn-sm btn-ghost" data-copy="${esc(signupLink(x.id))}" title="${t('Copy a sign-up link with this School ID filled in')}">${icon('link')} ${LINK}</button>`}
           <button class="btn btn-sm btn-ghost" data-note="${esc(x.id)}" aria-label="${t('Change who {id} is for', { id: esc(x.id) })}" title="${t('Change who it is for')}">${icon('edit')}</button>
           ${x.usedBy && D.schools.some(s => s.id === x.usedBy) ? '' : `<button class="btn btn-sm btn-ghost danger" data-del="${esc(x.id)}" aria-label="${t('Delete {name}', { name: esc(x.id) })}" title="${t('Delete')}">${icon('trash')}</button>`}</div></td></tr>`).join('')
         || `<tr><td colspan="5" class="muted">${list.length ? t('None here.') : t('No School IDs yet. Make one above for each school that will register.')}</td></tr>`}</tbody>
@@ -199,7 +201,7 @@ function schoolIdsPage(ctx) {
         const all = made.map(x => x.id).join('\n');
         const d = modal(`<h2>${made.length === 1 ? t('New School ID') : t('{n} new School IDs', { n: made.length })}</h2>
           <p class="muted">${t(made.length === 1 ? 'Send it to each school\'s coordinator. They enter it on the sign-up page under <b>Create account → School</b>, or open the sign-up link, which fills it in.' : 'Send one to each school\'s coordinator. They enter it on the sign-up page under <b>Create account → School</b>, or open the sign-up link, which fills it in.')}</p>
-          <ul class="sid-made">${made.map(x => `<li><code class="mono sid-code">${esc(x.id)}</code><button class="btn btn-sm btn-ghost" data-copy="${esc(x.id)}">${icon('copy')} ${t('ID')}</button><button class="btn btn-sm btn-ghost" data-copy="${esc(signupLink(x.id))}">${icon('link')} ${t('Link')}</button></li>`).join('')}</ul>
+          <ul class="sid-made">${made.map(x => `<li><code class="mono sid-code">${esc(x.id)}</code><button class="btn btn-sm btn-ghost" data-copy="${esc(x.id)}">${icon('copy')} ${t('ID')}</button><button class="btn btn-sm btn-ghost" data-copy="${esc(signupLink(x.id))}">${icon('link')} ${LINK}</button></li>`).join('')}</ul>
           <div class="modal-actions">${made.length > 1 ? `<button class="btn btn-ghost" data-copy="${esc(all)}">${icon('copy')} ${t('Copy all IDs')}</button>` : ''}<button class="btn btn-primary" data-close>${t('Done')}</button></div>`);
         bindCopy(d);
       });

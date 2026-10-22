@@ -134,7 +134,7 @@ function formOf(ing) {
 }
 const VOL = { liquid: 1, powder: .22, solid: .45, drops: .05 };
 const TOOL = u => /^(cup|cups|glass|glasses|mug|mugs|litre|litres|l|ml|bottle|jug|bowl|कप|गिलास|मग|लीटर|ली|मिली|मिलीलीटर|बोतल|जग|कटोरी|कटोरा)$/i.test(u || '') ? 'jug' : 'spoon';
-const VESSEL = { glass: t('glass'), bowl: t('bowl'), pot: t('pot'), bucket: t('bucket'), tank: t('tank'), jar: t('jar') };
+const VESSEL = { glass: t('glass'), bowl: t('bowl'), pot: isHi() ? t('pot (cooking)') : 'pot', bucket: t('bucket'), tank: t('tank'), jar: t('jar') };
 
 export function mount(stage, cfg, api) {
   const { gsap } = api;
