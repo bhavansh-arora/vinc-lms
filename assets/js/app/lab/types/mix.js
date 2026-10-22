@@ -5,6 +5,7 @@
 // is the Euclidean RGB distance to that colour. Meter values are sum(props[key] * amount), except `ph`, which is the
 // amount-weighted average over ingredients that define props.ph (7 when there are none).
 import { h, esc, shake, pop, sparkle } from '../kit.js';
+import { t, isHi } from '../../../i18n.js';
 
 export const meta = { title: 'Mix it right', needs: ['gsap'] };
 
@@ -124,14 +125,16 @@ const DEFS = `
 
 function formOf(ing) {
   if (ing.form) return ing.form;
+  // Hindi configs have Hindi units and labels, so the Hindi words are here too.
   const u = String(ing.unit || '').toLowerCase(), l = String(ing.label || '').toLowerCase();
-  if (/^drops?$/.test(u)) return 'drops';
-  if (/^(piece|pieces|slice|slices|leaf|leaves|handful|cube|cubes|whole)$/.test(u)) return 'solid';
-  if (/^(pinch|g|gram|grams|kg|tsp powder)$/.test(u) || /sugar|salt|powder|flour|jaggery|gur|masala|besan|soda|spice|haldi|turmeric|atta|dust|meal/.test(l)) return 'powder';
+  if (/^(drops?|बूँद|बूंद|बूँदें|बूंदें)$/.test(u)) return 'drops';
+  if (/^(piece|pieces|slice|slices|leaf|leaves|handful|cube|cubes|whole|टुकड़ा|टुकड़े|फाँक|फांक|स्लाइस|पत्ती|पत्तियाँ|पत्ता|पत्ते|मुट्ठी|क्यूब|साबुत)$/.test(u)) return 'solid';
+  if (/^(pinch|g|gram|grams|kg|tsp powder|चुटकी|ग्राम|ग्रा|किलो|किग्रा)$/.test(u) || /sugar|salt|powder|flour|jaggery|gur|masala|besan|soda|spice|haldi|turmeric|atta|dust|meal|चीनी|शक्कर|नमक|पाउडर|चूर्ण|आटा|गुड़|मसाल|बेसन|सोडा|हल्दी|बुरादा/.test(l)) return 'powder';
   return 'liquid';
 }
 const VOL = { liquid: 1, powder: .22, solid: .45, drops: .05 };
-const TOOL = u => /^(cup|cups|glass|glasses|mug|mugs|litre|litres|l|ml|bottle|jug|bowl)$/i.test(u || '') ? 'jug' : 'spoon';
+const TOOL = u => /^(cup|cups|glass|glasses|mug|mugs|litre|litres|l|ml|bottle|jug|bowl|कप|गिलास|मग|लीटर|ली|मिली|मिलीलीटर|बोतल|जग|कटोरी|कटोरा)$/i.test(u || '') ? 'jug' : 'spoon';
+const VESSEL = { glass: t('glass'), bowl: t('bowl'), pot: t('pot'), bucket: t('bucket'), tank: t('tank'), jar: t('jar') };
 
 export function mount(stage, cfg, api) {
   const { gsap } = api;
@@ -145,19 +148,21 @@ export function mount(stage, cfg, api) {
   const timers = [];
   let solved = false, busy = 0, checks = 0;
 
-  const unitWord = (i, n) => { const u = i.unit || 'spoon'; return n === 1 ? u : /s$|ml$|^g$|^kg$|^l$/i.test(u) ? u : /(ch|sh)$/.test(u) ? u + 'es' : u + 's'; };
+  // English plurals ("2 spoons"); Hindi configs give the unit as it should be shown.
+  const unitWord = (i, n) => { const u = i.unit || t('spoon'); return isHi() || n === 1 ? u : /s$|ml$|^g$|^kg$|^l$/i.test(u) ? u : /(ch|sh)$/.test(u) ? u + 'es' : u + 's'; };
+  const vName = VESSEL[kind];
   const meterLabel = k => meters.find(m => m.key === k)?.label || k;
   const zoneOf = k => { const r = rules.find(x => x.meter === k); return r ? [r.min ?? -Infinity, r.max ?? Infinity] : null; };
 
   const root = h(`<div class="lab-mix mx-v-${kind}">
-    <section class="mx-shelf" aria-label="Ingredients">
-      <h3 class="lab-h">Ingredients</h3>
-      <p class="mx-tip">Tap to add one ${ings.length ? 'measure' : ''}, or drag it into the ${esc(kind)}.</p>
+    <section class="mx-shelf" aria-label="${t('Ingredients')}">
+      <h3 class="lab-h">${t('Ingredients')}</h3>
+      <p class="mx-tip">${esc(t(ings.length ? 'Tap to add one measure, or drag it into the {vessel}.' : 'Tap to add one , or drag it into the {vessel}.', { vessel: vName }))}</p>
       <div class="mx-ings"></div>
     </section>
     <div class="mx-mid">
-      <button type="button" class="mx-drop" aria-label="The ${esc(kind)}. Drop an ingredient here.">
-        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="A ${esc(kind)} on the kitchen counter">
+      <button type="button" class="mx-drop" aria-label="${esc(t('The {vessel}. Drop an ingredient here.', { vessel: vName }))}">
+        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t('A {vessel} on the kitchen counter', { vessel: vName }))}">
           <defs>${DEFS}${V.mode === 'side' ? `<clipPath id="mx-clip"><polygon points="${V.poly.map(p => p.join(',')).join(' ')}"/></clipPath>` : `<clipPath id="mx-clip"><ellipse cx="${V.open.cx}" cy="${V.open.cy}" rx="${V.open.rx - 3}" ry="${V.open.ry - 2}"/></clipPath>`}</defs>
           <rect width="${W}" height="${H}" class="mx-bg-wall"/><rect width="${W}" height="352" fill="url(#mx-tiles)" class="mx-bg-tiles"/>
           <path d="M0 352H${W}V${H}H0Z" fill="url(#mx-counter)"/><path d="M0 352H${W}" stroke="#D9A86F" stroke-width="3"/>
@@ -173,13 +178,13 @@ export function mount(stage, cfg, api) {
         </svg>
       </button>
       <div class="mx-acts">
-        <button type="button" class="lab-act ghost mx-undo" disabled>↶ Undo</button>
-        <button type="button" class="lab-act ghost mx-empty" disabled>Empty</button>
-        <button type="button" class="lab-act mx-check" disabled>Check</button>
+        <button type="button" class="lab-act ghost mx-undo" disabled>↶ ${t('Undo')}</button>
+        <button type="button" class="lab-act ghost mx-empty" disabled>${t('Empty')}</button>
+        <button type="button" class="lab-act mx-check" disabled>${t('Check')}</button>
       </div>
     </div>
     <section class="mx-side">
-      <div class="mx-target"><p class="mx-kicker">Your goal</p><p class="mx-goal">${esc(cfg.target?.text || cfg.mission || '')}</p><ul class="mx-rules"></ul></div>
+      <div class="mx-target"><p class="mx-kicker">${t('Your goal')}</p><p class="mx-goal">${esc(cfg.target?.text || cfg.mission || '')}</p><ul class="mx-rules"></ul></div>
       <div class="mx-meters"></div>
     </section>
   </div>`);
@@ -193,7 +198,7 @@ export function mount(stage, cfg, api) {
   const ingEls = ings.map(i => {
     const b = h(`<button type="button" class="mx-ing" data-key="${esc(i.key)}" style="--c:${esc(i.color || '#ccc')}">
       <span class="mx-ing-art">${api.art(i) || `<span class="mx-blob"></span>`}</span>
-      <span class="mx-ing-t"><b>${esc(i.label)}</b><small>1 ${esc(i.unit || 'spoon')} each</small></span>
+      <span class="mx-ing-t"><b>${esc(i.label)}</b><small>${esc(t('1 {unit} each', { unit: i.unit || t('spoon') }))}</small></span>
       <span class="mx-pips" aria-hidden="true">${Array.from({ length: Math.min(i.max, 10) }, () => '<i></i>').join('')}</span>
       <span class="mx-n" aria-live="polite">0</span></button>`);
     b._ing = i;
@@ -211,8 +216,8 @@ export function mount(stage, cfg, api) {
       html = `<div class="mx-meter mx-ph"><div class="mx-m-h"><b>${esc(m.label || 'pH')}</b><span class="mx-m-v">7</span></div>
         <div class="mx-ph-row"><span class="mx-ph-paper"><i></i></span>
         <div class="mx-ph-scale"><div class="mx-ph-bar" style="background:linear-gradient(90deg,${stops})">${z ? `<span class="mx-ph-zone" style="left:${pct(Math.max(lo, z[0]))}%;width:${pct(Math.min(hi, z[1])) - pct(Math.max(lo, z[0]))}%"></span>` : ''}</div>
-        <span class="mx-ph-mark"></span><div class="mx-ph-ticks"><span>${lo}</span><span>acid</span><span>${(lo + hi) / 2}</span><span>base</span><span>${hi}</span></div></div></div>
-        <p class="mx-ph-word">neutral</p></div>`;
+        <span class="mx-ph-mark"></span><div class="mx-ph-ticks"><span>${lo}</span><span>${t('acid')}</span><span>${(lo + hi) / 2}</span><span>${t('base')}</span><span>${hi}</span></div></div></div>
+        <p class="mx-ph-word">${t('neutral')}</p></div>`;
     } else {
       const A = v => Math.PI * (1 - clamp((v - lo) / (hi - lo), 0, 1)), P = (v, r) => [100 + Math.cos(A(v)) * r, 102 - Math.sin(A(v)) * r];
       const arc = (a, b, r) => { const [x1, y1] = P(a, r), [x2, y2] = P(b, r); return `M${n1(x1)} ${n1(y1)}A${r} ${r} 0 0 1 ${n1(x2)} ${n1(y2)}`; };
@@ -233,9 +238,9 @@ export function mount(stage, cfg, api) {
 
   /* ---------- rule list ---------- */
   const ruleText = r => {
-    if (r.meter) { const m = meters.find(x => x.key === r.meter); const lbl = m?.label || r.meter; return r.min != null && r.max != null ? `${lbl}: between ${r.min} and ${r.max}` : r.min != null ? `${lbl}: at least ${r.min}` : `${lbl}: at most ${r.max}`; }
-    if (r.amount) { const i = ings.find(x => x.key === r.amount); const lbl = i?.label || r.amount, u = i ? unitWord(i, 2) : ''; return r.min != null && r.max != null ? (r.min === r.max ? `${lbl}: exactly ${r.min} ${i ? unitWord(i, r.min) : ''}` : `${lbl}: ${r.min}–${r.max} ${u}`) : r.min != null ? `${lbl}: at least ${r.min} ${u}` : `${lbl}: at most ${r.max} ${u}`; }
-    if (r.colorNear) return 'Colour like this';
+    if (r.meter) { const m = meters.find(x => x.key === r.meter); const label = m?.label || r.meter, v = { label, min: r.min, max: r.max }; return r.min != null && r.max != null ? t('{label}: between {min} and {max}', v) : r.min != null ? t('{label}: at least {min}', v) : t('{label}: at most {max}', v); }
+    if (r.amount) { const i = ings.find(x => x.key === r.amount); const label = i?.label || r.amount, u = i ? unitWord(i, 2) : '', v = { label, min: r.min, max: r.max, unit: u }; return r.min != null && r.max != null ? (r.min === r.max ? t('{label}: exactly {min} {unit}', { ...v, unit: i ? unitWord(i, r.min) : '' }) : t('{label}: {min}–{max} {unit}', v)) : r.min != null ? t('{label}: at least {min} {unit}', v) : t('{label}: at most {max} {unit}', v); }
+    if (r.colorNear) return t('Colour like this');
     return '';
   };
   const rulesUl = $('.mx-rules');
@@ -327,7 +332,7 @@ export function mount(stage, cfg, api) {
   function targetY() { return V.mode === 'side' ? (liquidVol() > 0 ? sideSurfaceY(L.lvl) : V.bottom - 10) : V.open.cy + (1 - Math.max(L.lvl, .1)) * V.depth; }
   function add(ing, fromDrag) {
     if (solved) return;
-    if (amt[ing.key] >= ing.max) { api.say(`That's the most ${ing.label.toLowerCase()} you can add (${ing.max} ${unitWord(ing, ing.max)}).`, 'hint'); shake(api, ingEls[ings.indexOf(ing)]); return; }
+    if (amt[ing.key] >= ing.max) { api.say(t('That\'s the most {name} you can add ({n} {unit}).', { name: ing.label.toLowerCase(), n: ing.max, unit: unitWord(ing, ing.max) }), 'hint'); shake(api, ingEls[ings.indexOf(ing)]); return; }
     amt[ing.key]++; history.push(ing.key);
     const b = ingEls[ings.indexOf(ing)];
     pop(api, b, 1.08);
@@ -357,7 +362,7 @@ export function mount(stage, cfg, api) {
     if (!ing) return;
     const v = values();
     const parts = meters.map(m => `${m.label || m.key} ${fmt(v[m.key])}`);
-    api.say(`+1 ${ing.unit || 'spoon'} ${ing.label.toLowerCase()}. ${parts.join(' · ')}`);
+    api.say(t('+1 {unit} {name}. {meters}', { unit: ing.unit || t('spoon'), name: ing.label.toLowerCase(), meters: parts.join(' · ') }));
   }
 
   function spoonG(color, powder) {
@@ -511,7 +516,7 @@ export function mount(stage, cfg, api) {
         const pct = clamp((val - lo) / (hi - lo), 0, 1) * 100;
         gsap.to(e.querySelector('.mx-ph-mark'), { left: `${pct}%`, duration: .8, ease: 'elastic.out(1,.5)' });
         e.querySelector('.mx-ph-paper i').style.background = totalVol() > 0 ? phColor(val) : '#F3E9C8';
-        e.querySelector('.mx-ph-word').textContent = totalVol() === 0 ? 'Dip the strip: add something first' : val < 6.5 ? `Acidic (sour) · pH ${fmt(val)}` : val > 7.5 ? `Basic (soapy, bitter) · pH ${fmt(val)}` : `Neutral · pH ${fmt(val)}`;
+        e.querySelector('.mx-ph-word').textContent = totalVol() === 0 ? t('Dip the strip: add something first') : t(val < 6.5 ? 'Acidic (sour) · pH {v}' : val > 7.5 ? 'Basic (soapy, bitter) · pH {v}' : 'Neutral · pH {v}', { v: fmt(val) });
       } else {
         const rot = -90 + 180 * clamp((val - lo) / (hi - lo), 0, 1);
         const nd = e.querySelector('.mx-needle');
@@ -525,7 +530,7 @@ export function mount(stage, cfg, api) {
       b.querySelector('.mx-n').textContent = n;
       b.querySelectorAll('.mx-pips i').forEach((p, k) => p.classList.toggle('on', k < Math.round(n * Math.min(i.max, 10) / i.max)));
       b.classList.toggle('full', n >= i.max); b.classList.toggle('has', n > 0);
-      b.setAttribute('aria-label', `${i.label}: ${n} of ${i.max} ${unitWord(i, i.max)} added. Add one more.`);
+      b.setAttribute('aria-label', t('{name}: {n} of {max} {unit} added. Add one more.', { name: i.label, n, max: i.max, unit: unitWord(i, i.max) }));
     });
   }
   function updateButtons() {
@@ -547,12 +552,15 @@ export function mount(stage, cfg, api) {
       const custom = cfg.tips?.[r.meter]?.[res.low ? 'low' : 'high'];
       if (custom) return custom;
       const lbl = meterLabel(r.meter).toLowerCase();
-      if (r.meter === 'ph') return res.low ? 'It is too acidic (pH too low). Add less of the sour ingredient, or more water.' : 'The pH is too high. Add a little of something sour.';
+      if (r.meter === 'ph') return res.low ? t('It is too acidic (pH too low). Add less of the sour ingredient, or more water.') : t('The pH is too high. Add a little of something sour.');
       const best = [...ings].filter(i => (i.props?.[r.meter] || 0) > 0).sort((a, b) => b.props[r.meter] - a.props[r.meter])[0];
-      return res.low ? `The ${lbl} is too low${best ? ` — add more ${best.label.toLowerCase()}` : ''}.` : `The ${lbl} is too high${best ? ` — use less ${best.label.toLowerCase()} (tap Undo)` : ''}${ings.some(i => i.form === 'liquid' && !(i.props?.[r.meter])) ? ' or add more of something plain to dilute it' : ''}.`;
+      const dilute = ings.some(i => i.form === 'liquid' && !(i.props?.[r.meter])), v = { meter: lbl, name: best?.label.toLowerCase() };
+      if (res.low) return t(best ? 'The {meter} is too low — add more {name}.' : 'The {meter} is too low.', v);
+      return t(best ? (dilute ? 'The {meter} is too high — use less {name} (tap Undo) or add more of something plain to dilute it.' : 'The {meter} is too high — use less {name} (tap Undo).')
+        : (dilute ? 'The {meter} is too high or add more of something plain to dilute it.' : 'The {meter} is too high.'), v);
     }
-    if (r.amount) { const i = ings.find(x => x.key === r.amount); return res.low ? `Add more ${i?.label.toLowerCase() || r.amount}: you need at least ${r.min}.` : `Too much ${i?.label.toLowerCase() || r.amount}: use at most ${r.max} ${i ? unitWord(i, r.max) : ''}.`; }
-    if (r.colorNear) return cfg.tips?.color || 'The colour is not quite right yet. Compare it with the swatch and think which ingredient changes the colour.';
+    if (r.amount) { const i = ings.find(x => x.key === r.amount), name = i?.label.toLowerCase() || r.amount; return res.low ? t('Add more {name}: you need at least {n}.', { name, n: r.min }) : t('Too much {name}: use at most {n} {unit}.', { name, n: r.max, unit: i ? unitWord(i, r.max) : '' }); }
+    if (r.colorNear) return cfg.tips?.color || t('The colour is not quite right yet. Compare it with the swatch and think which ingredient changes the colour.');
     return '';
   }
   function check() {
@@ -565,13 +573,13 @@ export function mount(stage, cfg, api) {
     if (bad < 0) { win(); return; }
     api.mistake();
     const nBad = res.filter(r => !r.ok).length;
-    api.say(`${nBad === 1 ? 'Almost!' : 'Not yet.'} ${tipFor(rules[bad], res[bad])}`, 'bad');
+    api.say(`${nBad === 1 ? t('Almost!') : t('Not yet.')} ${tipFor(rules[bad], res[bad])}`, 'bad');
     shake(api, $('.mx-drop'));
   }
   function win() {
     solved = true; root.classList.add('solved');
     updateButtons();
-    api.say(cfg.good || 'Perfect mix! Every target is met.', 'good');
+    api.say(cfg.good || t('Perfect mix! Every target is met.'), 'good');
     sparkle(api, $('.mx-drop'));
     L.amp = 5;
     // garnish: a straw for drinks, a little celebration for everything
@@ -593,7 +601,7 @@ export function mount(stage, cfg, api) {
     const i = ings.find(x => x.key === key);
     if (i.form === 'solid') { const k = pieces.map(p => p.key).lastIndexOf(key); if (k >= 0) { const [p] = pieces.splice(k, 1); gsap.to(p.g, { opacity: 0, duration: .3, onComplete: () => p.g.remove() }); } }
     api.sound('whoosh'); updateIngs(); settle(null);
-    api.say(`Took out 1 ${i.unit || 'spoon'} of ${i.label.toLowerCase()}.`);
+    api.say(t('Took out 1 {unit} of {name}.', { unit: i.unit || t('spoon'), name: i.label.toLowerCase() }));
     ruleEls.forEach(li => li.classList.remove('ok', 'no'));
   }
   function empty() {
@@ -602,7 +610,7 @@ export function mount(stage, cfg, api) {
     pieces.splice(0).forEach(p => gsap.to(p.g, { opacity: 0, y: 20, duration: .4, onComplete: () => p.g.remove() }));
     api.sound('whoosh'); updateIngs(); settle(null);
     ruleEls.forEach(li => li.classList.remove('ok', 'no'));
-    api.say(`The ${kind} is empty again. Start fresh!`);
+    api.say(t('The {vessel} is empty again. Start fresh!', { vessel: vName }));
   }
 
   /* ---------- input ---------- */
@@ -622,11 +630,11 @@ export function mount(stage, cfg, api) {
     onClick() { add(b._ing); },
   })[0]);
   ingEls.forEach(b => b.addEventListener('click', e => { if (e.detail === 0) add(b._ing); }));
-  zoneEl.addEventListener('click', () => { if (!solved) api.say('Tap an ingredient to pour it in, or drag it here.', 'hint'); });
+  zoneEl.addEventListener('click', () => { if (!solved) api.say(t('Tap an ingredient to pour it in, or drag it here.'), 'hint'); });
   $('.mx-check').onclick = check; $('.mx-undo').onclick = undo; $('.mx-empty').onclick = empty;
 
   settle(null); updateIngs(); render();
-  api.say(cfg.mission || 'Add ingredients, watch the meters, then press Check.');
+  api.say(cfg.mission || t('Add ingredients, watch the meters, then press Check.'));
   return {
     destroy() {
       gsap.ticker.remove(tick);
