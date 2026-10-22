@@ -747,3 +747,9 @@ html .reveal:not(.in) { opacity: 0; }
 .header-row .nav { order: 1; }
 .header-row .lang-btn { order: 2; }
 .header-row .menu-btn { order: 3; }
+
+/* Hindi: DM Mono has no Devanagari and its wide spaces split Hindi words apart, so labels use the
+   Devanagari face first. Synthetic italic reads poorly in Devanagari, so the headline accent stays upright. */
+html[lang="hi"] { --mono: "Noto Sans Devanagari", "DM Mono", ui-monospace, monospace; }
+html[lang="hi"] .hero h1 em { font-style: normal; }
+html[lang="hi"] .hero h1 .w:nth-child(6) { --wi: 5; }

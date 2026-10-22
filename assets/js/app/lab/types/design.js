@@ -2,7 +2,7 @@
 // SVG canvas with background colours and patterns, editable text (double-tap), stickers with
 // drag / scale / rotate handles, layer order, delete, a live checklist and PNG export.
 import { esc, sparkle, onResize } from '../kit.js';
-import { t } from '../../../i18n.js';
+import { t, isHi } from '../../../i18n.js';
 
 export const meta = { title: 'Design studio', needs: ['gsap'] };
 
@@ -18,6 +18,8 @@ const FONTS = [
 const STYLES = [{ id: 'plain', name: t('Plain') }, { id: 'outline', name: t('Outline') }, { id: 'pill', name: t('Ribbon') }];
 const PATTERNS = ['none', 'dots', 'stripes', 'rays', 'frame', 'confetti'];
 const PAT_NAME = { none: t('Plain'), dots: t('Dots'), stripes: t('Stripes'), rays: t('Sunburst'), frame: t('Frame'), confetti: t('Confetti') };
+// `contains:<word>` rules name an English word; Hindi designs may use any of these instead.
+const CONTAINS_HI = { path: ['रास्ता', 'रास्ते', 'पथ', 'पगडंडी'], sleep: ['नींद', 'सो', 'सोना', 'सोने', 'सोओ'] };
 // The canvas kind as a word for sentences ("Your poster starts here").
 const SHAPE_NAME = { poster: t('poster'), label: t('label'), card: t('card'), menu: t('menu'), badge: t('badge'), banner: t('banner') };
 const EXTRA = ['#FFFFFF', '#2B1A10', '#F6DFB5', '#CFE6E1', '#F3D3C5', '#DCE8CC', '#F2C21E', '#2A6FB0'];
@@ -426,7 +428,7 @@ export function mount(stage, cfg, api) {
     const [kind, ...rest] = String(rule).split(':'); const arg = rest.join(':');
     if (kind === 'text') return texts().length >= (+arg || 1);
     if (kind === 'stickers') return st.els.filter(e => e.kind === 'sticker').length >= (+arg || 1);
-    if (kind === 'contains') return texts().some(e => e.text.toLowerCase().includes(arg.toLowerCase()));
+    if (kind === 'contains') { const words = [arg, ...(isHi() ? CONTAINS_HI[arg.toLowerCase()] || [] : [])].map(w => w.toLowerCase()); return texts().some(e => words.some(w => e.text.toLowerCase().includes(w))); }
     if (kind === 'background') return st.bgChosen;
     if (kind === 'field') return !!String(st.fields[arg] || '').trim() && st.els.some(e => e.field === arg);
     return false;

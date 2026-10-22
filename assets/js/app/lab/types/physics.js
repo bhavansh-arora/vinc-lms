@@ -17,6 +17,7 @@
 // Extra config: goal.value (rpm for spin, N for push/pull strength, kg for lever effort), params[].names
 //   (labels for discrete slider steps).
 import { h, esc } from '../kit.js';
+import { t as tr } from '../../../i18n.js'; // `tr`: this file uses `t` for time
 
 export const meta = { title: 'Machine playground', needs: ['gsap', 'matter'] };
 
@@ -125,7 +126,7 @@ function arrow(g, x0, y0, x1, y1, col, w = 5) {
   g.beginPath(); g.moveTo(0, 0); g.lineTo(L - 10, 0); g.stroke(); g.beginPath(); g.moveTo(L + 2, 0); g.lineTo(L - 14, -9); g.lineTo(L - 14, 9); g.closePath(); g.fill(); g.restore();
 }
 function tag(g, x, y, text, bg = '#FFF9EF', fg = '#2B1A10', size = 14) {
-  g.save(); g.font = `700 ${size}px "DM Sans", system-ui, sans-serif`; const w = g.measureText(text).width + 14;
+  g.save(); g.font = `700 ${size}px "DM Sans", "Noto Sans Devanagari", system-ui, sans-serif`; const w = g.measureText(text).width + 14;
   g.fillStyle = 'rgba(0,0,0,.18)'; rr(g, x - w / 2 + 1, y - size + 1, w, size + 10, 8); g.fill();
   g.fillStyle = bg; rr(g, x - w / 2, y - size, w, size + 10, 8); g.fill();
   g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y - size / 2 + 5); g.restore();
@@ -136,7 +137,7 @@ function weightBlock(g, x, yb, kg, w = 40) {
   g.fillStyle = lin(g, x - w / 2, 0, x + w / 2, 0, [[0, '#4d5562'], [.35, '#9aa3b0'], [1, '#3a404a']]);
   g.beginPath(); g.moveTo(x - w / 2 + 5, yb - hh); g.lineTo(x + w / 2 - 5, yb - hh); g.lineTo(x + w / 2, yb); g.lineTo(x - w / 2, yb); g.closePath(); g.fill();
   g.strokeStyle = '#3a404a'; g.lineWidth = 3; g.beginPath(); g.arc(x, yb - hh + 1, 6, Math.PI, 0); g.stroke(); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x - w / 2 + 6, yb - hh + 3, w - 12, 2);
-  g.fillStyle = '#fff'; g.font = '700 12px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, x, yb - hh / 2 + 4);
+  g.fillStyle = '#fff'; g.font = '700 12px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, x, yb - hh / 2 + 4);
   return hh;
 }
 function sack(g, x, yb, kg, w = 56) {
@@ -150,7 +151,7 @@ function sack(g, x, yb, kg, w = 56) {
   g.restore();
   g.fillStyle = '#7A4E22'; rr(g, x - 9, yb - hh - 6, 18, 10, 4); g.fill();
   g.fillStyle = '#FFF4DE'; rr(g, x - 20, yb - hh * .55 - 10, 40, 18, 5); g.fill();
-  g.fillStyle = '#7A3B12'; g.font = '700 12px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, x, yb - hh * .55 + 3);
+  g.fillStyle = '#7A3B12'; g.font = '700 12px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, x, yb - hh * .55 + 3);
   return hh;
 }
 function bucket(g, x, yt, w, hh, label) {
@@ -159,7 +160,7 @@ function bucket(g, x, yt, w, hh, label) {
   g.fillStyle = lin(g, x - w / 2, 0, x + w / 2, 0, [[0, '#2f6fb0'], [.4, '#6db1ea'], [1, '#235a91']]); g.fill();
   g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(x - w / 2 + 3, yt + 4, w - 6, 3);
   g.fillStyle = '#1d4f7f'; g.beginPath(); g.ellipse(x, yt, w / 2, 4, 0, 0, TAU); g.fill();
-  if (label) { g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText(label, x, yt + hh / 2 + 5); }
+  if (label) { g.fillStyle = '#fff'; g.font = '700 11px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center'; g.fillText(label, x, yt + hh / 2 + 5); }
 }
 function pulleyWheel(g, x, y, r, ang) {
   g.fillStyle = lin(g, x - r, y - r, x + r, y + r, [[0, '#d8dde3'], [1, '#7b838e']]); g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
@@ -180,23 +181,23 @@ const rough = P => P.friction != null ? clamp((P.friction - 1) / 4, 0, 1) : clam
 const surfIdx = P => clamp(Math.round(rough(P) * 2), 0, 2);
 // Defaults for optional keys that a config may add to any preset (names show on the slider).
 const EXTRA = {
-  friction: { label: 'Floor roughness', min: 1, max: 5, step: 1, value: 3, names: ['Very smooth', 'Smooth', 'Medium', 'Rough', 'Very rough'] },
-  release: { label: 'Launch angle', min: 20, max: 70, step: 5, value: 40, unit: '°' },
-  bands: { label: 'Rubber bands', min: 1, max: 4, step: 1, value: 2, unit: '' },
-  blades: { label: 'Number of blades', min: 2, max: 8, step: 1, value: 4, unit: '' },
-  prop: { label: 'Propeller size', min: 1, max: 3, step: 1, value: 2, names: ['Small', 'Medium', 'Large'] },
+  friction: { label: tr('Floor roughness'), min: 1, max: 5, step: 1, value: 3, names: [tr('Very smooth'), tr('Smooth'), tr('Medium'), tr('Rough'), tr('Very rough')] },
+  release: { label: tr('Launch angle'), min: 20, max: 70, step: 5, value: 40, unit: '°' },
+  bands: { label: tr('Rubber bands'), min: 1, max: 4, step: 1, value: 2, unit: '' },
+  blades: { label: tr('Number of blades'), min: 2, max: 8, step: 1, value: 4, unit: '' },
+  prop: { label: tr('Propeller size'), min: 1, max: 3, step: 1, value: 2, names: [tr('Small'), tr('Medium'), tr('Large')] },
 };
 
 const PRESETS = {
   /* ---------------------------------------------------------------- catapult */
   catapult: {
-    scene: 'outdoor', ground: 'grass', verb: 'Launch!', unit: { px: 2.5, label: 'cm' }, kinds: ['hit', 'distance'],
+    scene: 'outdoor', ground: 'grass', verb: tr('Launch!'), unit: { px: 2.5, label: 'cm' }, kinds: ['hit', 'distance'],
     params: [
-      { key: 'arm', label: 'Arm length', min: 1, max: 5, step: 1, value: 3, names: ['Very short', 'Short', 'Medium', 'Long', 'Very long'] },
-      { key: 'angle', label: 'Pull-back angle', min: 10, max: 60, step: 5, value: 35, unit: '°' },
-      { key: 'load', label: 'Ball', min: 1, max: 3, step: 1, value: 2, names: ['Paper ball', 'Rubber ball', 'Clay ball'] },
+      { key: 'arm', label: tr('Arm length'), min: 1, max: 5, step: 1, value: 3, names: [tr('Very short'), tr('Short'), tr('Medium'), tr('Long'), tr('Very long')] },
+      { key: 'angle', label: tr('Pull-back angle'), min: 10, max: 60, step: 5, value: 35, unit: '°' },
+      { key: 'load', label: tr('Ball'), min: 1, max: 3, step: 1, value: 2, names: [tr('Paper ball'), tr('Rubber ball'), tr('Clay ball')] },
     ],
-    goal: { kind: 'hit', target: { x: .8, width: .09 }, text: 'Land the ball in the basket' },
+    goal: { kind: 'hit', target: { x: .8, width: .09 }, text: tr('Land the ball in the basket') },
     geo(P) {
       const L = 46 + 24 * clamp(P.arm, .5, 6);
       const stop = 90 - clamp(P.release ?? 40, 15, 75);
@@ -257,10 +258,10 @@ const PRESETS = {
       const miss = Math.round(Math.abs(r.land - tx) / this.unit.px);
       const ok = L.goal.kind === 'hit' ? r.hit : r.land >= tx - bw / 2;
       const val = `${Math.round(d)} cm`;
-      if (ok) return { ok, val, text: L.goal.kind === 'hit' ? `In the basket! It flew ${val}.` : `It flew ${val}. Past the flag!` };
+      if (ok) return { ok, val, text: tr(L.goal.kind === 'hit' ? 'In the basket! It flew {val}.' : 'It flew {val}. Past the flag!', { val }) };
       const short = r.land < tx;
-      const tip = short ? 'Pull the arm back further, or use a longer arm, to store more energy in the rubber band.' : 'Too much energy! Pull back a little less or use a shorter arm.';
-      return { ok, val, close: 1 - Math.abs(r.land - tx) / tx, text: `${short ? 'Too short' : 'Too far'} by ${miss} cm. ${tip}` };
+      const tip = short ? tr('Pull the arm back further, or use a longer arm, to store more energy in the rubber band.') : tr('Too much energy! Pull back a little less or use a shorter arm.');
+      return { ok, val, close: 1 - Math.abs(r.land - tx) / tx, text: `${tr(short ? 'Too short by {n} cm.' : 'Too far by {n} cm.', { n: miss })} ${tip}` };
     },
     ghostOf(L) { return { trail: L.trailPts.slice(), land: L.s.land }; },
     draw(g, L, t) {
@@ -310,13 +311,13 @@ const PRESETS = {
 
   /* ---------------------------------------------------------------- balloon car */
   'balloon-car': {
-    scene: 'indoor', ground: P => ['tiles', 'cardboard', 'carpet'][surfIdx(P)], verb: 'Let go!', unit: { px: 200, label: 'm' }, kinds: ['distance', 'hit'],
+    scene: 'indoor', ground: P => ['tiles', 'cardboard', 'carpet'][surfIdx(P)], verb: tr('Let go!'), unit: { px: 200, label: 'm' }, kinds: ['distance', 'hit'],
     params: [
-      { key: 'balloon', label: 'Balloon size', min: 1, max: 5, step: 1, value: 2, names: ['Tiny', 'Small', 'Medium', 'Big', 'Huge'] },
-      { key: 'mass', label: 'Car mass', min: 1, max: 5, step: 1, value: 3, unit: ' coins' },
-      { key: 'surface', label: 'Floor', min: 1, max: 3, step: 1, value: 2, names: ['Smooth tiles', 'Cardboard', 'Carpet'] },
+      { key: 'balloon', label: tr('Balloon size'), min: 1, max: 5, step: 1, value: 2, names: [tr('Tiny'), tr('Small'), tr('Medium'), tr('Big'), tr('Huge')] },
+      { key: 'mass', label: tr('Car mass'), min: 1, max: 5, step: 1, value: 3, unit: tr(' coins') },
+      { key: 'surface', label: tr('Floor'), min: 1, max: 3, step: 1, value: 2, names: [tr('Smooth tiles'), tr('Cardboard'), tr('Carpet')] },
     ],
-    goal: { kind: 'distance', target: { x: .86, width: .1 }, text: 'Make the car reach the finish flag' },
+    goal: { kind: 'distance', target: { x: .86, width: .1 }, text: tr('Make the car reach the finish flag') },
     m(P) { return 1.2 + .35 * clamp(P.mass, 0, 8); },
     launch(L) {
       const { M } = L, s = L.s, P = L.P;
@@ -343,7 +344,7 @@ const PRESETS = {
       s.rest = (s.air <= 0 && Math.abs(vx) < .03) ? s.rest + 1 : 0;
       if (s.rest > 20 || car.position.x > W + 120 || L.t > 1500) { M_stop(L, car); L.finish({ x: car.position.x + 60, d: (car.position.x - s.x0) / this.unit.px }); }
     },
-    judge(L, r) { return travelJudge(L, r, this, 'car', 'A bigger balloon stores more air to push with, a lighter car speeds up more, and a smoother floor wastes less energy on friction.'); },
+    judge(L, r) { return travelJudge(L, r, this, 'car', tr('A bigger balloon stores more air to push with, a lighter car speeds up more, and a smoother floor wastes less energy on friction.')); },
     ghostOf(L) { return { x: L.s.car.position.x }; },
     draw(g, L, t) {
       const s = L.s, P = L.P, tx = L.goal.target.x * W;
@@ -359,14 +360,14 @@ const PRESETS = {
 
   /* ---------------------------------------------------------------- ramp */
   ramp: {
-    scene: 'indoor', ground: 'tiles', verb: 'Go!', unit: { px: 200, label: 'm' }, kinds: ['distance', 'hit', 'least-force', 'lift'],
+    scene: 'indoor', ground: 'tiles', verb: tr('Go!'), unit: { px: 200, label: 'm' }, kinds: ['distance', 'hit', 'least-force', 'lift'],
     params: [
-      { key: 'angle', label: 'Ramp angle', min: 10, max: 45, step: 5, value: 15, unit: '°' },
-      { key: 'surface', label: 'Ramp surface', min: 1, max: 3, step: 1, value: 2, names: ['Glass sheet', 'Wooden plank', 'Sandpaper'] },
-      { key: 'load', label: 'Load', min: 5, max: 30, step: 5, value: 10, unit: ' kg' },
+      { key: 'angle', label: tr('Ramp angle'), min: 10, max: 45, step: 5, value: 15, unit: '°' },
+      { key: 'surface', label: tr('Ramp surface'), min: 1, max: 3, step: 1, value: 2, names: [tr('Glass sheet'), tr('Wooden plank'), tr('Sandpaper')] },
+      { key: 'load', label: tr('Load'), min: 5, max: 30, step: 5, value: 10, unit: ' kg' },
     ],
-    goal: { kind: 'distance', target: { x: .9, width: .1 }, text: 'Roll the toy truck all the way to the flag' },
-    texts: { 'least-force': 'Push the crate up onto the truck with as little force as you can', lift: 'Push the crate up onto the truck', hit: 'Make the truck stop inside the parking box' },
+    goal: { kind: 'distance', target: { x: .9, width: .1 }, text: tr('Roll the toy truck all the way to the flag') },
+    texts: { 'least-force': tr('Push the crate up onto the truck with as little force as you can'), lift: tr('Push the crate up onto the truck'), hit: tr('Make the truck stop inside the parking box') },
     push(L) { if (L.canPush == null) L.canPush = L.goal.value ?? Math.round(this.massKg(L.P) * 10 * .45); return L.goal.kind === 'least-force' || L.goal.kind === 'lift'; },
     geo(P, push) {
       const th = rad(clamp(P.angle, 5, 60));
@@ -417,10 +418,10 @@ const PRESETS = {
     judge(L, r) {
       if (this.push(L)) {
         const need = Math.round(this.need(L)), can = L.canPush, wt = this.massKg(L.P) * 10;
-        if (r.stuck) return { ok: false, val: `${need} N`, close: can / need, text: `It needs ${need} N but you can push only ${can} N. A gentler slope or a smoother surface needs less force.` };
-        return { ok: true, val: `${need} N`, text: `Up it goes with ${need} N instead of ${wt} N to lift it straight up. A long, gentle ramp trades distance for force.` };
+        if (r.stuck) return { ok: false, val: `${need} N`, close: can / need, text: tr('It needs {need} N but you can push only {can} N. A gentler slope or a smoother surface needs less force.', { need, can }) };
+        return { ok: true, val: `${need} N`, text: tr('Up it goes with {need} N instead of {wt} N to lift it straight up. A long, gentle ramp trades distance for force.', { need, wt }) };
       }
-      return travelJudge(L, r, this, 'truck', 'A steeper ramp gives more speed at the bottom, and a smoother surface wastes less energy.');
+      return travelJudge(L, r, this, 'truck', tr('A steeper ramp gives more speed at the bottom, and a smoother surface wastes less energy.'));
     },
     ghostOf(L) { return this.push(L) ? null : { x: L.s.body.position.x, y: L.s.body.position.y, a: L.s.body.angle }; },
     draw(g, L, t) {
@@ -441,7 +442,7 @@ const PRESETS = {
       g.save(); g.strokeStyle = 'rgba(31,111,102,.85)'; g.lineWidth = 2; g.beginPath();
       const cx = push ? geo.x0 : geo.x1, cy = GY;
       if (push) g.arc(cx, cy, 46, -geo.th, 0); else g.arc(cx, cy, 46, Math.PI, Math.PI + geo.th);
-      g.stroke(); g.fillStyle = '#1F6F66'; g.font = '700 14px "DM Sans", sans-serif'; g.textAlign = 'center';
+      g.stroke(); g.fillStyle = '#1F6F66'; g.font = '700 14px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center';
       g.fillText(`${Math.round(P.angle)}°`, push ? cx + 66 : cx - 66, cy - 10); g.restore();
       const body = s.body;
       const bx = body ? body.position.x : null, by = body ? body.position.y : null, ba = body ? (body.position.x < geo.x1 ? Math.atan2(geo.y1 - geo.y0, geo.x1 - geo.x0) : 0) : null;
@@ -468,13 +469,13 @@ const PRESETS = {
 
   /* ---------------------------------------------------------------- lever */
   lever: {
-    scene: 'outdoor', ground: 'grass', verb: 'Let go!', kinds: ['lift', 'least-force'],
+    scene: 'outdoor', ground: 'grass', verb: tr('Let go!'), kinds: ['lift', 'least-force'],
     params: [
-      { key: 'fulcrum', label: 'Fulcrum position', min: 1, max: 9, step: 1, value: 5, names: ['Near the load', '2', '3', '4', 'Middle', '6', '7', '8', 'Near the effort'] },
-      { key: 'load', label: 'Load (sack)', min: 10, max: 40, step: 5, value: 30, unit: ' kg' },
-      { key: 'effort', label: 'Effort (weights)', min: 2, max: 30, step: 2, value: 10, unit: ' kg' },
+      { key: 'fulcrum', label: tr('Fulcrum position'), min: 1, max: 9, step: 1, value: 5, names: [tr('Near the load'), '2', '3', '4', tr('Middle'), '6', '7', '8', tr('Near the effort')] },
+      { key: 'load', label: tr('Load (sack)'), min: 10, max: 40, step: 5, value: 30, unit: ' kg' },
+      { key: 'effort', label: tr('Effort (weights)'), min: 2, max: 30, step: 2, value: 10, unit: ' kg' },
     ],
-    goal: { kind: 'lift', text: 'Lift the heavy sack off the ground' },
+    goal: { kind: 'lift', text: tr('Lift the heavy sack off the ground') },
     geo(P) { const xl = 200, xr = 800, f = clamp(P.fulcrum, 1, 9); return { xl, xr, xf: xl + f * 60, py: GY - 64, lx: xl + 34, ex: xr - 30 }; },
     launch(L) {
       const { M } = L, s = L.s, P = L.P, geo = this.geo(P);
@@ -493,7 +494,7 @@ const PRESETS = {
     step(L) {
       const s = L.s, b = s.body, a = b.angle - s.a0;
       const lift = Math.max(0, Math.sin(a) * (this.geo(L.P).xf - this.geo(L.P).lx));
-      L.read(lift / 2, false, 'cm lifted');
+      L.read(lift / 2, false, tr('cm lifted'));
       if (Math.abs(b.angularVelocity) > .004 && ++s.creak % 14 === 0) L.sound('tick');
       s.rest = Math.abs(b.angularVelocity) < .0008 ? s.rest + 1 : 0;
       if ((s.rest > 30 && L.t > 100) || L.t > 360) L.finish({ angle: a, lift });
@@ -503,12 +504,12 @@ const PRESETS = {
     judge(L, r) {
       const P = L.P, geo = this.geo(P), dl = r1((geo.xf - geo.lx) / 200), de = r1((geo.ex - geo.xf) / 200);
       const lifted = r.angle > .04, val = `${Math.round(r.lift / 2)} cm`;
-      const why = `Load ${P.load} kg × ${dl} m = ${r1(P.load * dl)}, effort ${P.effort} kg × ${de} m = ${r1(P.effort * de)}.`;
-      if (lifted && L.goal.kind === 'least-force' && P.effort > (L.goal.value ?? 10)) return { ok: false, val, close: .8, text: `Lifted, but with ${P.effort} kg. Can you do it with ${L.goal.value ?? 10} kg or less? Move the fulcrum closer to the load.` };
-      if (lifted) return { ok: true, val, text: `Up goes the sack! ${why} The effort side turns harder.` };
+      const why = tr('Load {load} kg × {dl} m = {tl}, effort {effort} kg × {de} m = {te}.', { load: P.load, dl, tl: r1(P.load * dl), effort: P.effort, de, te: r1(P.effort * de) });
+      if (lifted && L.goal.kind === 'least-force' && P.effort > (L.goal.value ?? 10)) return { ok: false, val, close: .8, text: tr('Lifted, but with {n} kg. Can you do it with {max} kg or less? Move the fulcrum closer to the load.', { n: P.effort, max: L.goal.value ?? 10 }) };
+      if (lifted) return { ok: true, val, text: tr('Up goes the sack! {why} The effort side turns harder.', { why }) };
       const ratio = this.torque(P).te / this.torque(P).tl;
-      if (ratio > .85) return { ok: false, val, close: .9, text: `So close, it is nearly balanced! ${why} A tiny change will tip it.` };
-      return { ok: false, val, close: clamp(ratio, 0, .95), text: `The sack stays down. ${why} Move the fulcrum nearer the load or add more effort.` };
+      if (ratio > .85) return { ok: false, val, close: .9, text: tr('So close, it is nearly balanced! {why} A tiny change will tip it.', { why }) };
+      return { ok: false, val, close: clamp(ratio, 0, .95), text: tr('The sack stays down. {why} Move the fulcrum nearer the load or add more effort.', { why }) };
     },
     ghostOf(L) { return { angle: L.s.body.angle - L.s.a0, xf: this.geo(L.P).xf, py: this.geo(L.P).py }; },
     draw(g, L, t) {
@@ -534,8 +535,8 @@ const PRESETS = {
       // turning-effect meter
       const tq = this.torque(P), mx = Math.max(tq.tl, tq.te);
       const bx = 380, by = 92, bw2 = 150;
-      g.save(); g.font = '700 14px "DM Sans", sans-serif'; g.textAlign = 'right'; g.fillStyle = 'rgba(255,249,239,.88)'; rr(g, bx - 170, by - 26, 500, 70, 14); g.fill();
-      g.fillStyle = '#5E4634'; g.fillText('Load turning effect', bx - 8, by + 2); g.fillText('Effort turning effect', bx - 8, by + 26);
+      g.save(); g.font = '700 14px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'right'; g.fillStyle = 'rgba(255,249,239,.88)'; rr(g, bx - 170, by - 26, 500, 70, 14); g.fill();
+      g.fillStyle = '#5E4634'; g.fillText(tr('Load turning effect'), bx - 8, by + 2); g.fillText(tr('Effort turning effect'), bx - 8, by + 26);
       g.fillStyle = '#B98A4E'; rr(g, bx, by - 9, bw2 * 2 * tq.tl / mx, 14, 6); g.fill();
       g.fillStyle = '#4d5562'; rr(g, bx, by + 15, bw2 * 2 * tq.te / mx, 14, 6); g.fill();
       g.restore();
@@ -548,12 +549,12 @@ const PRESETS = {
 
   /* ---------------------------------------------------------------- pulley */
   pulley: {
-    scene: 'outdoor', ground: 'grass', verb: 'Pull!', kinds: ['lift', 'least-force'],
+    scene: 'outdoor', ground: 'grass', verb: tr('Pull!'), kinds: ['lift', 'least-force'],
     params: [
-      { key: 'pulleys', label: 'Rope strands holding the load', min: 1, max: 4, step: 1, value: 1, names: ['1 (one fixed pulley)', '2 (add a moving pulley)', '3 (block and tackle)', '4 (block and tackle)'] },
-      { key: 'load', label: 'Load', min: 10, max: 60, step: 5, value: 40, unit: ' kg' },
+      { key: 'pulleys', label: tr('Rope strands holding the load'), min: 1, max: 4, step: 1, value: 1, names: [tr('1 (one fixed pulley)'), tr('2 (add a moving pulley)'), tr('3 (block and tackle)'), tr('4 (block and tackle)')] },
+      { key: 'load', label: tr('Load'), min: 10, max: 60, step: 5, value: 40, unit: ' kg' },
     ],
-    goal: { kind: 'lift', value: 150, text: 'Lift the basket of mangoes up to the tree house' },
+    goal: { kind: 'lift', value: 150, text: tr('Lift the basket of mangoes up to the tree house') },
     beam: 96, top: GY - 250,
     need(P) { const n = clamp(Math.round(P.pulleys), 1, 4); return clamp(P.load, 0, 999) * 10 / n * (1 + .04 * (n - 1)); },
     launch(L) {
@@ -577,9 +578,9 @@ const PRESETS = {
     },
     judge(L, r) {
       const P = L.P, need = Math.round(this.need(P)), can = L.canPush, n = clamp(Math.round(P.pulleys), 1, 4);
-      if (!r.ok) return { ok: false, val: `${need} N`, close: can / need, text: `Too heavy! You must pull ${need} N but can pull only ${can} N. More rope strands share the weight.` };
-      if (L.goal.kind === 'least-force' && n > 1 && this.need({ ...P, pulleys: n - 1 }) <= can) return { ok: true, val: `${need} N`, text: `Lifted with ${need} N.` };
-      return { ok: true, val: `${need} N`, text: `Up it goes with ${need} N! ${n} strands share the load, but you pulled ${n}× as much rope.` };
+      if (!r.ok) return { ok: false, val: `${need} N`, close: can / need, text: tr('Too heavy! You must pull {need} N but can pull only {can} N. More rope strands share the weight.', { need, can }) };
+      if (L.goal.kind === 'least-force' && n > 1 && this.need({ ...P, pulleys: n - 1 }) <= can) return { ok: true, val: `${need} N`, text: tr('Lifted with {need} N.', { need }) };
+      return { ok: true, val: `${need} N`, text: tr('Up it goes with {need} N! {n} strands share the load, but you pulled {n}× as much rope.', { need, n }) };
     },
     ghostOf() { return null; },
     draw(g, L, t) {
@@ -608,20 +609,20 @@ const PRESETS = {
       // puller
       kid(g, { x: 724, y: GY, face: -1, lean: s.strain ? -8 + Math.sin(L.t * .5) * 3 : -6, armA: [hand[0] - 724, hand[1] - GY], armB: [hand[0] - 724 + 2, hand[1] - GY + 16], strain: s.strain || (need > can ? .6 : 0), shirt: '#D98A1C' });
       // spring balance tag
-      tag(g, 700, GY - 160, `Pull ${Math.round(need)} N`, need > can ? '#B23A2A' : '#1F6F66', '#fff', 13);
-      tag(g, 700, GY - 190, `You can pull ${can} N`, '#FFF9EF', '#5E4634', 12);
-      if (s.pulled > 0 && need <= can) tag(g, 830, GY - 20, `Rope pulled ${r1(s.pulled / 100)} m`, '#FFF9EF', '#5E4634', 12);
+      tag(g, 700, GY - 160, tr('Pull {n} N', { n: Math.round(need) }), need > can ? '#B23A2A' : '#1F6F66', '#fff', 13);
+      tag(g, 700, GY - 190, tr('You can pull {n} N', { n: can }), '#FFF9EF', '#5E4634', 12);
+      if (s.pulled > 0 && need <= can) tag(g, 830, GY - 20, tr('Rope pulled {n} m', { n: r1(s.pulled / 100) }), '#FFF9EF', '#5E4634', 12);
     },
   },
 
   /* ---------------------------------------------------------------- windmill */
   windmill: {
-    scene: 'outdoor', ground: 'grass', verb: 'Blow!', kinds: ['spin', 'lift'],
+    scene: 'outdoor', ground: 'grass', verb: tr('Blow!'), kinds: ['spin', 'lift'],
     params: [
-      { key: 'blade', label: 'Blade angle', min: 0, max: 90, step: 5, value: 10, unit: '°' },
-      { key: 'wind', label: 'Wind speed', min: 1, max: 5, step: 1, value: 2, names: ['Breeze', 'Light wind', 'Windy', 'Strong wind', 'Gale'] },
+      { key: 'blade', label: tr('Blade angle'), min: 0, max: 90, step: 5, value: 10, unit: '°' },
+      { key: 'wind', label: tr('Wind speed'), min: 1, max: 5, step: 1, value: 2, names: [tr('Breeze'), tr('Light wind'), tr('Windy'), tr('Strong wind'), tr('Gale')] },
     ],
-    goal: { kind: 'lift', text: 'Turn the windmill fast enough to lift the cup of clips' },
+    goal: { kind: 'lift', text: tr('Turn the windmill fast enough to lift the cup of clips') },
     hub: { x: 430, y: 170 },
     launch(L) {
       const { M } = L, s = L.s;
@@ -648,9 +649,9 @@ const PRESETS = {
     },
     judge(L, r) {
       const P = L.P, val = `${Math.round(r.rpm)} rpm`, b = P.blade;
-      if (r.ok) return { ok: true, val, text: L.goal.kind === 'lift' ? `The thread wound up and lifted the cup! Blades at ${b}° catch the wind well.` : `Whirr! ${val}. Tilted blades turn the push of the wind into a spin.` };
-      const tip = b < 20 ? 'Flat blades just get pushed backwards. Tilt them more.' : b > 70 ? 'Blades almost edge-on let the wind slip past. Tilt them less.' : 'Try a stronger wind, or fine-tune the blade angle.';
-      return { ok: false, val, close: clamp(this.torque(P) / this.torque({ ...P, blade: 45, wind: 5 }), 0, .9), text: `${L.goal.kind === 'lift' ? 'Not enough turning force to lift the cup.' : `Only ${val}.`} ${tip}` };
+      if (r.ok) return { ok: true, val, text: L.goal.kind === 'lift' ? tr('The thread wound up and lifted the cup! Blades at {b}° catch the wind well.', { b }) : tr('Whirr! {val}. Tilted blades turn the push of the wind into a spin.', { val }) };
+      const tip = b < 20 ? tr('Flat blades just get pushed backwards. Tilt them more.') : b > 70 ? tr('Blades almost edge-on let the wind slip past. Tilt them less.') : tr('Try a stronger wind, or fine-tune the blade angle.');
+      return { ok: false, val, close: clamp(this.torque(P) / this.torque({ ...P, blade: 45, wind: 5 }), 0, .9), text: `${L.goal.kind === 'lift' ? tr('Not enough turning force to lift the cup.') : tr('Only {val}.', { val })} ${tip}` };
     },
     ghostOf(L) { return { rpm: L.s.rpmMax }; },
     draw(g, L, t) {
@@ -670,7 +671,7 @@ const PRESETS = {
         g.strokeStyle = '#9aa3ad'; g.lineWidth = 1; g.stroke();
         g.strokeStyle = '#7E8792'; for (let i = 0; i < 3; i++) { g.beginPath(); g.ellipse(hb.x + 10 + i * 4, cy - 20 - i, 4, 2, .3, 0, TAU); g.stroke(); }
         g.save(); g.setLineDash([4, 5]); g.strokeStyle = 'rgba(31,111,102,.7)'; g.lineWidth = 2; g.beginPath(); g.moveTo(hb.x - 40, hb.y + 50); g.lineTo(hb.x + 70, hb.y + 50); g.stroke(); g.restore();
-        tag(g, hb.x + 104, hb.y + 56, 'Lift to here', '#1F6F66', '#fff', 12);
+        tag(g, hb.x + 104, hb.y + 56, tr('Lift to here'), '#1F6F66', '#fff', 12);
       }
       // rotor
       const nb = clamp(Math.round(P.blades ?? 4), 2, 8), pitch = rad(clamp(P.blade, 0, 90)), cols = ['#C2502A', '#F0B44C', '#1F6F66', '#8C3557', '#4C7424', '#2f6fb0', '#D98A1C', '#5E4634'];
@@ -688,7 +689,7 @@ const PRESETS = {
       g.restore();
       // pitch diagram
       g.save(); g.translate(hb.x + 200, 80); g.fillStyle = 'rgba(255,249,239,.85)'; rr(g, -48, -40, 120, 92, 12); g.fill();
-      g.fillStyle = '#5E4634'; g.font = '700 11px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText('Blade seen from above', 12, -24);
+      g.fillStyle = '#5E4634'; g.font = '700 11px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center'; g.fillText(tr('Blade seen from above'), 12, -24);
       arrow(g, -38, 12, -8, 12, '#2f6fb0', 3);
       g.rotate(-pitch); g.fillStyle = '#C2502A'; rr(g, 2, -3, 40, 6, 3); g.fill(); g.restore();
       // wind fan at the left, with streaks of moving air
@@ -696,18 +697,18 @@ const PRESETS = {
       fanBox(g, 70, GY, pw, t);
       if (pw > 0) { g.save(); g.lineCap = 'round'; for (let i = 0; i < 14; i++) { const sp = 2 + pw * 1.6, x = 110 + ((t * .06 * sp + i * 97) % 520), y = hb.y - 110 + (i * 37 % 230) + Math.sin(t * .004 + i) * 6; const a = Math.min(1, (x - 110) / 60) * Math.max(0, 1 - (x - 110) / 520); g.strokeStyle = `rgba(255,255,255,${.75 * a})`; g.lineWidth = 2.2; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 18, y - 4, x + 34 + pw * 6, y); g.stroke(); } g.restore(); }
     },
-    drawGhost(g, gh) { if (gh?.rpm) tag(g, 640, 40, `Last try: ${Math.round(gh.rpm)} rpm`, 'rgba(255,249,239,.8)', '#6E5442', 12); },
+    drawGhost(g, gh) { if (gh?.rpm) tag(g, 640, 40, tr('Last try: {n} rpm', { n: Math.round(gh.rpm) }), 'rgba(255,249,239,.8)', '#6E5442', 12); },
   },
 
   /* ---------------------------------------------------------------- wheel and axle */
   'wheel-axle': {
-    scene: 'outdoor', ground: 'grass', verb: 'Turn!', kinds: ['lift', 'least-force'],
+    scene: 'outdoor', ground: 'grass', verb: tr('Turn!'), kinds: ['lift', 'least-force'],
     params: [
-      { key: 'wheel', label: 'Wheel size', min: 1, max: 5, step: 1, value: 1, names: ['Tiny', 'Small', 'Medium', 'Big', 'Huge'] },
-      { key: 'axle', label: 'Axle size', min: 1, max: 3, step: 1, value: 3, names: ['Thin', 'Medium', 'Thick'] },
-      { key: 'load', label: 'Bucket of water', min: 5, max: 30, step: 5, value: 20, unit: ' kg' },
+      { key: 'wheel', label: tr('Wheel size'), min: 1, max: 5, step: 1, value: 1, names: [tr('Tiny'), tr('Small'), tr('Medium'), tr('Big'), tr('Huge')] },
+      { key: 'axle', label: tr('Axle size'), min: 1, max: 3, step: 1, value: 3, names: [tr('Thin'), tr('Medium'), tr('Thick')] },
+      { key: 'load', label: tr('Bucket of water'), min: 5, max: 30, step: 5, value: 20, unit: ' kg' },
     ],
-    goal: { kind: 'lift', value: 80, text: 'Wind the bucket up out of the well' },
+    goal: { kind: 'lift', value: 80, text: tr('Wind the bucket up out of the well') },
     hub: { x: 600, y: GY - 170 },
     radii(P) { return { rw: 30 + 16 * clamp(P.wheel, .5, 6), ra: 6 + 5 * clamp(P.axle, .5, 4) }; },
     need(P) { const { rw, ra } = this.radii(P); return clamp(P.load, 0, 999) * 10 * ra / rw * 1.08; },
@@ -729,15 +730,15 @@ const PRESETS = {
       L.spin(r, tq);
       s.depth = Math.max(0, s.depth + r.angularVelocity * ra); s.pulled = (s.pulled || 0) + Math.max(0, r.angularVelocity) * rw;
       if (s.need > s.can) { s.strain = 1; }
-      L.read(s.depth / 50, false, 'm up');
+      L.read(s.depth / 50, false, tr('m up'));
       if (s.depth >= 118) { if (++s.rest > 20) L.finish({ ok: true }); }
       else if (L.t > 360 && s.need > s.can) L.finish({ ok: false });
       else if (L.t > 900) L.finish({ ok: false });
     },
     judge(L, r) {
       const P = L.P, need = Math.round(this.need(P)), can = L.goal.value ?? 80, { rw, ra } = this.radii(P), k = r1(rw / ra);
-      if (r.ok) return { ok: true, val: `${need} N`, text: `Up came the bucket with only ${need} N! The wheel is ${k}× wider than the axle, so your force is multiplied ${k} times.` };
-      return { ok: false, val: `${need} N`, close: can / need, text: `The handle will not turn: it needs ${need} N and you have ${can} N. A bigger wheel or a thinner axle makes it easier.` };
+      if (r.ok) return { ok: true, val: `${need} N`, text: tr('Up came the bucket with only {need} N! The wheel is {k}× wider than the axle, so your force is multiplied {k} times.', { need, k }) };
+      return { ok: false, val: `${need} N`, close: can / need, text: tr('The handle will not turn: it needs {need} N and you have {can} N. A bigger wheel or a thinner axle makes it easier.', { need, can }) };
     },
     ghostOf() { return null; },
     draw(g, L, t) {
@@ -771,8 +772,8 @@ const PRESETS = {
       g.strokeStyle = '#C9A36A'; g.lineWidth = 3; g.beginPath(); g.moveTo(ex, hb.y); g.lineTo(ex, hy + 30); g.stroke();
       kid(g, { x: ex - 22, y: GY, face: 1, lean: s.strain ? 4 + Math.sin(L.t * .5) * 2 : 2, armA: [22, hy - GY], armB: [22, hy - GY + 18], strain: s.strain || 0, shirt: '#4C7424' });
       arrow(g, ex + 14, hy - 10, ex + 14, hy + 40, '#C2502A', 4);
-      tag(g, hb.x, hb.y - rw - 30, `Turning force ${Math.round(need)} N`, need > can ? '#B23A2A' : '#1F6F66', '#fff', 13);
-      tag(g, hb.x, hb.y - rw - 58, `You can push ${can} N`, '#FFF9EF', '#5E4634', 12);
+      tag(g, hb.x, hb.y - rw - 30, tr('Turning force {n} N', { n: Math.round(need) }), need > can ? '#B23A2A' : '#1F6F66', '#fff', 13);
+      tag(g, hb.x, hb.y - rw - 58, tr('You can push {n} N', { n: can }), '#FFF9EF', '#5E4634', 12);
       // dimension labels
       g.save(); g.strokeStyle = 'rgba(31,111,102,.9)'; g.lineWidth = 2; g.setLineDash([4, 4]);
       g.beginPath(); g.moveTo(hb.x, hb.y); g.lineTo(hb.x - rw, hb.y); g.stroke(); g.restore();
@@ -782,12 +783,12 @@ const PRESETS = {
 
   /* ---------------------------------------------------------------- propeller boat */
   'propeller-boat': {
-    scene: 'outdoor', ground: 'water', verb: 'Let go!', unit: { px: 200, label: 'm' }, kinds: ['distance', 'hit'], gravity: 0,
+    scene: 'outdoor', ground: 'water', verb: tr('Let go!'), unit: { px: 200, label: 'm' }, kinds: ['distance', 'hit'], gravity: 0,
     params: [
-      { key: 'twists', label: 'Rubber-band twists', min: 5, max: 40, step: 5, value: 10, unit: ' turns' },
-      { key: 'prop', label: 'Propeller size', min: 1, max: 3, step: 1, value: 2, names: ['Small', 'Medium', 'Large'] },
+      { key: 'twists', label: tr('Rubber-band twists'), min: 5, max: 40, step: 5, value: 10, unit: tr(' turns') },
+      { key: 'prop', label: tr('Propeller size'), min: 1, max: 3, step: 1, value: 2, names: [tr('Small'), tr('Medium'), tr('Large')] },
     ],
-    goal: { kind: 'distance', target: { x: .86, width: .1 }, text: 'Sail the bottle boat across the pond to the flag' },
+    goal: { kind: 'distance', target: { x: .86, width: .1 }, text: tr('Sail the bottle boat across the pond to the flag') },
     wy: GY - 30,
     launch(L) {
       const { M } = L, s = L.s, P = L.P;
@@ -809,7 +810,7 @@ const PRESETS = {
       s.rest = (s.rem <= 0 && Math.abs(v) < .08) ? s.rest + 1 : 0;
       if (s.rest > 20 || b.position.x > W + 120 || L.t > 1800) { L.M.Body.setVelocity(b, { x: 0, y: 0 }); L.finish({ x: b.position.x + 65, d: (b.position.x - s.x0) / this.unit.px }); }
     },
-    judge(L, r) { return travelJudge(L, r, this, 'boat', 'More twists store more energy in the rubber band, so the propeller pushes for longer.'); },
+    judge(L, r) { return travelJudge(L, r, this, 'boat', tr('More twists store more energy in the rubber band, so the propeller pushes for longer.')); },
     ghostOf(L) { return { x: L.s.boat.position.x }; },
     draw(g, L, t) {
       const s = L.s, P = L.P, tx = L.goal.target.x * W;
@@ -843,9 +844,9 @@ function tipOf(geo, a) { return [geo.HX - Math.cos(a) * geo.L, geo.HY - Math.sin
 function travelJudge(L, r, pr, what, tip) {
   const tx = L.goal.target.x * W, bw = (L.goal.target.width || .1) * W, val = `${r1(r.d)} m`;
   const ok = L.goal.kind === 'hit' ? Math.abs(r.x - tx) <= bw / 2 : r.x >= tx;
-  if (ok) return { ok, val, text: L.goal.kind === 'hit' ? `Parked right in the zone after ${val}!` : `The ${what} went ${val} and crossed the flag!` };
-  const short = r.x < tx, d = Math.abs(r.x - tx) / pr.unit.px, by = d < .1 ? 'just a few cm' : `${r1(d)} m`;
-  return { ok, val, close: clamp(1 - Math.abs(r.x - tx) / tx, 0, .95), text: `${short ? 'Stopped' : 'Rolled on'} ${by} ${short ? 'before' : 'past'} the ${L.goal.kind === 'hit' ? 'zone' : 'flag'}. ${tip}` };
+  if (ok) return { ok, val, text: L.goal.kind === 'hit' ? tr('Parked right in the zone after {val}!', { val }) : tr(`The ${what} went {val} and crossed the flag!`, { val }) };
+  const short = r.x < tx, d = Math.abs(r.x - tx) / pr.unit.px, by = d < .1 ? tr('just a few cm') : `${r1(d)} m`;
+  return { ok, val, close: clamp(1 - Math.abs(r.x - tx) / tx, 0, .95), text: `${tr(short ? (L.goal.kind === 'hit' ? 'Stopped {by} before the zone.' : 'Stopped {by} before the flag.') : (L.goal.kind === 'hit' ? 'Rolled on {by} past the zone.' : 'Rolled on {by} past the flag.'), { by })} ${tip}` };
 }
 function dashed(g, pts, col = 'rgba(94,70,52,.45)') {
   if (!pts || pts.length < 2) return;
@@ -903,7 +904,7 @@ function balloonCar(g, x, yb, br, bs, spin, coins, ghost) {
   rr(g, -60, -17, 112, 34, 15); g.fillStyle = ghost ? '#888' : 'rgba(150,205,235,.55)'; g.fill();
   if (!ghost) {
     g.fillStyle = 'rgba(255,255,255,.55)'; rr(g, -50, -12, 90, 5, 3); g.fill();
-    g.fillStyle = '#4C7424'; g.fillRect(-20, -17, 34, 34); g.fillStyle = '#FFF9EF'; g.font = '700 9px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText('AQUA', -3, 4);
+    g.fillStyle = '#4C7424'; g.fillRect(-20, -17, 34, 34); g.fillStyle = '#FFF9EF'; g.font = '700 9px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center'; g.fillText('AQUA', -3, 4);
     g.fillStyle = '#2f6fb0'; rr(g, 50, -8, 14, 16, 3); g.fill();
     g.strokeStyle = 'rgba(40,90,120,.5)'; g.lineWidth = 1.5; rr(g, -60, -17, 112, 34, 15); g.stroke();
     for (let i = 0; i < Math.min(coins, 6); i++) { g.fillStyle = '#E8B84A'; g.beginPath(); g.ellipse(-40 + i * 7, 12 - i % 2 * 2, 6, 2.5, 0, 0, TAU); g.fill(); g.strokeStyle = '#9a6f12'; g.lineWidth = .8; g.stroke(); }
@@ -927,7 +928,7 @@ function toyTruck(g, spin, load, ghost) {
 function crate(g, w, h, kg) {
   g.save(); g.translate(-w / 2, -h / 2); wood(g, 0, 0, w, h, 3, ['#E0B070', '#C08440', '#9a6428'], 21);
   g.strokeStyle = 'rgba(90,45,12,.55)'; g.lineWidth = 3; g.beginPath(); g.moveTo(4, 4); g.lineTo(w - 4, h - 4); g.moveTo(w - 4, 4); g.lineTo(4, h - 4); g.stroke();
-  g.fillStyle = '#FFF4DE'; rr(g, w / 2 - 18, h / 2 - 9, 36, 18, 4); g.fill(); g.fillStyle = '#7A3B12'; g.font = '700 12px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, w / 2, h / 2 + 4);
+  g.fillStyle = '#FFF4DE'; rr(g, w / 2 - 18, h / 2 - 9, 36, 18, 4); g.fill(); g.fillStyle = '#7A3B12'; g.font = '700 12px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, w / 2, h / 2 + 4);
   g.restore();
 }
 function books(g, x, ytop, w) {
@@ -948,7 +949,7 @@ function mangoBasket(g, kg) {
   g.save(); g.clip(); g.strokeStyle = 'rgba(90,50,15,.45)'; g.lineWidth = 2; for (let y = -24; y < 28; y += 8) { g.beginPath(); g.moveTo(-40, y); g.lineTo(40, y); g.stroke(); } g.restore();
   for (let i = 0; i < 5; i++) { g.fillStyle = i % 2 ? '#F2B33D' : '#E58A1F'; g.beginPath(); g.ellipse(-22 + i * 11, -30 - (i % 2) * 5, 8, 10, .4, 0, TAU); g.fill(); g.fillStyle = '#4C7424'; g.beginPath(); g.ellipse(-20 + i * 11, -40 - (i % 2) * 5, 4, 2, -.6, 0, TAU); g.fill(); }
   g.strokeStyle = '#7A4E22'; g.lineWidth = 3; g.beginPath(); g.moveTo(-28, -28); g.quadraticCurveTo(0, -60, 28, -28); g.stroke();
-  g.fillStyle = '#FFF4DE'; rr(g, -18, -2, 36, 16, 4); g.fill(); g.fillStyle = '#7A3B12'; g.font = '700 11px "DM Sans", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, 0, 10);
+  g.fillStyle = '#FFF4DE'; rr(g, -18, -2, 36, 16, 4); g.fill(); g.fillStyle = '#7A3B12'; g.font = '700 11px "DM Sans", "Noto Sans Devanagari", sans-serif'; g.textAlign = 'center'; g.fillText(`${kg} kg`, 0, 10);
 }
 function treehouse(g, top) {
   // tree trunk and canopy at the left, platform at "top"
@@ -1035,23 +1036,23 @@ export function mount(stage, cfg, api) {
 
   const root = h(`<div class="lab-physics">
     <div class="lp-view">
-      <canvas class="lp-canvas" role="img" aria-label="${esc(cfg.title || 'Machine')} simulation"></canvas>
+      <canvas class="lp-canvas" role="img" aria-label="${esc(tr('{name} simulation', { name: cfg.title || tr('Machine') }))}"></canvas>
       <div class="lp-hud">
         <div class="lp-goal"><span class="lp-goal-ic" aria-hidden="true">🎯</span><span>${esc(goal.text)}</span></div>
-        <div class="lp-tries" aria-live="polite"><span>Try</span> <b>1</b><span class="lp-of"> of ${triesMax}</span></div>
+        <div class="lp-tries" aria-live="polite"><span>${tr('Try')}</span> <b>1</b><span class="lp-of"> ${tr('of {n}', { n: triesMax })}</span></div>
       </div>
       <div class="lp-read" aria-live="polite"><small>${esc(readLabel(name, goal))}</small><b>—</b></div>
       <div class="lp-banner" aria-hidden="true"></div>
     </div>
     <div class="lp-panel">
-      <p class="lp-ptitle">Change the machine</p>
+      <p class="lp-ptitle">${tr('Change the machine')}</p>
       <div class="lp-sliders">${defs.map((p, i) => `
         <label class="lp-sl" for="lp-${i}">
           <span class="lp-sl-top"><span>${esc(p.label || p.key)}</span><output>${esc(fmtVal(p, P[p.key]))}</output></span>
           <input id="lp-${i}" type="range" min="${p.min ?? 0}" max="${p.max ?? 10}" step="${p.step ?? 1}" value="${P[p.key]}" data-k="${esc(p.key)}">
         </label>`).join('')}</div>
       <button type="button" class="lp-go"><span class="lp-go-ic" aria-hidden="true">▶</span><span class="lp-go-t">${esc(PR.verb)}</span></button>
-      <ol class="lp-log" aria-label="Your tries"></ol>
+      <ol class="lp-log" aria-label="${tr('Your tries')}"></ol>
     </div>
   </div>`);
   stage.append(root);
@@ -1232,7 +1233,7 @@ export function mount(stage, cfg, api) {
     const li = document.createElement('li'); li.className = j.ok ? 'ok' : 'no';
     li.innerHTML = `<b>${tries}</b><span>${esc(paramSummary())}</span><em>${esc(j.val)}</em>`;
     log.prepend(li); if (gsap && !api.reduced) gsap.from(li, { x: -16, opacity: 0, duration: .35, ease: 'back.out(2)' });
-    banner.textContent = j.ok ? 'Goal!' : (j.text.split(/[.!]/)[0] + '!'); banner.className = `lp-banner show ${j.ok ? 'ok' : 'no'}`;
+    banner.textContent = j.ok ? tr('Goal!') : (j.text.split(/[.!।]/)[0] + '!'); banner.className = `lp-banner show ${j.ok ? 'ok' : 'no'}`;
     if (gsap && !api.reduced) gsap.fromTo(banner, { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: .45, ease: 'back.out(2.2)' });
     if (j.ok) {
       done = true; goBtn.disabled = true;
@@ -1244,7 +1245,7 @@ export function mount(stage, cfg, api) {
       api.mistake(); api.say(j.text, tries >= 2 ? 'hint' : 'bad');
       if (tries < 2) {/* bad already played */ } else api.sound('bad');
       best = Math.max(best, clamp(j.close ?? 0, 0, .9)); api.progress(best * .9);
-      $('.lp-go-t').textContent = 'Try again';
+      $('.lp-go-t').textContent = tr('Try again');
       if (gsap && !api.reduced) gsap.fromTo(view, { x: 0 }, { x: 0, duration: .4, keyframes: { x: [0, -6, 5, -3, 0] } });
     }
   }
@@ -1272,7 +1273,7 @@ function fmtVal(p, v) {
   return `${+(+v).toFixed(2)}${p.unit || ''}`;
 }
 function readLabel(name, goal) {
-  return { catapult: 'Distance', 'balloon-car': 'Distance', ramp: goal.kind === 'least-force' || goal.kind === 'lift' ? 'Push needed' : 'Distance', lever: 'Load lifted', pulley: 'Height', windmill: 'Speed', 'wheel-axle': 'Height', 'propeller-boat': 'Distance' }[name] || 'Result';
+  return tr({ catapult: 'Distance', 'balloon-car': 'Distance', ramp: goal.kind === 'least-force' || goal.kind === 'lift' ? 'Push needed' : 'Distance', lever: 'Load lifted', pulley: 'Height', windmill: 'Speed', 'wheel-axle': 'Height', 'propeller-boat': 'Distance' }[name] || 'Result');
 }
 
 export const demo = {

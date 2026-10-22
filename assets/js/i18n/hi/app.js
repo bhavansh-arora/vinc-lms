@@ -122,7 +122,7 @@ export default {
   'Full name': 'पूरा नाम',
   'Email': 'ईमेल',
   'Mobile number': 'मोबाइल नंबर',
-  '10-digit mobile': '10 अंकों का मोबाइल नंबर',
+  '10-digit mobile': '10 अंकों का नंबर',
   'As in school records': 'जैसा स्कूल के रिकॉर्ड में है',
   'School joining code': 'स्कूल का जुड़ने का कोड',
   'e.g. GP-7KQ2': 'जैसे GP-7KQ2',
