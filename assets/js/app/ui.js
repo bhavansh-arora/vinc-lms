@@ -1,5 +1,6 @@
 // Small UI helpers shared by every dashboard.
 import { icon as baseIcon } from '../art.js';
+import { locale } from '../i18n.js';
 export { art } from '../art.js';
 
 // Extra icons for logins and profiles, drawn in the same 24px stroke style as art.js.
@@ -49,7 +50,7 @@ export function bar(pct, color = 'var(--brand)') {
 
 export function fmtDate(t, opts = { day: 'numeric', month: 'short' }) {
   if (!t) return '—';
-  return new Date(t).toLocaleDateString('en-IN', opts);
+  return new Date(t).toLocaleDateString(locale(), opts);
 }
 export function timeAgo(t) {
   if (!t) return 'never';

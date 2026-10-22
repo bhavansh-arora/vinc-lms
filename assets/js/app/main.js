@@ -1,4 +1,5 @@
 // VINC Lab LMS: hash router, app shell and page transitions.
+import { langButton } from '../i18n.js';
 import { boot, session, user, school, canPersist, onSync, pull, takeRecovered, isRemote, refresh, loadPublic, logOut, backToAdmin } from './store.js';
 import { $, $$, esc, icon, toast, countUp, REDUCED } from './ui.js';
 import { renderAuth } from './auth.js';
@@ -175,6 +176,7 @@ function buildShell(me, sch, nav, s) {
         <h1 class="top-title" id="top-title"></h1>
         <div class="top-tools">
           ${s?.by ? `<button class="btn btn-sm btn-ghost" id="back-admin">${icon('arrow', 'flip')} <span>Back to admin</span></button>` : ''}
+          ${langButton('sm')}
           <a class="me-btn" href="#/${me.role}/profile" data-path="profile" aria-label="Your profile: ${esc(me.name)}"><span class="avatar">${esc(initialsOf(me.name))}</span><span class="me-name">${esc(me.name.split(' ')[0])}</span></a>
           <button class="icon-btn" id="logout" aria-label="Log out" title="Log out">${icon('logout')}</button>
         </div>

@@ -5,6 +5,7 @@
 // The data shape is the same either way: schools, users, per-project progress and a log.
 import { emptyProgress } from './scoring.js';
 import { sha256 } from './sha256.js';
+import { t, tx } from '../i18n.js';
 
 // v4 starts empty. v3 held the sample schools and demo accounts: anything people created there
 // themselves is carried over (see importLegacy), the demo data is dropped.
@@ -144,10 +145,10 @@ async function http(path, { method = 'GET', body } = {}) {
   if (s?.token) headers.Authorization = `Bearer ${s.token}`;
   let r;
   try { r = await fetch(`api/${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); }
-  catch { const e = new Error('Could not reach VINC Lab. Check your internet connection and try again.'); e.offline = true; throw e; }
+  catch { const e = new Error(t('Could not reach VINC Lab. Check your internet connection and try again.')); e.offline = true; throw e; }
   let j = {};
   try { j = await r.json(); } catch { /* empty */ }
-  if (!r.ok) { const e = new Error(j.error || 'Something went wrong. Please try again.'); e.field = j.field; e.status = r.status; throw e; }
+  if (!r.ok) { const e = new Error(j.error ? tx(j.error) : t('Something went wrong. Please try again.')); e.field = j.field; e.status = r.status; throw e; }
   return j;
 }
 

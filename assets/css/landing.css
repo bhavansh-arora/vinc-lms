@@ -741,3 +741,9 @@ section { padding: clamp(64px, 9vw, 112px) 0; position: relative; }
 
 /* Scroll reveal: hidden until landing.js animates it in (opacity + translate only). Kept last so it wins. */
 html .reveal:not(.in) { opacity: 0; }
+
+/* Language button: top right, next to the menu button on small screens. */
+.header-row .brand { margin-right: auto; }
+.header-row .nav { order: 1; }
+.header-row .lang-btn { order: 2; }
+.header-row .menu-btn { order: 3; }

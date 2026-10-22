@@ -1,6 +1,10 @@
 // VINC Lab landing page behaviour.
+import { langButton } from './i18n.js';
 import { COURSES, GRADES, FORMS, WEIGHTS, LEARNING_OUTCOMES, projectById, projectsOfGrade } from './data/courses.js';
 import { art, icon } from './art.js';
+
+// The language button (top right) names the other language.
+{ const b = document.getElementById('lang-btn'); if (b) b.outerHTML = langButton().replace('class="lang-btn ', 'id="lang-btn" class="lang-btn '); }
 
 const LEADS_INBOX = 'info@vinc-lab.com';
 const $ = (s, r = document) => r.querySelector(s);

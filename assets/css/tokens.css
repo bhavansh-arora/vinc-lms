@@ -36,9 +36,9 @@
   --radius: 22px;
   --radius-sm: 14px;
   --wrap: 1180px;
-  --display: "Lora", Georgia, "Times New Roman", serif;
-  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --display: "Lora", "Noto Serif Devanagari", Georgia, "Times New Roman", serif;
+  --body: "DM Sans", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "DM Mono", "Noto Sans Devanagari", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --t-label: 0.8125rem;
   --t-small: 0.9375rem;
   --t-body: 1.0625rem;
@@ -153,3 +153,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }
+
+/* ---------- Language: the English/Hindi button and Hindi typography ---------- */
+.lang-btn { display: inline-flex; align-items: center; gap: .45em; min-height: 40px; padding: .35em .85em .35em .45em; border: 1.5px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font: 700 .9rem/1 var(--body); cursor: pointer; white-space: nowrap; transition: border-color .2s ease, background-color .2s ease, transform .15s ease; }
+.lang-btn:hover { border-color: var(--ink-2); }
+.lang-btn:active { transform: scale(.96); }
+.lang-btn:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.lang-btn .lang-ic { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--amber-soft); color: var(--amber-ink); font: 700 .72rem/1 var(--body); letter-spacing: 0; }
+.lang-btn.sm { min-height: 36px; font-size: .85rem; }
+.lang-btn.sm .lang-ic { width: 26px; height: 26px; }
+@media (max-width: 420px) { .lang-btn.sm .lang-name { display: none; } .lang-btn.sm { padding: .3em; } }
+
+/* Hindi: no letter spacing or capitals (they break joined letters), a little more line height. */
+html[lang="hi"] body { line-height: 1.65; }
+html[lang="hi"] :is(h1, h2, h3, h4, p, li, label, legend, button, a, span, small, b, strong, em, th, td, dt, dd, figcaption, summary, div):not(code):not(.mono):not(kbd) { letter-spacing: 0; }
+html[lang="hi"] * { text-transform: none; }
+html[lang="hi"] :is(h1, h2, h3) { line-height: 1.3; }
+/* While Hindi text is being put in place on the landing page, keep it hidden (at most 2.5 s). */
+html.i18n-wait body { opacity: 0; }

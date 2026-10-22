@@ -2,6 +2,7 @@
 // sign up as a student, parent, teacher or school. The VINC Lab admin is not listed here.
 import { db, school, user, session, logIn, register, makeLogin, checkLogin, normLogin, lookupFamily, studioName, initials, isRemote } from './store.js';
 import { $, $$, esc, icon, art, confetti, bindCopy, modal, REDUCED } from './ui.js';
+import { langButton } from '../i18n.js';
 
 export const ROLES = {
   student: { label: 'Student', icon: 'star', blurb: 'I am in Grade 6, 7 or 8' },
@@ -139,6 +140,7 @@ export function renderAuth(root, { tab = 'login', role = null, code = '', onEnte
       </div>
     </section>
     <main class="auth-main" id="auth-main">
+      <div class="auth-lang">${langButton()}</div>
       ${me ? `<p class="signed-in">${icon('user')} Logged in as <b>${esc(me.name)}</b>. <a href="#/${me.role}">Go to your dashboard</a></p>` : ''}
       <div class="auth-card" id="auth-card">
         <div class="auth-tabs" role="tablist" aria-label="Log in or create an account" data-tab="${st.tab}">

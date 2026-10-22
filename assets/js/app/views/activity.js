@@ -1,5 +1,6 @@
 // One activity, start to finish, inside the portal: the lesson (what you need, steps you can tick,
 // safety, a table to record in, questions to think about) and the activity's virtual lab.
+import { isHi } from '../../i18n.js';
 import { FORMS, projectById } from '../../data/courses.js';
 import { progress, save, log } from '../store.js';
 import { $, $$, esc, icon, art, toast, confetti, fmtDate } from '../ui.js';
@@ -9,7 +10,9 @@ const cache = {};
 export const lessonsFor = pid => cache[pid];
 export function loadLessons(pid) {
   if (cache[pid]) return Promise.resolve(cache[pid]);
-  return import(`../../data/lessons/${pid}.js`).then(m => (cache[pid] = m.LESSONS || {}), () => (cache[pid] = {}));
+  const en = () => import(`../../data/lessons/${pid}.js`);
+  // Hindi lessons live in data/lessons/hi/ with the same structure; English is the fallback.
+  return (isHi() ? import(`../../data/lessons/hi/${pid}.js`).catch(en) : en()).then(m => (cache[pid] = m.LESSONS || {}), () => (cache[pid] = {}));
 }
 export const lessonOf = (pid, n) => cache[pid]?.[n] || null;
 

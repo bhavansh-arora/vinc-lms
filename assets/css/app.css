@@ -967,3 +967,6 @@ code.code { font: 600 1em var(--mono); padding: .05em .4em; border-radius: 6px; 
   .sid-tbl .sid-code { font-size: 1.05rem; }
   .sid-tbl td:last-child .btn-row { flex-wrap: wrap; justify-content: flex-start; }
 }
+
+/* Language button on the login and sign-up screens. */
+.auth-lang { align-self: flex-end; }
