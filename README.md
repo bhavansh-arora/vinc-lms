@@ -34,6 +34,19 @@ Light and dark mode follow the device setting automatically.
 - **Also on the page**: a learning-outcomes explorer, the roadmap, FAQ, and a
   pilot request form.
 
+### English and Hindi
+- The whole site is available in **English and Hindi**: landing page, sign-up and login, every
+  dashboard, all 18 projects with their lessons, quizzes and rubrics, and all 144 virtual labs.
+- The **language button** (top right of the landing page, the login screen and the app's top bar)
+  switches between them. The choice is remembered in the browser; `?lang=hi` or `?lang=en` on any
+  link also sets it.
+- How it works: `assets/js/i18n.js` (`t()`, `tx()`), Hindi text in `assets/js/i18n/hi/`, Hindi course
+  and lesson content in `assets/js/data/hi/` and `assets/js/data/lessons/hi/`. Word choices follow
+  `docs/hindi-glossary.md`.
+- After changing course or lesson content, update the Hindi copy too and run
+  `node scripts/check-hindi-data.mjs` (structure, ids and lab logic must match the English) and
+  `node scripts/make-hindi-titles.mjs` (titles used in the activity feed).
+
 ### Logins and sign-up
 - Everyone logs in with a **User ID** (like `aarav.sharma`) and a **password**.
   The User ID is case-insensitive; an email on the profile also works.

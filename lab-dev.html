@@ -28,6 +28,7 @@
 <script type="module">
 import { openLab } from './assets/js/app/lab/runtime.js';
 import { sprite, spriteNames } from './assets/js/app/lab/sprites.js';
+import { isHi } from './assets/js/i18n.js';
 const TYPES = ['sort', 'sequence', 'match', 'layers', 'mix', 'grow', 'calc', 'chart', 'choice', 'explore', 'design', 'train', 'physics', 'circuit', 'blocks'];
 const types = document.getElementById('types');
 for (const t of TYPES) {
@@ -39,7 +40,7 @@ for (const t of TYPES) {
 }
 const q = new URLSearchParams(location.search);
 async function openLesson(pid, n) {
-  const m = await import(`./assets/js/data/lessons/${pid}.js`);
+  const m = await import(isHi() ? `./assets/js/data/lessons/hi/${pid}.js` : `./assets/js/data/lessons/${pid}.js`);
   const L = m.LESSONS[n];
   console.log('result', await openLab(L.lab, { form: m.FORM || 'life', label: `${pid} · Activity ${n}` }));
 }
