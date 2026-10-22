@@ -128,7 +128,7 @@ function formOf(ing) {
   // Hindi configs have Hindi units and labels, so the Hindi words are here too.
   const u = String(ing.unit || '').toLowerCase(), l = String(ing.label || '').toLowerCase();
   if (/^(drops?|बूँद|बूंद|बूँदें|बूंदें)$/.test(u)) return 'drops';
-  if (/^(piece|pieces|slice|slices|leaf|leaves|handful|cube|cubes|whole|टुकड़ा|टुकड़े|फाँक|फांक|स्लाइस|पत्ती|पत्तियाँ|पत्ता|पत्ते|मुट्ठी|क्यूब|साबुत)$/.test(u)) return 'solid';
+  if (/^(piece|pieces|slice|slices|leaf|leaves|handful|cube|cubes|whole|टुकड़ा|टुकड़े|फाँक|फांक|स्लाइस|पत्ती|पत्तियाँ|पत्ता|पत्ते|मुट्ठी|नग|क्यूब|साबुत)$/.test(u)) return 'solid';
   if (/^(pinch|g|gram|grams|kg|tsp powder|चुटकी|ग्राम|ग्रा|किलो|किग्रा)$/.test(u) || /sugar|salt|powder|flour|jaggery|gur|masala|besan|soda|spice|haldi|turmeric|atta|dust|meal|चीनी|शक्कर|नमक|पाउडर|चूर्ण|आटा|गुड़|मसाल|बेसन|सोडा|हल्दी|बुरादा/.test(l)) return 'powder';
   return 'liquid';
 }
