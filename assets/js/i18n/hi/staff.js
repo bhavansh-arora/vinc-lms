@@ -426,6 +426,7 @@ export default {
   'Pilot': 'पायलट',
   'Standard': 'स्टैंडर्ड',
   'Premium': 'प्रीमियम',
+  'Trial': 'ट्रायल',
   "Coordinator's name": 'समन्वयक का नाम',
   'Who runs Kaushal Bodh at the school': 'विद्यालय में कौशल बोध कौन चलाते हैं',
   "Coordinator's email": 'समन्वयक का ईमेल',
