@@ -129,7 +129,7 @@ function teachers(ctx, sch) {
         <td><button class="btn btn-sm btn-ghost" data-swap="${s.id}">${icon('refresh')} ${tc ? t('Change teacher') : t('Assign a teacher')}</button></td></tr>`; }).join('') || `<tr><td colspan="4" class="muted">${t('No classes yet. Add one on the Year plan page.')}</td></tr>`}</tbody></table></section>
     <div class="teacher-cards">${ts.map(tc => {
       const mine = sortedSecs(sch).filter(s => tc.sectionIds.includes(s.id)); const kids = mine.flatMap(s => studentsOf(sch.id, s.id)); const st = stats(kids);
-      return `<section class="card teacher-card"><div class="tc-head"><span class="avatar lg">${esc(tc.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><div><b>${esc(tc.name)}</b><small class="muted">${esc(t(tc.title || 'Kaushal Bodh teacher'))} · <span class="mono">@${esc(tc.login)}</span></small></div></div>
+      return `<section class="card teacher-card"><div class="tc-head"><span class="avatar lg">${esc(tc.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span><div><b>${esc(tc.name)}</b><small class="muted">${esc(!tc.title || tc.title === 'Kaushal Bodh teacher' ? t('Kaushal Bodh teacher') : tc.title)} · <span class="mono">@${esc(tc.login)}</span></small></div></div>
         <div class="chips">${mine.map(s => `<span class="chip">${esc(secLabel(s))}</span>`).join('') || `<span class="muted small">${t('No sections yet')}</span>`}</div>
         <div class="gc-row"><span>${t('{n} students', { n: kids.length })}</span>${bar(st.completion)}<b>${st.completion}%</b></div>
         <p class="muted small">${t(st.vivaDue === 1 ? '{n} viva to mark' : '{n} vivas to mark', { n: st.vivaDue })} · ${t('{n} inactive', { n: st.inactive })}</p>

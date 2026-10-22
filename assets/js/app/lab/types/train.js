@@ -5,6 +5,7 @@
 //   each class has, how balanced the classes are and how varied the photos were, so weak training
 //   gives honest wrong guesses and the mascot explains why.
 import { esc, sparkle, shuffle, onResize } from '../kit.js';
+import { t as tr } from '../../../i18n.js'; // `tr`: this file uses `t` for test items
 
 export const meta = { title: 'Teach the computer', needs: ['gsap'] };
 
@@ -29,7 +30,7 @@ export function mount(stage, cfg, api) {
   const P = `tr${++UID}`;
   const minS = Math.max(2, Math.round(cfg.minSamples || 6));
   const classes = (cfg.classes || []).slice(0, 3).map((c, i) => ({ ...c, i, color: c.tint || DEF_COLORS[i % 3], shots: [], combos: new Set() }));
-  if (classes.length < 2) { stage.innerHTML = '<div class="lab-err"><p>This lab needs at least two classes.</p></div>'; return { destroy() {} }; }
+  if (classes.length < 2) { stage.innerHTML = `<div class="lab-err"><p>${tr('This lab needs at least two classes.')}</p></div>`; return { destroy() {} }; }
   const byKey = Object.fromEntries(classes.map(c => [c.key, c]));
   const tests = (cfg.tests || []).filter(t => byKey[t.truth]);
   const timers = [];
@@ -47,40 +48,40 @@ export function mount(stage, cfg, api) {
   root.className = 'lab-train';
   root.innerHTML = `
     <svg class="tr-defs" width="0" height="0" aria-hidden="true"><defs>${tintDefs}</defs></svg>
-    <ol class="tr-steps" aria-label="Steps">${['Collect', 'Train', 'Test'].map((s, i) => `<li class="tr-step${i === 0 ? ' on' : ''}" data-step="${i}"><b>${i + 1}</b><span>${s}</span></li>`).join('<li class="tr-step-line" aria-hidden="true"><i></i></li>')}</ol>
+    <ol class="tr-steps" aria-label="${tr('Steps')}">${[tr('Collect'), tr('Train'), tr('Test')].map((s, i) => `<li class="tr-step${i === 0 ? ' on' : ''}" data-step="${i}"><b>${i + 1}</b><span>${s}</span></li>`).join('<li class="tr-step-line" aria-hidden="true"><i></i></li>')}</ol>
     <section class="tr-view tr-collect">
       <div class="tr-cam">
-        <div class="tr-cam-top"><span class="tr-live"><i></i>LIVE</span><span class="tr-showing">Showing: <b></b></span></div>
+        <div class="tr-cam-top"><span class="tr-live"><i></i>${tr('LIVE')}</span><span class="tr-showing">${tr('Showing:')} <b></b></span></div>
         <div class="tr-screen"><div class="tr-belt"></div><div class="tr-rec" aria-hidden="true"><i></i>REC</div><div class="tr-corners" aria-hidden="true"></div><div class="tr-flashf"></div></div>
         <div class="tr-cam-base" aria-hidden="true"><span></span></div>
-        <p class="tr-cam-tip">Tip: the camera shows the object at different angles, sizes and backgrounds. More variety = a smarter model.</p>
+        <p class="tr-cam-tip">${tr('Tip: the camera shows the object at different angles, sizes and backgrounds. More variety = a smarter model.')}</p>
       </div>
       <div class="tr-classes">${classes.map(c => `
         <article class="tr-class" data-c="${c.i}" style="--cc:${esc(c.color)};--cc-ink:${inkFor(c.color)}">
           <header><span class="tr-cdot"></span><h3>${esc(c.label)}</h3><span class="tr-ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15"/><circle class="tr-ring-v" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="94.2"/></svg><b>0</b></span></header>
-          <div class="tr-bucket" aria-label="${esc(c.label)} samples"><p class="tr-empty">No samples yet</p></div>
-          <div class="tr-cbtns"><button type="button" class="tr-recbtn" aria-label="Hold to record ${esc(c.label)}"><i></i><span>Hold to record</span></button><button type="button" class="tr-clear" aria-label="Clear ${esc(c.label)} samples" title="Clear">↺</button></div>
-          <p class="tr-need">Need at least <b>${minS}</b></p>
+          <div class="tr-bucket" aria-label="${esc(tr('{name} samples', { name: c.label }))}"><p class="tr-empty">${tr('No samples yet')}</p></div>
+          <div class="tr-cbtns"><button type="button" class="tr-recbtn" aria-label="${esc(tr('Hold to record {name}', { name: c.label }))}"><i></i><span>${tr('Hold to record')}</span></button><button type="button" class="tr-clear" aria-label="${esc(tr('Clear {name} samples', { name: c.label }))}" title="${tr('Clear')}">↺</button></div>
+          <p class="tr-need">${tr('Need at least <b>{n}</b>', { n: minS })}</p>
         </article>`).join('')}</div>
-      <div class="tr-go"><button type="button" class="tr-trainbtn" disabled><span aria-hidden="true">🧠</span> Train the model</button></div>
+      <div class="tr-go"><button type="button" class="tr-trainbtn" disabled><span aria-hidden="true">🧠</span> ${tr('Train the model')}</button></div>
     </section>
     <section class="tr-view tr-train" hidden>
-      <div class="tr-netwrap"><svg class="tr-net" viewBox="0 0 700 320" role="img" aria-label="A neural network learning"></svg></div>
+      <div class="tr-netwrap"><svg class="tr-net" viewBox="0 0 700 320" role="img" aria-label="${tr('A neural network learning')}"></svg></div>
       <div class="tr-stats">
-        <div class="tr-epoch"><small>Epoch</small><b>0</b><span>/ <em>0</em></span></div>
-        <div class="tr-chartwrap"><small>Accuracy</small><svg class="tr-chart" viewBox="0 0 300 150"><g class="tr-grid">${[0, 25, 50, 75, 100].map(v => `<line x1="34" x2="292" y1="${r1(132 - v * 1.2)}" y2="${r1(132 - v * 1.2)}"/><text x="28" y="${r1(136 - v * 1.2)}">${v}</text>`).join('')}</g><path class="tr-area" d=""/><path class="tr-line" d=""/><circle class="tr-head" r="5" cx="34" cy="132"/></svg><b class="tr-acc">0%</b></div>
-        <button type="button" class="tr-testbtn" hidden><span aria-hidden="true">🔍</span> Test the model</button>
+        <div class="tr-epoch"><small>${tr('Epoch')}</small><b>0</b><span>/ <em>0</em></span></div>
+        <div class="tr-chartwrap"><small>${tr('Accuracy')}</small><svg class="tr-chart" viewBox="0 0 300 150"><g class="tr-grid">${[0, 25, 50, 75, 100].map(v => `<line x1="34" x2="292" y1="${r1(132 - v * 1.2)}" y2="${r1(132 - v * 1.2)}"/><text x="28" y="${r1(136 - v * 1.2)}">${v}</text>`).join('')}</g><path class="tr-area" d=""/><path class="tr-line" d=""/><circle class="tr-head" r="5" cx="34" cy="132"/></svg><b class="tr-acc">0%</b></div>
+        <button type="button" class="tr-testbtn" hidden><span aria-hidden="true">🔍</span> ${tr('Test the model')}</button>
       </div>
     </section>
     <section class="tr-view tr-test" hidden>
       <div class="tr-cam tr-cam-test">
-        <div class="tr-cam-top"><span class="tr-live"><i></i>PREVIEW</span><span class="tr-showing">New picture <b class="tr-tn"></b></span></div>
+        <div class="tr-cam-top"><span class="tr-live"><i></i>${tr('PREVIEW')}</span><span class="tr-showing">${tr('New picture')} <b class="tr-tn"></b></span></div>
         <div class="tr-screen"><div class="tr-belt"></div><div class="tr-scan" aria-hidden="true"></div><div class="tr-verdict" hidden></div></div>
       </div>
       <div class="tr-pred">
-        <h3 class="tr-h">The model thinks…</h3>
+        <h3 class="tr-h">${tr('The model thinks…')}</h3>
         <div class="tr-bars">${classes.map(c => `<div class="tr-bar" data-c="${c.i}" style="--cc:${esc(c.color)}"><span class="tr-bl">${esc(c.label)}</span><span class="tr-bt"><i></i></span><b>0%</b></div>`).join('')}</div>
-        <ol class="tr-results">${tests.map((t, i) => `<li data-t="${i}" aria-label="Test ${i + 1}"></li>`).join('')}</ol>
+        <ol class="tr-results">${tests.map((t, i) => `<li data-t="${i}" aria-label="${tr('Test {n}', { n: i + 1 })}"></li>`).join('')}</ol>
         <div class="tr-summary" hidden></div>
       </div>
     </section>`;
@@ -172,10 +173,10 @@ export function mount(stage, cfg, api) {
     clearInterval(recTimer);
     cards[c.i].classList.remove('is-rec'); root.classList.remove('is-recording');
     const n = c.shots.length;
-    if (n < minS) api.say(`${c.label}: ${n} sample${n === 1 ? '' : 's'}. Keep holding to collect at least ${minS}.`, 'hint');
+    if (n < minS) api.say(tr(n === 1 ? '{name}: {n} sample. Keep holding to collect at least {min}.' : '{name}: {n} samples. Keep holding to collect at least {min}.', { name: c.label, n, min: minS }), 'hint');
     else {
       const others = classes.filter(o => o.shots.length < minS);
-      api.say(others.length ? `Great, ${n} samples of ${c.label}! Now show the camera some ${others[0].label}.` : `Every class has enough samples. Check they are balanced, then press Train!`, others.length ? 'info' : 'good');
+      api.say(others.length ? tr('Great, {n} samples of {name}! Now show the camera some {other}.', { n, name: c.label, other: others[0].label }) : tr('Every class has enough samples. Check they are balanced, then press Train!'), others.length ? 'info' : 'good');
     }
     later(idle, 500);
   }
@@ -202,10 +203,10 @@ export function mount(stage, cfg, api) {
       if (!c.shots.length) return;
       c.shots = []; c.combos.clear();
       const b = card.querySelector('.tr-bucket');
-      const go = () => { b.innerHTML = '<p class="tr-empty">No samples yet</p>'; };
+      const go = () => { b.innerHTML = `<p class="tr-empty">${tr('No samples yet')}</p>`; };
       if (api.reduced) go(); else gsap.to(b.querySelectorAll('.tr-thumb'), { scale: 0, opacity: 0, duration: .25, stagger: .01, onComplete: go });
       updateCounts(c); api.sound('whoosh');
-      api.say(`Cleared ${c.label}. Record again!`);
+      api.say(tr('Cleared {name}. Record again!', { name: c.label }));
     });
   });
 
@@ -261,8 +262,8 @@ export function mount(stage, cfg, api) {
     if (busy || done) return;
     stopRec(); clearTimeout(idleTimer);
     const low = classes.filter(c => c.shots.length < minS);
-    if (low.length) api.say(`Training with only ${low.map(c => `${c.shots.length} ${c.label}`).join(' and ')} sample${low.length > 1 ? 's' : ''}… let's see how it does!`, 'hint');
-    else api.say('Training! The computer looks at every sample again and again, and slowly finds patterns.');
+    if (low.length) api.say(tr(low.length > 1 ? 'Training with only {list} samples… let\'s see how it does!' : 'Training with only {list} sample… let\'s see how it does!', { list: low.map(c => `${c.shots.length} ${c.label}`).join(tr(' and ')) }), 'hint');
+    else api.say(tr('Training! The computer looks at every sample again and again, and slowly finds patterns.'));
     trained = model();
     goStep(1);
     runTraining();
@@ -280,7 +281,7 @@ export function mount(stage, cfg, api) {
       ${nodes.map((ln, l) => ln.map((p, j) => `<g class="tr-node tr-node-${l}" transform="translate(${p.x} ${p.y})"><circle r="${l === 3 ? 17 : 13}" ${l === 3 ? `style="--cc:${classes[j].color}"` : ''}/></g>`).join('')).join('')}
       ${classes.map((c, j) => `<text class="tr-olab" x="${578}" y="${nodes[3][j].y}" dominant-baseline="central">${esc(c.label.length > 17 ? `${c.label.slice(0, 16)}…` : c.label)}</text>`).join('')}
       <g class="tr-inputs">${nodes[0].map((p, j) => `<g transform="translate(14 ${p.y - 17})"><rect width="34" height="34" rx="7" class="tr-in-bg" style="fill:${thumbs[j] ? classes.find(c => c.shots.includes(thumbs[j])).color : '#ccc'}"/><foreignObject width="34" height="34"><div xmlns="http://www.w3.org/1999/xhtml" class="tr-in-art">${thumbs[j] ? api.art(thumbs[j].item) : ''}</div></foreignObject></g>`).join('')}</g>
-      <text class="tr-layer" x="70" y="22" text-anchor="middle">Input</text><text class="tr-layer" x="310" y="22" text-anchor="middle">Hidden layers</text><text class="tr-layer" x="550" y="22" text-anchor="middle">Output</text>`;
+      <text class="tr-layer" x="70" y="22" text-anchor="middle">${tr('Input')}</text><text class="tr-layer" x="310" y="22" text-anchor="middle">${tr('Hidden layers')}</text><text class="tr-layer" x="550" y="22" text-anchor="middle">${tr('Output')}</text>`;
     return { net, nodes };
   }
   function runTraining() {
@@ -339,7 +340,7 @@ export function mount(stage, cfg, api) {
     net.classList.add('is-trained');
     const btn = $('.tr-testbtn'); btn.hidden = false;
     if (!api.reduced) { gsap.from(btn, { scale: .6, opacity: 0, duration: .5, ease: 'back.out(2.5)' }); sparkle(api, $('.tr-acc')); }
-    api.say(`Training done! On its own samples it gets about ${Math.round(final * 100)}% right. But the real test is pictures it has never seen…`, 'good');
+    api.say(tr('Training done! On its own samples it gets about {n}% right. But the real test is pictures it has never seen…', { n: Math.round(final * 100) }), 'good');
     btn.focus({ preventScroll: true });
   }
   $('.tr-testbtn').addEventListener('click', () => { if (!busy) { goStep(2); runTests(); } });
@@ -358,7 +359,7 @@ export function mount(stage, cfg, api) {
       const t = tests[i], r = R[i];
       const v = { si: 0, item: t, tint: t.tint, bg: BGS[(i * 2 + rounds) % BGS.length].id, rot: Math.round((rnd() - .5) * 30), sc: .9, dx: 0, dy: 0, br: 1, hue: 0 };
       showFrame(testBelt, v, .45);
-      $('.tr-tn').textContent = `${i + 1} of ${tests.length}`;
+      $('.tr-tn').textContent = tr('{n} of {total}', { n: i + 1, total: tests.length });
       const vd = $('.tr-verdict'); vd.hidden = true;
       root.querySelectorAll('.tr-bar').forEach(b => { b.classList.remove('top'); b.querySelector('i').style.transform = 'scaleX(0)'; b.querySelector('b').textContent = '0%'; });
       const scan = $('.tr-scan');
@@ -379,7 +380,7 @@ export function mount(stage, cfg, api) {
         const T = byKey[t.truth];
         vd.hidden = false;
         vd.className = `tr-verdict ${r.ok ? 'ok' : 'no'}`;
-        vd.innerHTML = r.ok ? `<b>✓</b> ${esc(r.guess.label)}` : `<b>✗</b> Said ${esc(r.guess.label)}<small>It was really ${esc(T.label)}</small>`;
+        vd.innerHTML = r.ok ? `<b>✓</b> ${esc(r.guess.label)}` : `<b>✗</b> ${tr('Said {name}', { name: esc(r.guess.label) })}<small>${tr('It was really {name}', { name: esc(T.label) })}</small>`;
         if (!api.reduced) gsap.fromTo(vd, { scale: .4, rotation: -8, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: .45, ease: 'back.out(2.6)' });
         const li = root.querySelector(`.tr-results li[data-t="${i}"]`);
         li.className = r.ok ? 'ok' : 'no'; li.innerHTML = r.ok ? '✓' : '✗';
@@ -391,7 +392,7 @@ export function mount(stage, cfg, api) {
         later(next, 1250);
       }, 1800);
     };
-    api.say('Here come new pictures the model has never seen. Watch its guesses!');
+    api.say(tr('Here come new pictures the model has never seen. Watch its guesses!'));
     later(next, 400);
   }
   function why(R) {
@@ -400,9 +401,9 @@ export function mount(stage, cfg, api) {
     if (!wrong.length) return '';
     const T = byKey[wrong[0].t.truth], g = wrong[0].r.guess, m = M[T.key];
     const big = classes.reduce((a, b) => (M[b.key].n > M[a.key].n ? b : a));
-    if (m.n < minS) return `It mixed up ${T.label}: you showed it only ${m.n} ${T.label} sample${m.n === 1 ? '' : 's'}. Collect at least ${minS}.`;
-    if (m.bal < .7 && big !== T) return `It guessed ${g.label} too often because it saw ${M[big.key].n} ${big.label} samples but only ${m.n} of ${T.label}. Balance your classes.`;
-    return `It got confused by new backgrounds and angles. Add more varied ${T.label} samples (hold Record longer).`;
+    if (m.n < minS) return tr(m.n === 1 ? 'It mixed up {name}: you showed it only {n} {name} sample. Collect at least {min}.' : 'It mixed up {name}: you showed it only {n} {name} samples. Collect at least {min}.', { name: T.label, n: m.n, min: minS });
+    if (m.bal < .7 && big !== T) return tr('It guessed {guess} too often because it saw {nb} {big} samples but only {n} of {name}. Balance your classes.', { guess: g.label, nb: M[big.key].n, big: big.label, n: m.n, name: T.label });
+    return tr('It got confused by new backgrounds and angles. Add more varied {name} samples (hold Record longer).', { name: T.label });
   }
   function summary(R, right) {
     busy = false;
@@ -413,20 +414,20 @@ export function mount(stage, cfg, api) {
     s.className = `tr-summary ${pass ? 'pass' : 'fail'}`;
     const C = 2 * Math.PI * 26;
     s.innerHTML = `<div class="tr-score"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26"/><circle class="tr-score-v" cx="32" cy="32" r="26" stroke-dasharray="${r1(C)}" stroke-dashoffset="${r1(C)}"/></svg><b>${pct}%</b></div>
-      <div><p><b>${right} of ${tests.length} correct.</b> ${pass ? (right === tests.length ? 'A perfect score!' : 'That passes the 75% mark!') : 'It needs 75% to pass.'}</p>${pass ? '' : `<p class="tr-why">${esc(why(R))}</p><div class="tr-sbtns"><button type="button" class="tr-more">📸 Collect more samples</button><button type="button" class="tr-retest ghost">🔁 Test again</button></div>`}</div>`;
+      <div><p><b>${tr('{n} of {total} correct.', { n: right, total: tests.length })}</b> ${pass ? (right === tests.length ? tr('A perfect score!') : tr('That passes the 75% mark!')) : tr('It needs 75% to pass.')}</p>${pass ? '' : `<p class="tr-why">${esc(why(R))}</p><div class="tr-sbtns"><button type="button" class="tr-more">📸 ${tr('Collect more samples')}</button><button type="button" class="tr-retest ghost">🔁 ${tr('Test again')}</button></div>`}</div>`;
     s.scrollIntoView({ block: 'nearest', behavior: api.reduced ? 'auto' : 'smooth' });
     if (!api.reduced) { gsap.from(s, { y: 20, opacity: 0, duration: .5, ease: 'back.out(2)' }); gsap.to(s.querySelector('.tr-score-v'), { strokeDashoffset: C * (1 - pct / 100), duration: 1, ease: 'power2.out' }); }
     else s.querySelector('.tr-score-v').style.strokeDashoffset = C * (1 - pct / 100);
     if (pass) {
       done = true;
       const extra = right < tests.length ? ` ${why(R)}` : '';
-      api.say(`Your model passed with ${pct}%!${extra}`, 'good');
-      later(() => api.complete({ message: cfg.win || `Your model scored ${pct}% on new pictures. Well trained!` }), 2200);
+      api.say(`${tr('Your model passed with {n}%!', { n: pct })}${extra}`, 'good');
+      later(() => api.complete({ message: cfg.win || tr('Your model scored {n}% on new pictures. Well trained!', { n: pct }) }), 2200);
     } else {
       api.mistake();
       api.say(why(R), 'bad');
-      s.querySelector('.tr-more').onclick = () => { goStep(0); later(idle, 300); api.say('Add more samples. Focus on the class the model got wrong, and keep the classes balanced.', 'hint'); };
-      s.querySelector('.tr-retest').onclick = () => { api.say('Same model, same pictures: it will make the same mistakes. A model only gets better with better data!', 'hint'); };
+      s.querySelector('.tr-more').onclick = () => { goStep(0); later(idle, 300); api.say(tr('Add more samples. Focus on the class the model got wrong, and keep the classes balanced.'), 'hint'); };
+      s.querySelector('.tr-retest').onclick = () => { api.say(tr('Same model, same pictures: it will make the same mistakes. A model only gets better with better data!'), 'hint'); };
     }
   }
 
@@ -435,7 +436,7 @@ export function mount(stage, cfg, api) {
     if (+s.dataset.step === 0 && view === 'test' && !busy && !done) { goStep(0); later(idle, 300); }
   }));
   setActive(classes[0]);
-  api.say(`Hold the red Record button on a class to show the camera examples. Collect at least ${minS} for every class, then train your model.`);
+  api.say(tr('Hold the red Record button on a class to show the camera examples. Collect at least {n} for every class, then train your model.', { n: minS }));
   if (!api.reduced) {
     gsap.from(cards, { x: 30, opacity: 0, duration: .5, stagger: .1, ease: 'power3.out', delay: .2 });
     gsap.from('.lab-train .tr-collect .tr-cam', { scale: .9, opacity: 0, duration: .55, ease: 'back.out(1.6)', delay: .1 });
