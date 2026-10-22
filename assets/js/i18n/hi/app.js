@@ -10,11 +10,11 @@ export const patterns = [
   // Activity feed (sign-ups, linking, School IDs).
   [/^joined Grade (\d+) · (.+)$/, 'कक्षा $1 · $2 में शामिल हुए'],
   [/^linked to (.+) as a parent$/, '$1 के अभिभावक के रूप में जुड़े'],
-  [/^registered (.+)$/, '$1 को रजिस्टर किया'],
-  [/^made 1 School ID for (.+)$/, '$1 के लिए 1 स्कूल आईडी बनाई'],
-  [/^made 1 School ID$/, '1 स्कूल आईडी बनाई'],
-  [/^made (\d+) School IDs for (.+)$/, '$2 के लिए $1 स्कूल आईडी बनाईं'],
-  [/^made (\d+) School IDs$/, '$1 स्कूल आईडी बनाईं'],
+  [/^registered (.+)$/, 'ने $1 को रजिस्टर किया'],
+  [/^made 1 School ID for (.+)$/, 'ने $1 के लिए 1 स्कूल आईडी बनाई'],
+  [/^made 1 School ID$/, 'ने 1 स्कूल आईडी बनाई'],
+  [/^made (\d+) School IDs for (.+)$/, 'ने $2 के लिए $1 स्कूल आईडी बनाईं'],
+  [/^made (\d+) School IDs$/, 'ने $1 स्कूल आईडी बनाईं'],
 ];
 
 export default {

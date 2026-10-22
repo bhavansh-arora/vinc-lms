@@ -9,5 +9,7 @@ import lab, { patterns as pLab } from './lab.js';
 import labTypes, { patterns as pLabTypes } from './lab-types.js';
 import titles from './data.js';
 
+export { titles };
+
 export const strings = Object.assign({}, titles, landing, app, student, staff, lab, labTypes);
 export const patterns = [...(pApp || []), ...(pStaff || []), ...(pStudent || []), ...(pLanding || []), ...(pLab || []), ...(pLabTypes || [])];

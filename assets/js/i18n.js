@@ -18,9 +18,9 @@ try {
   if (v && v in LANGS) L = v;
 } catch { /* storage blocked: English */ }
 
-let DICT = {}, PATTERNS = [];
+let DICT = {}, PATTERNS = [], TITLES = [];
 if (L === 'hi') {
-  try { const m = await import('./i18n/hi/index.js'); DICT = m.strings; PATTERNS = m.patterns; }
+  try { const m = await import('./i18n/hi/index.js'); DICT = m.strings; PATTERNS = m.patterns; TITLES = Object.entries(m.titles || {}).map(([en, hi]) => [hi, en]).sort((a, b) => b[0].length - a[0].length); }
   catch (e) { console.error('Hindi text could not be loaded; showing English.', e); }
 }
 try { document.documentElement.lang = L === 'hi' ? 'hi' : 'en-IN'; document.documentElement.dataset.lang = L; } catch { /* no DOM */ }
@@ -52,6 +52,14 @@ export function tx(s) {
   if (DICT[s] != null) return DICT[s];
   for (const [re, out] of PATTERNS) if (re.test(s)) return s.replace(re, (...m) => out.replace(/\$(\d)/g, (_, i) => { const v = m[+i] ?? ''; return DICT[v] ?? v; }));
   missing.add(s);
+  return s;
+}
+
+// Activity-feed lines are stored in English for everyone. In Hindi, course titles inside a line
+// come from the Hindi course data, so put the English titles back before the line is saved.
+export function toEnglishTitles(s) {
+  if (L !== 'hi' || !s) return s;
+  for (const [hi, en] of TITLES) if (s.includes(hi)) s = s.split(hi).join(en);
   return s;
 }
 

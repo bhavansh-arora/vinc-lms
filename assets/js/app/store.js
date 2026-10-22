@@ -5,7 +5,7 @@
 // The data shape is the same either way: schools, users, per-project progress and a log.
 import { emptyProgress } from './scoring.js';
 import { sha256 } from './sha256.js';
-import { t, tx } from '../i18n.js';
+import { t, tx, toEnglishTitles } from '../i18n.js';
 
 // v4 starts empty. v3 held the sample schools and demo accounts: anything people created there
 // themselves is carried over (see importLegacy), the demo data is dropped.
@@ -591,7 +591,7 @@ export function progress(studentId, projectId, create = false) {
 
 export function log(who, what, schoolId) {
   const d = db();
-  d.log.unshift({ at: Date.now(), who, what, schoolId });
+  d.log.unshift({ at: Date.now(), who, what: toEnglishTitles(what), schoolId });
   d.log.length = Math.min(d.log.length, 250);
 }
 
