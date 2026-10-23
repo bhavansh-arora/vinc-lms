@@ -3,7 +3,7 @@
 .env.*
 docker-compose.override.yml
 .install-state
-backups/
-data/
+/backups/
+/data/
 # Dependencies
 node_modules/
